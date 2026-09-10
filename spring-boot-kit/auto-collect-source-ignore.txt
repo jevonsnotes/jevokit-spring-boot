@@ -1,0 +1,4 @@
+target\
+auto-collect-source-ignore.txt
+cmd.bat
+test/

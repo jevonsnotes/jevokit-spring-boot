@@ -1,24 +1,54 @@
-# Compiled class file
-*.class
+target/
+.idea/
+*.iml
+*.log*
+.claude/
+docs/
+**/application-local.yml
 
-# Log file
-*.log
+# ---------------------------------------------------------------------------
+# 以下段落整合自各模块嵌套 .gitignore（2026-09-10 合并，嵌套文件已删除）：
+#   - spring-boot-kit/.gitignore（独有项：auto-collection/）
+#   - spring-boot-kit/server/spring-boot-kit-test-server/.gitignore
+#   - spring-boot-kit/security/spring-boot-kit-security-{all, code-inject,
+#     path-traversal, sql-inject, web-fixed, xss}/.gitignore（6 个，内容相同）
+# 迁移说明：
+#   - 无斜杠 pattern（target/、build/、.vscode/ 等）本就匹配任意层级，语义不变；
+#   - 原带前导斜杠的模块根锚定 pattern（/nbproject/private/ 等）泛化为 **/ 前缀；
+#   - 原 !.mvn/wrapper/maven-wrapper.jar（相对各模块根）泛化为 !**/.mvn/...；
+#   - .idea、*.iml、*.log* 与顶部已有条目去重，不重复列出。
+# ---------------------------------------------------------------------------
 
-# BlueJ files
-*.ctxt
+### auto-collection ###
+auto-collection/
 
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
+### Maven ###
+!**/.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
 
-# Package Files #
-*.jar
-*.war
-*.nar
-*.ear
-*.zip
-*.tar.gz
-*.rar
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
-hs_err_pid*
-replay_pid*
+### IntelliJ IDEA ###
+*.iws
+*.ipr
+
+### NetBeans ###
+**/nbproject/private/
+**/nbbuild/
+**/dist/
+**/nbdist/
+**/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/

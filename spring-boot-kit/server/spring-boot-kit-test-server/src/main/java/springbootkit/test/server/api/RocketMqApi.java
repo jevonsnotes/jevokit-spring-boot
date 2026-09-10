@@ -1,0 +1,129 @@
+package springbootkit.test.server.api;
+
+import cn.hutool.core.date.DatePattern;
+import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.lang.UUID;
+import com.alibaba.fastjson2.JSON;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.rocketmq.client.producer.TransactionSendResult;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import springbootkit.core.lang.CallbackP;
+import springbootkit.rocketmq.dto.MessageData;
+import springbootkit.rocketmq.helper.RocketMqHelper;
+import springbootkit.test.server.consts.MqConst;
+import springbootkit.core.lang.ApiResponse;
+import springbootkit.test.server.vo.TestVo;
+import springbootkit.test.server.vo.TopicVo;
+
+/**
+ * @Description
+ * POST localhost:8080/rocketmq/test
+ * {
+ * "type":1,
+ * "async":true,
+ * "transactionRollback":true,
+ * "loop":1
+ * }
+ *
+ *
+ * @Date 2024/7/3 14:54
+ * @Version 0.0.1
+ */
+@Slf4j
+@RestController
+@RequestMapping("/rocketmq")
+@RequiredArgsConstructor
+public class RocketMqApi {
+    private final RocketMqHelper rocketMqV5Helper;
+
+    @RequestMapping("/test")
+    public ApiResponse<String> test(@RequestBody TopicVo vo){
+        switch (vo.getType()){
+            case 1 :
+                testTopicNormal(vo);
+                break;
+            case 2 :
+                testTopicFIFO(vo);
+                break;
+            case 3 :
+                testTopicDelay(vo);
+                break;
+            case 4 :
+                testTopicTransaction(vo);
+                break;
+            default:
+                break;
+        }
+        return ApiResponse.ok("success");
+    }
+
+    /**
+     * sh mqadmin updateTopic -n <nameserver_address> -t <topic_name> -c <cluster_name> -a +message.type=NORMAL
+     * @param vo
+     */
+    private void testTopicNormal(TopicVo vo){
+
+        vo.setSendMsg("正常消息内容");
+        final Message<MessageData<TopicVo>> data =
+                MessageData.withData(vo).header("id", UUID.fastUUID().toString()).buildMsg();
+//        looper(vo,(idx) -> {
+//            if(vo.isAsync()){
+//                rocketMqHelper.asyncSend(MqConst.TOPIC_NORMAL,msg);
+//            } else {
+//                rocketMqHelper.syncSend(MqConst.TOPIC_NORMAL,msg);
+//            }
+//        });
+        log.info("发送普通消息："+ JSON.toJSONString(data));
+        if(vo.isAsync()){
+            rocketMqV5Helper.asyncSend(MqConst.TOPIC_NORMAL+":TAG_A",data);
+        } else {
+            rocketMqV5Helper.syncSend(MqConst.TOPIC_NORMAL+":TAG_A",data);
+        }
+
+    }
+    private void testTopicFIFO(TopicVo vo){
+        String messageGroup1 = "sameQueue1";
+        String messageGroup2 = "sameQueue2";
+        final String sendMsg = vo.getSendMsg();
+//        looper(vo,(idx) -> rocketMqHelper.asyncSendOrderly(MqConst.TOPIC_FIFO,build,"sameQueue"));
+        vo.setSendMsg(sendMsg + " 1");
+        rocketMqV5Helper.syncSendOrderly(MqConst.TOPIC_FIFO,vo,messageGroup1);
+        vo.setSendMsg(sendMsg + " 2-1");
+        rocketMqV5Helper.syncSendOrderly(MqConst.TOPIC_FIFO,vo,messageGroup1);
+        vo.setSendMsg(sendMsg + " 3");
+        rocketMqV5Helper.syncSendOrderly(MqConst.TOPIC_FIFO,vo,messageGroup1);
+        vo.setSendMsg(sendMsg + " 2-2");
+        rocketMqV5Helper.syncSendOrderly(MqConst.TOPIC_FIFO,vo,messageGroup2);
+
+    }
+    private void testTopicDelay(TopicVo vo){
+//        Message<TopicVo> msg = MessageBuilder
+//                .withPayload(vo)
+//                .build();
+        final Message<MessageData<TopicVo>> data =
+                MessageData.withData(vo).header("id", UUID.fastUUID().toString()).buildMsg();
+//        looper(vo,(idx) -> rocketMqHelper.syncSendDelay(MqConst.TOPIC_DELAY,"延时消息内容："+ DateUtil.formatDate(DateUtil.date()),3000));
+        rocketMqV5Helper.syncSendDelay(MqConst.TOPIC_DELAY,data,1);
+        rocketMqV5Helper.syncSendDelay(MqConst.TOPIC_DELAY,data,2);
+    }
+    private void testTopicTransaction(TopicVo vo){
+        final TestVo testVo = TestVo.builder().address("xxxx地址").mobile("123456487").build();
+        final Message<TopicVo> msg = MessageBuilder
+                .withPayload(vo)
+                .setHeader("BusinessId", "B"+DateUtil.format(DateUtil.date(), DatePattern.PURE_DATETIME_PATTERN))
+                .build();
+
+        final TransactionSendResult transactionSendResult = rocketMqV5Helper.syncSendTran(MqConst.TOPIC_TRANSACTION, msg, testVo);
+        System.out.println("本地事务状态：" + transactionSendResult.getLocalTransactionState());
+    }
+    private void looper(TopicVo vo,CallbackP callback) {
+        for(int i=0;i<vo.getLoop();i++){
+            callback.call(i);
+        }
+    }
+}

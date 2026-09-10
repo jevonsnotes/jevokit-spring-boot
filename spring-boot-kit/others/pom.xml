@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>spring-boot-kit</groupId>
+        <artifactId>spring-boot-kit-parent</artifactId>
+        <version>3.5.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <groupId>spring-boot-kit</groupId>
+    <artifactId>spring-boot-kit-others</artifactId>
+    <name>spring-boot-kit-others</name>
+    <packaging>pom</packaging>
+    <modules>
+        <module>spring-boot-kit-excel</module>
+        <module>spring-boot-kit-desensitization</module>
+        <module>spring-boot-kit-redis</module>
+        <module>spring-boot-kit-nogen</module>
+        <module>spring-boot-kit-workflow</module>
+        <module>spring-boot-kit-jasypt</module>
+        <module>spring-boot-kit-rocketmq</module>
+        <module>spring-boot-kit-okhttp</module>
+        <module>spring-boot-kit-api</module>
+    </modules>
+    <dependencies>
+        <dependency>
+            <groupId>spring-boot-kit</groupId>
+            <artifactId>spring-boot-kit-configuration</artifactId>
+        </dependency>
+    </dependencies>
+
+</project>
