@@ -3,7 +3,9 @@ target/
 *.iml
 *.log*
 .claude/
-docs/
+docs/*
+!docs/lessons/
+!docs/preferences/
 **/application-local.yml
 
 # ---------------------------------------------------------------------------
