@@ -14,7 +14,7 @@ import java.io.FileInputStream;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = {SpringBootKitTestServerApplication.class})
-public class ApplicationTests {
+public class ApplicationTest {
     @Autowired
     private RedissonClient client;
     @Autowired

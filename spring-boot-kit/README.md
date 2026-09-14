@@ -416,7 +416,6 @@ logback配置文件按需替换appender
 ```
 DesensitizedConsoleAppender
 DesensitizedRollingFileAppender
-DesensitizedLogstashTcpSocketFileAppender
 ```
 注意：需要脱敏的对象需要以参数的方式来使用日志输出方法，比如
 ```

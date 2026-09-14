@@ -1,7 +1,10 @@
 
-# jasypt.key 经环境变量 JASYPT_KEY 或运行工作目录 application-local.yml 注入（不入库）
+# jasypt 演示默认密钥（demo 应用开箱即用）：环境变量 JASYPT_KEY 或运行工作目录 application-local.yml 可覆盖，优先级高于此默认值。
+# 注意：下方 datasource.password 的 ENC(...) 密文与该演示密钥配套——若改用自有 JASYPT_KEY，旧密文将解密失败
+# （EncryptionOperationNotPossibleException），需用自有密钥重新加密，或在 application-local.yml 覆盖 datasource 段。
+# 生产环境必须通过环境变量/local 文件注入自有密钥并重算全部 ENC 密文。
 jasypt:
-  key: ${JASYPT_KEY:}
+  key: ${JASYPT_KEY:DemoJasyptKey123456} # 演示默认密钥（16+ 字符任意字符串；生产必须替换）
   encryptor:
     iv-generator-classname: org.jasypt.iv.NoIvGenerator
     bean: springBootKitStringEncryptor
@@ -185,7 +188,10 @@ spring:
     #url: jdbc:h2:file:./h2data/test # 文件存储方式
     url: jdbc:h2:mem:test # 内存存储方式
     username: postgres
-    password: ENC(JatSMaSRsP+ymsfztCnDB5N0bpVgpRms)
+    # H2 内存库自建库自注册凭据，明文任意一致值均可；此处演示明文 DemoDbPassword123，
+    # 用演示密钥 DemoJasyptKey123456（jasypt.key 默认值）加密——改用自有 JASYPT_KEY 时此密文解密会失败，
+    # 需用自有密钥重算（JasyptTest 加密入口）或在 application-local.yml 覆盖本段。
+    password: ENC(qPksSqpFLyoey8nYmi639icfJK8ZCoO1G6t/S7YQauE=)
     hikari:
       maximum-pool-size: 50
       minimum-idle: 5
@@ -209,7 +215,7 @@ camunda.bpm:
       historyTimeToLive: 3650 #10年
 
   admin-user:
-    id: demo-admin
+    id: demoAdmin # Camunda 7.x 资源 ID 白名单默认 [a-zA-Z0-9]+|camunda-admin，连字符非法（password 非资源 ID 不受限）
     password: demo-password
     firstName: Kermit
   filter:

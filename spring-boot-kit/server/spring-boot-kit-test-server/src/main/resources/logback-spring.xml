@@ -40,41 +40,9 @@
         <appender-ref ref="DST_LOG" />
     </logger>
 
-    <appender name="LOGSTASH" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
-        <destination>192.0.2.1:9250,192.0.2.1:9251</destination>
-        <queueSize>1048576</queueSize>
-        <encoder charset="UTF-8" class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
-            <providers class="net.logstash.logback.composite.loggingevent.LoggingEventJsonProviders">
-                <timestamp>
-                    <timeZone>UTC</timeZone>
-                </timestamp>
-                <pattern>
-                    <pattern>
-                        {
-                        "server_date":"%date{yyyy-MM-dd HH:mm:ss.SSS}",
-                        "app_name":"${springAppName}",
-                        "service_name": "spring-boot-kit-${springAppEnv}-%date{yyyyMM}",
-                        "file_line":"%file:%line",
-                        "port":"${port}",
-                        "level": "%level",
-                        "thread": "%thread",
-                        "class": "%logger{40}",
-                        "message": "%message",
-                        "stack_trace": "%exception",
-                        "trace.id":"%mdc{trace.id}",
-                        "transaction.id":"%mdc{transaction.id}",
-                        "error.id":"%mdc{error.id}"
-                        }
-                    </pattern>
-                </pattern>
-            </providers>
-        </encoder>
-    </appender>
-
     <root level="info">
         <!--颜色管理-->
         <appender-ref ref="consoleLog"/>
-        <appender-ref ref="LOGSTASH"/>
 <!--        <appender-ref ref="DST_LOG"/>-->
     </root>
 

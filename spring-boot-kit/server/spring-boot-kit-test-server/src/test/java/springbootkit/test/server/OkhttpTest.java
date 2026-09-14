@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = {SpringBootKitTestServerApplication.class})
-public class OkhttpTests {
+public class OkhttpTest {
 
     @Test
     public void mainTest() {
