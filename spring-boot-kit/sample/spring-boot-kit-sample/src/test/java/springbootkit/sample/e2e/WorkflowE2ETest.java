@@ -7,11 +7,11 @@ import com.alibaba.fastjson2.JSONObject;
 import com.alibaba.fastjson2.TypeReference;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -39,13 +39,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * workflow（camunda）模块 E2E（原 MockTest.testWorkflow 拆分）。
  *
- * <p>环境要求（@Tag("env")）：默认构建不跑（surefire excludedGroups=env），
+ * <p>默认测试集（无需 MQ）：内建 @ActiveProfiles("local") 排除 RocketMQ 自动装配，环境仅需 Redis 在位 + H2 内存自给。
  * 需要 H2 + Redis；流程实例真实提交（Propagation.NEVER）。
  * 完整链路：部署 BPMN → 发起 → 起草人提交 → 地市审核认领+通过 → 省级查询，
  * 末尾断言流程实例 ID 前后一致。
  */
 @Slf4j
-@Tag("env")
+@ActiveProfiles("local")
 @DisplayName("workflow 端到端")
 @SpringBootTest(classes = SpringBootKitSampleApplication.class)
 @AutoConfigureMockMvc

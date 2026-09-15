@@ -2,10 +2,11 @@ package springbootkit.sample.e2e;
 
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import springbootkit.sample.SpringBootKitSampleApplication;
 import springbootkit.sample.service.RedisService;
 
@@ -14,14 +15,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * redis 模块 E2E（原 MockTest.testRedis 拆分）。
  *
- * <p>环境要求（@Tag("env")）：默认构建不跑（surefire excludedGroups=env），
- * 需要真实 Redis。执行：mvn test -Dgroups=env -DexcludedGroups=
+ * <p>默认测试集（无需 MQ）：内建 @ActiveProfiles("local") 排除 RocketMQ 自动装配，环境仅需 Redis 在位 + H2 内存自给。
+ *
  * 二次调用命中缓存返回同值，验证 kit 缓存键前缀与 Spring Cache 装配。
+ *
+ * <p>@AutoConfigureMockMvc 说明：本类不使用 MockMvc，加它以与其余 e2e 类共享同一
+ * TestContext 缓存键——实测同 fork 双上下文（双 Redisson 实例）第二实例握手失败并
+ * 在关闭路径死锁（连接风暴 144 条，干净 Redis 亦复现），统一键后全套件单上下文。
  */
 @Slf4j
-@Tag("env")
+@ActiveProfiles("local")
 @DisplayName("redis 端到端")
 @SpringBootTest(classes = SpringBootKitSampleApplication.class)
+@AutoConfigureMockMvc
 class RedisE2ETest {
 
     @Autowired

@@ -3,11 +3,11 @@ package springbootkit.sample.e2e;
 import cn.hutool.core.util.RandomUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -20,14 +20,14 @@ import springbootkit.sample.SpringBootKitSampleApplication;
 /**
  * nogen 模块 E2E（原 MockTest.testNoGen / testNoGenRecycle 拆分）。
  *
- * <p>环境要求（@Tag("env")）：默认构建不跑（surefire excludedGroups=env），
- * 需要真实 Redis + H2 上下文。执行：mvn test -Dgroups=env -DexcludedGroups=
+ * <p>默认测试集（无需 MQ）：内建 @ActiveProfiles("local") 排除 RocketMQ 自动装配，环境仅需 Redis 在位 + H2 内存自给。
+ *
  *
  * <p>事务说明：单号获取走号段模式 + 真实 DB 提交，测试以 Propagation.NEVER
  * 禁用回滚（与原 MockTest 一致）；每次用随机 bizTag 插入独立行，用例间零共享数据。
  */
 @Slf4j
-@Tag("env")
+@ActiveProfiles("local")
 @DisplayName("nogen 端到端")
 @SpringBootTest(classes = SpringBootKitSampleApplication.class)
 @AutoConfigureMockMvc

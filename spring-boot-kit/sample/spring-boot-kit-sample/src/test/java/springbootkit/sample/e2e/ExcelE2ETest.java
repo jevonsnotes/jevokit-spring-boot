@@ -5,11 +5,11 @@ import cn.hutool.core.io.resource.ResourceUtil;
 import com.alibaba.fastjson2.JSONObject;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockPart;
 import org.springframework.test.web.servlet.MockMvc;
@@ -23,11 +23,11 @@ import java.net.URL;
 /**
  * excel 模块 E2E（原 MockTest.testExcel 拆分）。
  *
- * <p>环境要求（@Tag("env")）：默认构建不跑（surefire excludedGroups=env）。
+ * <p>默认测试集（无需 MQ）：内建 @ActiveProfiles("local") 排除 RocketMQ 自动装配，环境仅需 Redis 在位 + H2 内存自给。
  * 用 main resources 里的模板样例文件走 multipart 导入链路。
  */
 @Slf4j
-@Tag("env")
+@ActiveProfiles("local")
 @DisplayName("excel 端到端")
 @SpringBootTest(classes = SpringBootKitSampleApplication.class)
 @AutoConfigureMockMvc

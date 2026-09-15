@@ -3,12 +3,12 @@ package springbootkit.sample.e2e;
 import com.alibaba.fastjson2.JSON;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.transaction.TestTransaction;
 import org.springframework.test.web.servlet.MockMvc;
@@ -26,12 +26,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * audit-log 模块 E2E（原 MockTest.testAuditLog 拆分）。
  *
- * <p>环境要求（@Tag("env")）：默认构建不跑（surefire excludedGroups=env），
- * 需要真实 Redis + H2 上下文；无 RocketMQ 机器加 @ActiveProfiles("local") 或
- * SPRING_PROFILES_ACTIVE=local 运行。执行：mvn test -Dgroups=env -DexcludedGroups=
+ * <p>默认测试集（无需 MQ）：内建 @ActiveProfiles("local") 排除 RocketMQ 自动装配，环境仅需 Redis 在位 + H2 内存自给。
+ * 本类已内建 @ActiveProfiles("local")（MQ 监听器由 local profile 排除），
+ * 环境仅需 Redis + H2。
  */
 @Slf4j
-@Tag("env")
+@ActiveProfiles("local")
 @DisplayName("audit-log 端到端")
 @SpringBootTest(classes = SpringBootKitSampleApplication.class)
 @AutoConfigureMockMvc
