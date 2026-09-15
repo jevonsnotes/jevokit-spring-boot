@@ -2,7 +2,7 @@
 
 - 分类：代码风格
 - 状态：已认可
-- 适用范围：spring-boot-kit 各 starter 模块新增对外配置键时，落演示配置于 `spring-boot-kit/server/spring-boot-kit-test-server/src/main/resources/application.yml`（kit 的示例应用）
+- 适用范围：spring-boot-kit 各 starter 模块新增对外配置键时，落演示配置于 `spring-boot-kit/sample/spring-boot-kit-sample/src/main/resources/application.yml`（kit 的示例应用）
 
 ## 偏好描述
 
@@ -25,4 +25,4 @@
 
 ## 参考实现
 
-`spring-boot-kit/server/spring-boot-kit-test-server/src/main/resources/application.yml` 的 `crypto:` 段（2026-09-10 任务落地）。
+`spring-boot-kit/sample/spring-boot-kit-sample/src/main/resources/application.yml` 的 `crypto:` 段（2026-09-10 任务落地）。

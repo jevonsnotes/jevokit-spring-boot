@@ -375,7 +375,16 @@ public class SecurityUtil {
         try {
             Map<Object, Object> values = (Map) (field == null ? src : ReflectUtil.getFieldValue(src, field));
             if (values != null) {
-                Map<Object, Object> temp = ReflectUtil.newInstance(values.getClass());
+                // 不可变容器统一降级：unmodifiable*、Map.of 系等无法实例化同类临时容器或不可回写，
+                // 告警并跳过该字段，不让 UtilException 逃逸中断整棵对象的过滤（与集合侧语义对齐）
+                Map<Object, Object> temp;
+                try {
+                    temp = ReflectUtil.newInstance(values.getClass());
+                } catch (RuntimeException e) {
+                    log.warn("Skip map cleaning: cannot create temp container of [{}]: {}",
+                            values.getClass().getName(), e.getMessage());
+                    return;
+                }
                 for (Map.Entry<Object, Object> next : values.entrySet()) {
                     Object key = next.getKey();
                     Object value = next.getValue();
@@ -395,8 +404,12 @@ public class SecurityUtil {
                     }
                     temp.put(key, value);
                 }
-                values.clear();
-                values.putAll(temp);
+                try {
+                    values.clear();
+                    values.putAll(temp);
+                } catch (RuntimeException e) {
+                    log.warn("Skip map cleaning: map [{}] is not modifiable", values.getClass().getName());
+                }
             }
         } catch (UnsupportedOperationException e) {
             log.warn("Can not do clean for map cause of unsupportedOperation : {} ", e.getMessage());
@@ -419,8 +432,17 @@ public class SecurityUtil {
     private static <T> void processCollection(T src, Field field, CallBackP3R<String, Object, Field, String> callback) {
         try {
             Collection values = (Collection) (field == null ? src : ReflectUtil.getFieldValue(src, field));
-            if (values != null && !values.getClass().getSimpleName().contains("Unmodifiable")) {
-                Collection<Object> temp = ReflectUtil.newInstance(values.getClass());
+            if (values != null) {
+                // 不可变集合统一降级（原 "Unmodifiable" 字样检查防不住 List.of 的 ListN/List12）：
+                // 无法实例化同类临时容器或不可回写时告警并跳过，不让 UtilException 逃逸中断整棵对象的过滤
+                Collection<Object> temp;
+                try {
+                    temp = ReflectUtil.newInstance(values.getClass());
+                } catch (RuntimeException e) {
+                    log.warn("Skip collection cleaning: cannot create temp container of [{}]: {}",
+                            values.getClass().getName(), e.getMessage());
+                    return;
+                }
                 for (Object c : values) {
                     if (String.class.isAssignableFrom(c.getClass())) {
                         temp.add(callback.call(c, field, (String) c));
@@ -428,8 +450,12 @@ public class SecurityUtil {
                         temp.add(filterStr(c, callback));
                     }
                 }
-                values.clear();
-                values.addAll(temp);
+                try {
+                    values.clear();
+                    values.addAll(temp);
+                } catch (RuntimeException e) {
+                    log.warn("Skip collection cleaning: collection [{}] is not modifiable", values.getClass().getName());
+                }
             }
         } catch (UnsupportedOperationException e) {
             log.warn("Can not do clean for collection cause of unsupportedOperation : {} ", e.getMessage());

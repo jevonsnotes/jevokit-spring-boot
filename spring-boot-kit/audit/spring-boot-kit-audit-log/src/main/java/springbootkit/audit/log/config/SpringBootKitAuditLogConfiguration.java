@@ -136,6 +136,11 @@ public class SpringBootKitAuditLogConfiguration {
         }
     }
 
+    /**
+     * 自动迁移 job 依赖 AuditLogDao（无 DB 环境不存在），须与 dao 的
+     * {@code @ConditionalOnBean(JdbcTemplate.class)} 守卫对齐，否则无 DB 应用整个模块装配失败
+     */
+    @ConditionalOnBean(AuditLogDao.class)
     @Bean
     public AuditLogAutoMigrateJob auditLogAutoMigrateJob(AuditLogDao dao){
         return new AuditLogAutoMigrateJob(dao,properties);

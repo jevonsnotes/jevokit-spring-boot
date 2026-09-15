@@ -1,0 +1,76 @@
+{
+	"body": {
+		"brands": ["ab\",\"c"   ,
+12306,"kkk"],
+		"brands3": [],
+		"brands4": [""],
+		"brands2": [["abc","efg","kkk"],["abc","efg","kkk"]],
+		"brands5": { "subField1": [12306, 12306,"kkk"],"subField1": "testdfsfsd"},
+		"amount": 69.0,
+		"applicantInfo": {
+			"birthDay": "1990-01-01",
+			"idNumber": "110101190001011234",
+			"idType": "01",
+			"mobile": "13800138000",
+			"name": "张\",\"三\",\"丰\""
+			"name2": ""
+		},
+		"businessUnitInfo": {
+			"businessUnitCode": "BUC110000DM1_01"
+		},
+		"dataPolicySigFlag": false,
+		"dataSignFlag": false,
+		"inexpireTime": "2024-11-20 10:42:54",
+		"insuredInfos": [
+			{
+				"birthDay": "1990-01-01",
+				"idNumber": "110101190001011234",
+				"idType": "01",
+				"insureOrderNo": "DEMO-ORDER-0001",
+				"insuredIdentity": "0",
+				"mobile": "13800138000",
+				"name": "张三丰"
+			}
+		],
+		"paySuccessNoticUrl": "https://pay.example.com/demo/payNotify",
+		"payType": "C",
+		"policyInfo": {
+			"endDate": "2025-12-31",
+			"endDateStr": "2025-12-31",
+			"endHour": 24,
+			"insureCount": 1,
+			"loanMonth": 0,
+			"loanYear": 0,
+			"operateTime": "2024-11-20 10:40:54.659",
+			"policyCount": 0,
+			"startDate": "2025-01-01",
+			"startDateStr": "2025-01-01",
+			"startHour": 0,
+			"sumAmount": 3000000,
+			"sumPremium": 69.00,
+			"unit": 1
+		},
+		"productInfo": {
+			"amount": 3000000,
+			"premium": 69.00,
+			"rationType": "WDF11000n7_DM1",
+			"riskCode": "WDF"
+		},
+		"returnUrl": "",
+		"signinginfo": {
+			"estimateddate": "2025-12-01",
+			"iscontract": "1",
+			"multiaccountsouterid": "张*丰(DEMO-ORDER-0001)",
+			"openid": "oDEMO0000000000000000000000X",
+			"oppactname": "张三丰",
+			"signInsureOrderNo": "SIGN_ALL"
+		}
+	},
+	"data": "+YTTZSOpGABGR7jBnsCOnJikmmP5NUfLlEmP3abG9yksJy+MPz+Z3jl2/39Vjp0jDFWec6I8n7VvPsVj+bKzy1FGcMXCgM5+1+y3QX51WHzPyj2WVxCwqjuVxPmxPjrbS0Ha+y87SODAajD8MGo/PJcPd1ANHJPhyVN1fVdIzlMGnhyP89FF/RTcywqheK6jlVPffd8Dy6YWSAK9Tv3l2ZHjZTN0IWayzLQ6NuTsKnBnH2vIhcW5oIjv3WK0cFd0zB/NHFIE4e72PvNm8Iqp6910Vj9Kn8kAlcSooulVSYbr1gTPtUT7gavEvJbXdeSL3G8tNZfoqr4Le4PmZLRmqwV+nMXZG1BZwVLhRyu830rPP64W33RG1cMGJ9n2AAJF8ku/gDSu0bMXtD9U2KT5lfLL5yAB/59vAnYqbSHB8pLIL34y4xLNEeuGfYXU9pMLmK9tWGk4kunV7WW9EG76qUJg/JxYvtnNUW2iNNr89g8zSo5E4/ERa+42Vd6Kl632jQNuEiBDsFwcGscbmtI3ZlYoLE1hwroZfWeht9cOg4QJNT60Fi+ywnwdccPtG3EvrItIMfAXrpnaGF1YT00bX8noCSBO65gYP7T4qaHH+75paCuI8OpvPQ1cMIp6MNxdyatbIm9y27E2DZFWdqfaTJFsMDd0lcukHmywv/fvEjd0Gx4VQm9FkladkuDBpPTsmOFUjU1OjjwJ18F+86smUGHrxHwbllelsO/UT2HXALAgrg9yQwdVbs8D0+68CRG1RDI0uPZ7l2yMwAiHB1/Onc3lGCq+7dnMNCeoRDH2gH3YV/BMh/73U20GOTgQT/h02uTSOyAL2erPqKct88+ggWQCChcjzOmBASvMFBMsubgNXYSaWlRSEKTZamgezXEfnOBW+CSln9Kt9YLb7JtrZd2vdZseixCUM0qXrBkKgS05+dJXYgZkvqhT2P20ZWHzZfwdA8QgjoPDkF4n1O9S0ixTymp5MB7NIBFNXGY8uQtgIeLXnQoZQmLri2hBN4fCWxVQwpnr3/mnfBhbVumceCDV36tBPFc7xBUnwrTZ4mwLiYQ+Sr5ZICpaZv8iqhaN2ygOllB1HFBWjw9yjKJGwF3kEoFVTDAUlPzmrLtoyWsRTooHc4IpIIh2n6OOGv3rA1oOit2rS2YhcCZpvxnN3eMFYSROHV3s47EuUAPvFlubngtjeMRnaaobkBA3JdnFvpiFQ+V5VxTNYNAu8hCOQtLsYZ5hEagfquH1g5Lmvx3zZLsDWF6nv1bPGV3IeiojHZDkCRksVjL4V9vIU+VUhctAeKPe+CJhuQPL7i/tJxYvtnNU2pnmiwBHNM8V5h7M/zkFlYMVw3qttMNwa/RaR44PeAfcdFB654Oo5CX+sZN/xMknutIop2Y2D0",
+	"requestHead": {
+		"md5EncryptedValue": "642fade73bbd390ff588fea8bc30c563",
+		"pipeCode": "EOP110000DM1",
+		"requestUUID": "c0f0c4d9628f49ce8a6241887bdc2427"
+	},
+	"sign": "+YTTZSOpGABGR6zOid6SnNX2h2ulE0jGknmRz6yAmzNiMCPccXXri3IypDkBgJl1QwCfZ6Fr26x1b8dI7eezzRBUKdLAh9xjxarnARo0Ci2ZiH7oCjz75UyOzI/ybDeNBROZ8CI4G/THZTu+LyJnZsVUYQJUQ46ikR5rPh8L0EYOiRPGtEWtD4ByGpG606OvwAHccYMaxLorVCO6UfCOm9X8JnBb0nSined2ELsVXWxrH13Vj/Xp9oiXqgPZU9QWpf7OtSi4UJapkXpFkw=="
+}

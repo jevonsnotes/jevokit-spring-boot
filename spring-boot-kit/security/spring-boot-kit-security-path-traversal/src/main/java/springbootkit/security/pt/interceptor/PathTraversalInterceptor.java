@@ -1,6 +1,5 @@
 package springbootkit.security.pt.interceptor;
 
-import cn.hutool.core.util.ObjectUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.AsyncHandlerInterceptor;
@@ -26,12 +25,13 @@ public class PathTraversalInterceptor implements AsyncHandlerInterceptor {
         if (!properties.isEnabled()) {
             return true;
         }
-        // 忽略
+        // 忽略（方法级覆盖类级，Spring 惯例；方法无注解时回退类级）
         HandlerMethod handlerMethod = (HandlerMethod) handler;
 
-        PtClean ptClean = ObjectUtil.defaultIfNull(
-                handlerMethod.getMethod().getDeclaringClass().getAnnotation(PtClean.class),
-                handlerMethod.getMethodAnnotation(PtClean.class));
+        PtClean ptClean = handlerMethod.getMethodAnnotation(PtClean.class);
+        if (ptClean == null) {
+            ptClean = handlerMethod.getMethod().getDeclaringClass().getAnnotation(PtClean.class);
+        }
 
         if (ptClean == null || !ptClean.disabled()) {
             PathTraversalMeta meta = ConfigHolder.getPtMeta();

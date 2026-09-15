@@ -1,6 +1,5 @@
 package springbootkit.security.sql.inject.interceptor;
 
-import cn.hutool.core.util.ObjectUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.AsyncHandlerInterceptor;
@@ -26,12 +25,13 @@ public class SqlInjectInterceptor implements AsyncHandlerInterceptor {
         if (!properties.isEnabled()) {
             return true;
         }
-        // 忽略
+        // 忽略（方法级覆盖类级，Spring 惯例；方法无注解时回退类级）
         HandlerMethod handlerMethod = (HandlerMethod) handler;
 
-        SIClean siClean = ObjectUtil.defaultIfNull(
-                handlerMethod.getMethod().getDeclaringClass().getAnnotation(SIClean.class),
-                handlerMethod.getMethodAnnotation(SIClean.class));
+        SIClean siClean = handlerMethod.getMethodAnnotation(SIClean.class);
+        if (siClean == null) {
+            siClean = handlerMethod.getMethod().getDeclaringClass().getAnnotation(SIClean.class);
+        }
 
         if (siClean == null || !siClean.disabled()) {
             SqlInjectMeta meta = ConfigHolder.getSIMeta();

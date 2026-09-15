@@ -18,6 +18,7 @@ import springbootkit.desensitization.dto.DstContext;
 import springbootkit.desensitization.helper.DesHelper;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,7 +30,7 @@ import java.util.regex.Pattern;
 @Slf4j
 public class DesUtil {
 
-    private static Map<Class<Desensitizer>, Desensitizer> CACHE = new HashMap<>();
+    private static final Map<Class<? extends Desensitizer>, Desensitizer> CACHE = new ConcurrentHashMap<>();
     private static final ThreadLocal<DstProcessType> PROCESS_TYPE = new ThreadLocal<>();
     private static final String XML_C_DATA_START = "<![CDATA[";
     private static final String XML_C_DATA_END = "]]>";
@@ -46,19 +47,13 @@ public class DesUtil {
 
 
     public static Desensitizer getDesensitizer(Class<? extends Desensitizer> clazz) {
-        Desensitizer desensitizer = CACHE.get(clazz);
-        if (desensitizer == null) {
-            synchronized (DesUtil.class) {
-                if ((desensitizer = CACHE.get(clazz)) == null) {
-                    try {
-                        desensitizer = clazz.newInstance();
-                    } catch (Exception e) {
-                        throw new RuntimeException(e.getMessage(), e);
-                    }
-                }
+        return CACHE.computeIfAbsent(clazz, c -> {
+            try {
+                return c.newInstance();
+            } catch (Exception e) {
+                throw new RuntimeException(e.getMessage(), e);
             }
-        }
-        return desensitizer;
+        });
     }
 
     /**
@@ -250,9 +245,12 @@ public class DesUtil {
      * 脱敏（基础类型）
      * @param value 明文数据
      * @param dstContext 脱敏对象上下文
-     * @return 脱敏数据
+     * @return 脱敏数据；value 为 null、或 dstContext/type 为 null 时原样返回（不脱敏不抛错）
      */
     public static String processBasic(String value, DstContext dstContext) {
+        if (value == null || dstContext == null || dstContext.getType() == null) {
+            return value;
+        }
         StrBuilder sb = new StrBuilder();
         switch (dstContext.getType()) {
             case NAME:

@@ -135,6 +135,21 @@ spkit:
         - ((?i)[ ]+(AND|OR)[ ]+)
 ```
 
+> **默认污染表为保守策略**：仅 4 条（UPDATE..SET / INSERT INTO / DELETE FROM / (AND|OR|WHERE) 等式），
+> union select、注释截断等激进规则**不在默认表**，需要时按下例 opt-in（示例正则均有单测背书，可直接复制）：
+```yaml
+spkit:
+  security:
+    sql-inject:
+      addition-tainted-patterns: # 激进防护 opt-in（默认不启用）
+        - ((?i)union[ ]+select)   # union 组合查询注入
+        - '--'                    # 行注释截断（标准 SQL 方言）
+        - '#'                     # 行注释截断（MySQL 方言；yaml 中必须加引号，防被当作注释）
+        - [/][*].*?[*][/]         # 块注释截断（非贪婪；等价写法 /\*.*?\*/，字符类形态更利于复制）
+```
+适用场景：内部管理端等可信度较高的入口可整体启用；公开面向用户的入口需评估误清洗风险——
+clear 模式会剥离命中片段（如 "C#"、话题 "#标签"、区间 "1--5"），reject 模式直接拒绝整条报文。
+
 ### code-inject
 > 代码注入
 

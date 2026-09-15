@@ -62,6 +62,20 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-tx</artifactId>
         </dependency>
+        <!-- B 档测试重构：JUnit5 + AssertJ（版本经 spring-boot-kit-dependencies 导入的 spring-boot-dependencies 3.5.16 管理） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- 测试日志捕获（BUG-2 对抗复测）：starter-test 不含日志实现，slf4j 落 NOP 时
+             SecurityUtil 降级 warn 无法断言；logback-classic 仅 test 期绑定，
+             ListAppender 据此验证降级路径确有告警输出。版本同上由 BOM 管理。 -->
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
 </project>

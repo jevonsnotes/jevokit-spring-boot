@@ -97,10 +97,13 @@ public class PageUtil extends cn.hutool.core.util.PageUtil {
                 int start = getStart(page.value, pageSize);
                 int end = (end = getEnd(page.value, pageSize)) > data.size() ? data.size() : end;
                 List<T> sub = start > end ? data.subList(0, 0) : data.subList(start, end);
+                // 页号快照：匿名 supplier 读 final 拷贝而非共享 IntHolder，
+                // 避免异步执行时主线程已完成 page.value++ 导致 consumer 收到错乱页号（值捕获竞态）
+                final int pageIndex = page.value;
                 Supplier<R> supplier = new InheritTransactionSupplier<R>() {
                         @Override
                         public R inheritedGet() {
-                            return consumer.apply(sub, page.value);
+                            return consumer.apply(sub, pageIndex);
                         }
                     };
                 //判断同步/异步处理

@@ -34,6 +34,8 @@ public class DefaultXssCleaner implements XssCleaner{
             }
             //清理模式
             else {
+                // 清洗输出为 HTML 片段语义：正文 & 等按规范实体化（幂等，& 与 &amp; 输出均收敛为 &amp;）；
+                // 非 HTML 消费方自行 htmlUnescape；需原文直通场景用 reject 模式白名单放行（BUG-11 wontfix 裁定）
                 Document.OutputSettings outputSettings = new Document
                         .OutputSettings()
                         .escapeMode(Entities.EscapeMode.xhtml)

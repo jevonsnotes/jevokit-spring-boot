@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>spring-boot-kit</groupId>
+        <artifactId>spring-boot-kit-parent</artifactId>
+        <version>3.5.0.0-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+
+    <groupId>spring-boot-kit</groupId>
+    <artifactId>spring-boot-kit-sample</artifactId>
+    <name>spring-boot-kit-sample</name>
+    <description>Demo project for Spring Boot</description>
+    <properties>
+        <!-- 示例应用不发布仓库（开源惯例：sample 不进 deploy）；本地 install 供 -pl 单模块联调用 -->
+        <maven.deploy.skip>true</maven.deploy.skip>
+        <!-- E2E 分层（surefire excludedGroups 参数绑定）：默认构建排除 @Tag("env") 的
+             端到端用例（需 Redis/H2/ RocketMQ 等真实环境），保证无 MQ 机器 mvn test 默认绿。
+             跑法：
+               - 默认（无环境）：mvn test                      → 仅冒烟/防线用例
+               - 仅 E2E（有环境）：mvn test -Dgroups=env -DexcludedGroups=
+               - 全量：            mvn test -DexcludedGroups=
+             （用户属性 -D 覆盖本处 project 属性；excludedGroups= 空串等于不排除） -->
+        <excludedGroups>env</excludedGroups>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>spring-boot-kit</groupId>
+            <artifactId>spring-boot-kit-security-all</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>spring-boot-kit</groupId>
+            <artifactId>spring-boot-kit-audit-log</artifactId>
+        </dependency>
+        <!-- junit:junit 已于终验 #6 移除：防线类已迁 JUnit5，全仓 JUnit4 API 零残留 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>spring-boot-kit</groupId>
+            <artifactId>spring-boot-kit-excel</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>spring-boot-kit</groupId>
+            <artifactId>spring-boot-kit-desensitization</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>spring-boot-kit</groupId>
+            <artifactId>spring-boot-kit-redis</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>spring-boot-kit</groupId>
+            <artifactId>spring-boot-kit-nogen</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>spring-boot-kit</groupId>
+            <artifactId>spring-boot-kit-workflow</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>spring-boot-kit</groupId>
+            <artifactId>spring-boot-kit-jasypt</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>spring-boot-kit</groupId>
+            <artifactId>spring-boot-kit-rocketmq</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>spring-boot-kit</groupId>
+            <artifactId>spring-boot-kit-okhttp</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>spring-boot-kit</groupId>
+            <artifactId>spring-boot-kit-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.apache.cxf/cxf-spring-boot-starter-jaxrs -->
+        <dependency>
+            <groupId>org.apache.cxf</groupId>
+            <artifactId>cxf-spring-boot-starter-jaxws</artifactId>
+            <version>4.1.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

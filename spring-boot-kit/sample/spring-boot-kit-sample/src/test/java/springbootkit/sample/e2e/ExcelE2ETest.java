@@ -1,0 +1,62 @@
+package springbootkit.sample.e2e;
+
+import cn.hutool.core.io.IoUtil;
+import cn.hutool.core.io.resource.ResourceUtil;
+import com.alibaba.fastjson2.JSONObject;
+import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockPart;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import springbootkit.sample.SpringBootKitSampleApplication;
+
+import java.net.URL;
+
+/**
+ * excel 模块 E2E（原 MockTest.testExcel 拆分）。
+ *
+ * <p>环境要求（@Tag("env")）：默认构建不跑（surefire excludedGroups=env）。
+ * 用 main resources 里的模板样例文件走 multipart 导入链路。
+ */
+@Slf4j
+@Tag("env")
+@DisplayName("excel 端到端")
+@SpringBootTest(classes = SpringBootKitSampleApplication.class)
+@AutoConfigureMockMvc
+class ExcelE2ETest {
+
+    @Autowired
+    MockMvc mockMvc;
+
+    @Test
+    @DisplayName("multipart 导入 importExcel.xlsx：解析成功返回 status=0")
+    void excelImportParsesTemplate() throws Exception {
+        // given：classpath 模板样例（src/main/resources/tpl/excel/importExcel.xlsx）
+        URL resource = ResourceUtil.getResource("tpl/excel/importExcel.xlsx");
+        MockPart part = new MockPart("file1",
+                "importExcel.xlsx",
+                IoUtil.readBytes(resource.openStream()),
+                MediaType.MULTIPART_FORM_DATA);
+
+        // when / then
+        String content = mockMvc.perform(MockMvcRequestBuilders
+                        .multipart("/excel/importExcel")
+                        .part(part)
+                        .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.status").value("0"))
+                .andDo(MockMvcResultHandlers.print())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        log.info("excel import response {}", JSONObject.toJSONString(content));
+    }
+}

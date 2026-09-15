@@ -61,6 +61,12 @@
         </dependency>
 
 
+        <!-- 单测用内存库（B 档测试重构 #5）：AuditLogDao 按 jdbc url 路由验证 -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
 </project>

@@ -42,6 +42,9 @@
 | 改名类重构后本地 Maven 仓库陈旧 jar 混入单模块构建——防线测试首跑即真实拦截 | 重复实现走偏 | 已修复·已沉淀 | [bug-rename-stale-local-repo-jar-20260910.md](bug-rename-stale-local-repo-jar-20260910.md) |
 | 洋葱型环境阻塞——fail-fast 依赖故障（Redis 连不上）长期掩盖 camunda 配置缺陷（admin id 连字符） | 其他 | 已修复·已沉淀 | [bug-env-failfast-masking-config-defect-20260910.md](bug-env-failfast-masking-config-defect-20260910.md) |
 | rocketmq-client "connect to null failed" 报错形态误导：环境缺位被误判为装配/绑定断链 | 其他 | 已定性·已沉淀 | [bug-rocketmq5-connect-null-misread-20260910.md](bug-rocketmq5-connect-null-misread-20260910.md) |
+| 姊妹/三胞胎方法防御不对称族谱（BUG-2/3/7/8/9 五实例） | 重复实现走偏 | 已修复·已沉淀 | [bug-sister-methods-defense-asymmetry-family-20260911.md](bug-sister-methods-defense-asymmetry-family-20260911.md) |
+| 跨边界隐式契约断裂三合一：值捕获跨线程/资源所有权跨方法/getBytes 默认编码跨平台（BUG-1/4/5） | 契约不一致 | 已修复·已沉淀 | [bug-boundary-implicit-contract-break-20260911.md](bug-boundary-implicit-contract-break-20260911.md) |
+| 共享可变静态状态两轴：跨实例构造偷换（JasyptUtil 静态字段）与半截双检锁漏 put（DesUtil 惰性缓存永远 miss） | 性能·并发 | 已修复·已沉淀 | [bug-shared-mutable-static-state-20260911.md](bug-shared-mutable-static-state-20260911.md) |
 
 ## 单条目骨架
 

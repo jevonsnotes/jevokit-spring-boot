@@ -27,9 +27,9 @@ public class SqlInjectStringPropertiesEditChain implements StringPropertiesSuppo
     @Override
     public String setTextEdit(String content) {
         String newer = content;
-        if(ConfigHolder.getPtMeta().isEnabled()) {
+        if(ConfigHolder.getSIMeta().isEnabled()) {
             newer = SqlInjectUtil.clean(content,properties.getAllTaintedPatterns());
-            log.debug("Request parameter value:{} cleaned up by path-traversal defending, current value is:{}.", content, newer);
+            log.debug("Request parameter value:{} cleaned up by sql-inject defending, current value is:{}.", content, newer);
         }
         return newer;
     }

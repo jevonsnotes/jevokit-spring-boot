@@ -382,10 +382,16 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         log(request);
         try (Response response = getClient().newCall(request).execute()) {
             checkStatus(response);
-            if (response.isSuccessful() && response.body() != null) {
-                return charset != null ? new String(response.body().bytes(), charset) : response.body().string();
-            } else if (!response.isSuccessful() && response.body() != null) {
-                log.warn(charset != null ? new String(response.body().bytes(), charset) : response.body().string());
+            if (response.body() != null) {
+                String body = charset != null ? new String(response.body().bytes(), charset) : response.body().string();
+                if (!response.isSuccessful() && properties.getErrorMode() == OkhttpProperties.ErrorMode.throwout) {
+                    // BUG-3 修复：非 2xx 统一尊重 error-mode——throwout 抛带响应信息的状态异常
+                    //（此处抛出会被本方法 catch 捕获并经 processError 在 throwout 分支原样重抛）；
+                    // quiet/log 模式返回错误体（与原 GET 路径行为一致，两条路径自此对称）
+                    OkHttpStatusRuntimeException.ofThrow(response.code(), response.message(),
+                            response.request().url().toString(), body);
+                }
+                return body;
             }
         } catch (Exception e) {
             processError(e);
@@ -409,11 +415,14 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
 
     private InputStream executeStream(Request request) {
         log(request);
-        try (Response response = getClient().newCall(request).execute()) {
-            checkStatus(response);
+        try {
+            Response response = getClient().newCall(request).execute();
             if (response.isSuccessful() && response.body() != null) {
-                return response.body().byteStream();
+                // 流包装接管 Response 的关闭职责：调用方读完/关闭流时连带关闭 Response（连接归还连接池），
+                // 未读完即 close 也能正确释放；错误路径在此处即时关闭，不泄漏
+                return new ResponseBodyStreamWrapper(response);
             }
+            response.close();
         } catch (Exception e) {
             processError(e);
         }
@@ -425,16 +434,32 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
     }
 
     private String executeBody(Request request) {
-        log(request);
-        try (Response response = getClient().newCall(request).execute()) {
-            checkStatus(response);
-            if (response.body() != null) {
-                return response.body().string();
-            }
-        } catch (Exception e) {
-            processError(e);
+        // BUG-3 修复：原实现是 execute 的姊妹方法但无 isSuccessful 分支（错误体当正常串返回），
+        // 现直接委托 execute（charset=null 即 body().string() 语义），从根上消除姊妹方法不对称
+        return execute(request, null);
+    }
+
+    /**
+     * 响应体流包装：接管 Response 的关闭职责。
+     * 原实现把 body 流从 try-with-resources 内返回，Response 随块结束关闭，调用方拿到死流。
+     * 现由本包装持有 Response，调用方读完或 close 流时连带关闭 Response（连接归还连接池）。
+     */
+    private static final class ResponseBodyStreamWrapper extends java.io.FilterInputStream {
+        private final Response response;
+
+        ResponseBodyStreamWrapper(Response response) {
+            super(response.body().byteStream());
+            this.response = response;
         }
-        return StrUtil.EMPTY;
+
+        @Override
+        public void close() throws java.io.IOException {
+            try {
+                super.close();
+            } finally {
+                response.close();
+            }
+        }
     }
 
     private void checkStatus(Response response){
@@ -622,14 +647,10 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
     }
 
     private static FormBody buildFormBody(Map<String, String> params, Charset charset) {
-        FormBody.Builder builder = new FormBody.Builder();
+        FormBody.Builder builder = charset != null ? new FormBody.Builder(charset) : new FormBody.Builder();
         if (CollectionUtil.isNotEmpty(params)) {
             for (String key : params.keySet()) {
-                String value = params.get(key);
-                if (charset != null) {
-                    value = StrUtil.str(value.getBytes(), charset);
-                }
-                builder.add(key, value);
+                builder.add(key, params.get(key));
             }
         }
         return builder.build();

@@ -1,6 +1,5 @@
 package springbootkit.security.xss.interceptor;
 
-import cn.hutool.core.util.ObjectUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.AsyncHandlerInterceptor;
@@ -26,12 +25,13 @@ public class XssCleanInterceptor implements AsyncHandlerInterceptor {
         if (!xssProperties.isEnabled()) {
             return true;
         }
-        // Xss忽略
+        // Xss忽略（方法级覆盖类级，Spring 惯例；方法无注解时回退类级）
         HandlerMethod handlerMethod = (HandlerMethod) handler;
 
-        XssClean xssClean = ObjectUtil.defaultIfNull(
-                handlerMethod.getMethod().getDeclaringClass().getAnnotation(XssClean.class),
-                handlerMethod.getMethodAnnotation(XssClean.class));
+        XssClean xssClean = handlerMethod.getMethodAnnotation(XssClean.class);
+        if (xssClean == null) {
+            xssClean = handlerMethod.getMethod().getDeclaringClass().getAnnotation(XssClean.class);
+        }
 
         if (xssClean == null || !xssClean.disabled()) {
             XssMeta meta = ConfigHolder.getXssMeta();

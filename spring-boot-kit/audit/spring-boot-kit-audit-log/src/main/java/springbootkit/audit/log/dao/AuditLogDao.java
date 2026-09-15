@@ -24,22 +24,33 @@ public interface AuditLogDao extends BaseAutoDao{
     String TABLE_NAME_HIS = TABLE_NAME + "_HIS";
     String TABLE_PRIMARY_KEY = "local_key";
     String MIGRATE_FLAG = "MIGRATING";
-    JdbcTemplate jdbcTemplate = SpringUtil.getBean(JdbcTemplate.class);
-    AuditLogProperties PROPERTIES = SpringUtil.getBean(AuditLogProperties.class);
     Logger log = LoggerFactory.getLogger(AuditLogDao.class);
 
+    /**
+     * 惰性获取 JdbcTemplate（原为接口 static 字段在类初始化期 getBean，形成类加载顺序依赖：
+     * 无 DB/SpringUtil 未就绪时任何实现类加载即抛异常——终验裁定改为调用期查找）。
+     * 每次调用直查，无共享可变状态；SpringUtil.getBean 自身即容器单例查找，成本可接受。
+     */
+    static JdbcTemplate jdbcTemplate() {
+        return SpringUtil.getBean(JdbcTemplate.class);
+    }
+
+    /** 惰性获取审计配置（同 {@link #jdbcTemplate()} 的改造理由） */
+    static AuditLogProperties properties() {
+        return SpringUtil.getBean(AuditLogProperties.class);
+    }
 
     default void createTableAuditLogHis() {
         String sql = "CREATE TABLE "+ TABLE_NAME_HIS +" AS" +
                 " SELECT * FROM "+TABLE_NAME+" WHERE 1=0;";
-        jdbcTemplate.execute(sql);
+        jdbcTemplate().execute(sql);
     }
 
     default void migrate() {
 
         DateTime date = DateUtil.date();
 
-        switch (PROPERTIES.getPersistent().getDbMigratePeriod()) {
+        switch (properties().getPersistent().getDbMigratePeriod()) {
             case YEAR:
                 date = DateUtil.offset(date, DateField.YEAR,-1);
                 break;
@@ -70,12 +81,12 @@ public interface AuditLogDao extends BaseAutoDao{
             String insertSql =  "INSERT INTO "+ TABLE_NAME_HIS +
                     " SELECT * FROM "+TABLE_NAME+" WHERE start_time < ?;";
 
-            int rowsInsert = jdbcTemplate.update(insertSql, date);
+            int rowsInsert = jdbcTemplate().update(insertSql, date);
             log.info("audit log migrate rows {} successful",rowsInsert);
 
 
             String delete =  "DELETE FROM "+ TABLE_NAME +" WHERE  start_time < ?;";
-            int rowsDeleted = jdbcTemplate.update(delete, date);
+            int rowsDeleted = jdbcTemplate().update(delete, date);
             log.info("audit log delete rows {} successful",rowsDeleted);
 
             deleteByKey(MIGRATE_FLAG);
@@ -92,16 +103,16 @@ public interface AuditLogDao extends BaseAutoDao{
             return updateSelectiveByPrimaryKey(po);
         } else {
             sqlBundleDto = SqlUtil.generateInsertSelectivePreSql(po);
-            return jdbcTemplate.update(sqlBundleDto.getSql(),sqlBundleDto.getArgs());
+            return jdbcTemplate().update(sqlBundleDto.getSql(),sqlBundleDto.getArgs());
         }
     }
 
     default int insert(AuditLogDto po) {
         SqlBundleDto sqlBundleDto = SqlUtil.generateInsertSelectivePreSql(po);
-        return jdbcTemplate.update(sqlBundleDto.getSql(),sqlBundleDto.getArgs());
+        return jdbcTemplate().update(sqlBundleDto.getSql(),sqlBundleDto.getArgs());
     }
     default int deleteByKey(String key) {
-        return jdbcTemplate.update("DELETE FROM "+TABLE_NAME +" WHERE "+TABLE_PRIMARY_KEY+" = ?",key);
+        return jdbcTemplate().update("DELETE FROM "+TABLE_NAME +" WHERE "+TABLE_PRIMARY_KEY+" = ?",key);
     }
     default AuditLogDto selectByKey(String key) {
         return getById(TABLE_PRIMARY_KEY,key);
@@ -110,6 +121,6 @@ public interface AuditLogDao extends BaseAutoDao{
 
     default int updateSelectiveByPrimaryKey(AuditLogDto po) {
         SqlBundleDto sqlBundleDto = SqlUtil.generateUpdateSelectivePreSql(po, new String[]{TABLE_PRIMARY_KEY});
-        return jdbcTemplate.update(sqlBundleDto.getSql(),sqlBundleDto.getArgs());
+        return jdbcTemplate().update(sqlBundleDto.getSql(),sqlBundleDto.getArgs());
     }
 }
