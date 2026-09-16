@@ -9,14 +9,14 @@
     </parent>
 
     <groupId>io.github.jevonsnotes</groupId>
-    <artifactId>spring-boot-kit-dependencies</artifactId>
-    <name>spring-boot-kit-dependencies</name>
+    <artifactId>jevokit-dependencies</artifactId>
+    <name>jevokit-dependencies</name>
     <version>3.5.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <!-- Central 发布元数据：BOM 的 parent 是 spring-boot-starter-parent，继承的是 Spring 官方
-         元数据而非 spring-boot-kit-parent 的——Central 逐 pom 校验，必须独立配同套（#11）。 -->
-    <description>Dependency management BOM for Spring Boot Kit (io.github.jevonsnotes:spring-boot-kit-*).</description>
+         元数据而非 jevokit-parent 的——Central 逐 pom 校验，必须独立配同套（#11）。 -->
+    <description>Dependency management BOM for Spring Boot Kit (io.github.jevonsnotes:jevokit-*).</description>
     <url>https://github.com/jevonsnotes/spring-boot-kit</url>
     <licenses>
         <license>
@@ -181,92 +181,92 @@
             </dependency>
             <dependency>
                 <groupId>io.github.jevonsnotes</groupId>
-                <artifactId>spring-boot-kit-security-xss</artifactId>
+                <artifactId>jevokit-security-xss-spring-boot-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.github.jevonsnotes</groupId>
-                <artifactId>spring-boot-kit-security-web-fixed</artifactId>
+                <artifactId>jevokit-security-web-fixed-spring-boot-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.github.jevonsnotes</groupId>
-                <artifactId>spring-boot-kit-okhttp</artifactId>
+                <artifactId>jevokit-okhttp-spring-boot-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.github.jevonsnotes</groupId>
-                <artifactId>spring-boot-kit-core</artifactId>
+                <artifactId>jevokit-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.github.jevonsnotes</groupId>
-                <artifactId>spring-boot-kit-rocketmq</artifactId>
+                <artifactId>jevokit-rocketmq-spring-boot-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.github.jevonsnotes</groupId>
-                <artifactId>spring-boot-kit-security-path-traversal</artifactId>
+                <artifactId>jevokit-security-path-traversal-spring-boot-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.github.jevonsnotes</groupId>
-                <artifactId>spring-boot-kit-security-sql-inject</artifactId>
+                <artifactId>jevokit-security-sql-inject-spring-boot-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.github.jevonsnotes</groupId>
-                <artifactId>spring-boot-kit-security-code-inject</artifactId>
+                <artifactId>jevokit-security-code-inject-spring-boot-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.github.jevonsnotes</groupId>
-                <artifactId>spring-boot-kit-configuration</artifactId>
+                <artifactId>jevokit-autoconfigure</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.github.jevonsnotes</groupId>
-                <artifactId>spring-boot-kit-security-all</artifactId>
+                <artifactId>jevokit-security-all-spring-boot-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.github.jevonsnotes</groupId>
-                <artifactId>spring-boot-kit-audit-log</artifactId>
+                <artifactId>jevokit-audit-log-spring-boot-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.github.jevonsnotes</groupId>
-                <artifactId>spring-boot-kit-excel</artifactId>
+                <artifactId>jevokit-excel-spring-boot-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.github.jevonsnotes</groupId>
-                <artifactId>spring-boot-kit-desensitization</artifactId>
+                <artifactId>jevokit-desensitization-spring-boot-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.github.jevonsnotes</groupId>
-                <artifactId>spring-boot-kit-api</artifactId>
+                <artifactId>jevokit-api-spring-boot-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.github.jevonsnotes</groupId>
-                <artifactId>spring-boot-kit-redis</artifactId>
+                <artifactId>jevokit-redis-spring-boot-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.github.jevonsnotes</groupId>
-                <artifactId>spring-boot-kit-nogen</artifactId>
+                <artifactId>jevokit-nogen-spring-boot-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.github.jevonsnotes</groupId>
-                <artifactId>spring-boot-kit-jasypt</artifactId>
+                <artifactId>jevokit-jasypt-spring-boot-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.github.jevonsnotes</groupId>
-                <artifactId>spring-boot-kit-workflow</artifactId>
+                <artifactId>jevokit-workflow-spring-boot-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -369,8 +369,8 @@
         </plugins>
     </build>
 
-    <!-- Central 发布（#11）：BOM 不在 spring-boot-kit reactor 内（parent 为 Boot 官方），
-         release profile 从 spring-boot-kit-parent 继承不到，须独立配置。
+    <!-- Central 发布（#11）：BOM 不在 jevokit reactor 内（parent 为 Boot 官方），
+         release profile 从 jevokit-parent 继承不到，须独立配置。
          pom 型构件无 source/javadoc 附加件，仅签名 + 发布。 -->
     <profiles>
         <profile>

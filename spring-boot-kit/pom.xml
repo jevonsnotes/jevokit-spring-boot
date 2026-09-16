@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <version>3.5.0.0-SNAPSHOT</version>
     <groupId>io.github.jevonsnotes</groupId>
-    <artifactId>spring-boot-kit-parent</artifactId>
+    <artifactId>jevokit-parent</artifactId>
     <packaging>pom</packaging>
 
     <!-- Central 发布元数据（模块经继承全覆盖；BOM 因 parent 为 Boot 官方需独立配同套） -->
@@ -31,7 +31,7 @@
 
     <!--    <parent>-->
     <!--        <groupId>io.github.jevonsnotes</groupId>-->
-    <!--        <artifactId>spring-boot-kit-dependencies</artifactId>-->
+    <!--        <artifactId>jevokit-dependencies</artifactId>-->
     <!--        <version>2.7.1.1.XC-SNAPSHOT</version>-->
     <!--        <relativePath /> &lt;!&ndash; lookup parent from repository &ndash;&gt;-->
     <!--    </parent>-->
@@ -46,18 +46,32 @@
 <!--        <spring-boot-maven-plugin.version>2.7.18</spring-boot-maven-plugin.version>-->
     </properties>
     <modules>
-        <module>common/spring-boot-kit-core</module>
-        <module>common/spring-boot-kit-configuration</module>
-        <module>audit</module>
-        <module>others</module>
-        <module>security</module>
-        <module>sample/spring-boot-kit-sample</module>
+        <!-- 聚合器扁平化（#12）：原 common/others/security/audit 三层聚合器已删，19 模块直挂 -->
+        <module>core/jevokit-core</module>
+        <module>core/jevokit-autoconfigure</module>
+        <module>starter/security/jevokit-security-web-fixed</module>
+        <module>starter/security/jevokit-security-xss</module>
+        <module>starter/security/jevokit-security-path-traversal</module>
+        <module>starter/security/jevokit-security-sql-inject</module>
+        <module>starter/security/jevokit-security-code-inject</module>
+        <module>starter/security/jevokit-security-all</module>
+        <module>starter/security/jevokit-api</module>
+        <module>starter/security/jevokit-jasypt</module>
+        <module>starter/compliance/jevokit-desensitization</module>
+        <module>starter/compliance/jevokit-audit-log</module>
+        <module>starter/data/jevokit-redis</module>
+        <module>starter/data/jevokit-nogen</module>
+        <module>starter/data/jevokit-excel</module>
+        <module>starter/integration/jevokit-rocketmq</module>
+        <module>starter/integration/jevokit-okhttp</module>
+        <module>starter/integration/jevokit-workflow</module>
+        <module>sample/jevokit-sample</module>
     </modules>
     <dependencyManagement>
         <dependencies>
             <dependency>
                 <groupId>io.github.jevonsnotes</groupId>
-                <artifactId>spring-boot-kit-dependencies</artifactId>
+                <artifactId>jevokit-dependencies</artifactId>
                 <version>${project.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
@@ -85,7 +99,7 @@
     <build>
         <pluginManagement>
             <plugins>
-                <!-- 钉定 spring-boot-maven-plugin 版本，与 BOM（spring-boot-kit-dependencies）父级
+                <!-- 钉定 spring-boot-maven-plugin 版本，与 BOM（jevokit-dependencies）父级
                      spring-boot-starter-parent 3.5.16 基线一致。
                      本工程对 BOM 仅为 import scope（只传递 dependencyManagement，不传递 pluginManagement），
                      且本 pom 无 Maven parent，插件若不钉版本，Maven 会解析仓库 metadata 的 <release>

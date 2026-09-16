@@ -83,7 +83,7 @@ public class XxStringPropertiesEditChain implements StringPropertiesSupportChain
 ```
 <dependency>
   <groupId>io.github.jevonsnotes</groupId>
-  <artifactId>spring-boot-kit-security-all</artifactId>
+  <artifactId>jevokit-security-all-spring-boot-starter</artifactId>
   <version>${project.version}</version>
 </dependency>
 ```
@@ -179,7 +179,7 @@ spkit:
 ```
  <dependency>
                 <groupId>io.github.jevonsnotes</groupId>
-                <artifactId>spring-boot-kit-audit-log</artifactId>
+                <artifactId>jevokit-audit-log-spring-boot-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
 ```
@@ -246,7 +246,7 @@ spkit:
 ```
             <dependency>
                 <groupId>io.github.jevonsnotes</groupId>
-                <artifactId>spring-boot-kit-excel</artifactId>
+                <artifactId>jevokit-excel-spring-boot-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
 ```
@@ -274,7 +274,7 @@ public class ExcelApi {
 ```
            <dependency>
                 <groupId>io.github.jevonsnotes</groupId>
-                <artifactId>spring-boot-kit-desensitization</artifactId>
+                <artifactId>jevokit-desensitization-spring-boot-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
 ```
@@ -559,7 +559,7 @@ public class RedisService {
 ```xml
         <dependency>
             <groupId>io.github.jevonsnotes</groupId>
-            <artifactId>spring-boot-kit-nogen</artifactId>
+            <artifactId>jevokit-nogen-spring-boot-starter</artifactId>
             <version>${project.version}</version>
         </dependency>
 ```
@@ -610,7 +610,7 @@ spring:
 ```xml
         <dependency>
             <groupId>io.github.jevonsnotes</groupId>
-            <artifactId>spring-boot-kit-jasypt</artifactId>
+            <artifactId>jevokit-jasypt-spring-boot-starter</artifactId>
             <version>${project.version}</version>
         </dependency>
 ```
