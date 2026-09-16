@@ -17,7 +17,7 @@
     <!-- Central 发布元数据：BOM 的 parent 是 spring-boot-starter-parent，继承的是 Spring 官方
          元数据而非 jevokit-parent 的——Central 逐 pom 校验，必须独立配同套（#11）。 -->
     <description>Dependency management BOM for Spring Boot Kit (io.github.jevonsnotes:jevokit-*).</description>
-    <url>https://github.com/jevonsnotes/spring-boot-kit</url>
+    <url>https://github.com/jevonsnotes/jevokit-spring-boot</url>
     <licenses>
         <license>
             <name>Apache License, Version 2.0</name>
@@ -32,9 +32,9 @@
         </developer>
     </developers>
     <scm>
-        <connection>scm:git:https://github.com/jevonsnotes/spring-boot-kit.git</connection>
+        <connection>scm:git:https://github.com/jevonsnotes/jevokit-spring-boot.git</connection>
         <developerConnection>scm:git:git@github.com:jevonsnotes/spring-boot-kit.git</developerConnection>
-        <url>https://github.com/jevonsnotes/spring-boot-kit</url>
+        <url>https://github.com/jevonsnotes/jevokit-spring-boot</url>
     </scm>
 
     <properties>

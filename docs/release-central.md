@@ -23,7 +23,7 @@ mvn -Prelease clean install            # 干跑校验：pom 签名产出即可
 mvn -Prelease clean deploy             # 真发布（发布到 Central 门户，需在 portal 手动或自动 publish）
 
 # 第二步：parent + 全部库模块（在 spring-boot-kit 聚合根）
-cd ../spring-boot-kit
+cd ../jevokit-spring-boot
 mvn -Prelease clean deploy
 ```
 

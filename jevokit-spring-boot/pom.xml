@@ -9,7 +9,7 @@
     <!-- Central 发布元数据（模块经继承全覆盖；BOM 因 parent 为 Boot 官方需独立配同套） -->
     <name>Spring Boot Kit</name>
     <description>A Spring Boot starter kit covering security hardening, data desensitization, audit logging, distributed locks, idempotent number generation and encrypted configuration.</description>
-    <url>https://github.com/jevonsnotes/spring-boot-kit</url>
+    <url>https://github.com/jevonsnotes/jevokit-spring-boot</url>
     <licenses>
         <license>
             <name>Apache License, Version 2.0</name>
@@ -24,9 +24,9 @@
         </developer>
     </developers>
     <scm>
-        <connection>scm:git:https://github.com/jevonsnotes/spring-boot-kit.git</connection>
+        <connection>scm:git:https://github.com/jevonsnotes/jevokit-spring-boot.git</connection>
         <developerConnection>scm:git:git@github.com:jevonsnotes/spring-boot-kit.git</developerConnection>
-        <url>https://github.com/jevonsnotes/spring-boot-kit</url>
+        <url>https://github.com/jevonsnotes/jevokit-spring-boot</url>
     </scm>
 
     <!--    <parent>-->
