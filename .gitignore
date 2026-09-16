@@ -6,6 +6,7 @@ target/
 docs/*
 !docs/lessons/
 !docs/preferences/
+!docs/release-central.md
 **/application-local.yml
 
 # ---------------------------------------------------------------------------

@@ -2,13 +2,13 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>spring-boot-kit</groupId>
+        <groupId>io.github.jevonsnotes</groupId>
         <artifactId>spring-boot-kit-parent</artifactId>
         <version>3.5.0.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <groupId>spring-boot-kit</groupId>
+    <groupId>io.github.jevonsnotes</groupId>
     <artifactId>spring-boot-kit-sample</artifactId>
     <name>spring-boot-kit-sample</name>
     <description>Demo project for Spring Boot</description>
@@ -45,11 +45,11 @@
         </dependency>
 
         <dependency>
-            <groupId>spring-boot-kit</groupId>
+            <groupId>io.github.jevonsnotes</groupId>
             <artifactId>spring-boot-kit-security-all</artifactId>
         </dependency>
         <dependency>
-            <groupId>spring-boot-kit</groupId>
+            <groupId>io.github.jevonsnotes</groupId>
             <artifactId>spring-boot-kit-audit-log</artifactId>
         </dependency>
         <!-- junit:junit 已于终验 #6 移除：防线类已迁 JUnit5，全仓 JUnit4 API 零残留 -->
@@ -58,39 +58,39 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
         <dependency>
-            <groupId>spring-boot-kit</groupId>
+            <groupId>io.github.jevonsnotes</groupId>
             <artifactId>spring-boot-kit-excel</artifactId>
         </dependency>
         <dependency>
-            <groupId>spring-boot-kit</groupId>
+            <groupId>io.github.jevonsnotes</groupId>
             <artifactId>spring-boot-kit-desensitization</artifactId>
         </dependency>
         <dependency>
-            <groupId>spring-boot-kit</groupId>
+            <groupId>io.github.jevonsnotes</groupId>
             <artifactId>spring-boot-kit-redis</artifactId>
         </dependency>
         <dependency>
-            <groupId>spring-boot-kit</groupId>
+            <groupId>io.github.jevonsnotes</groupId>
             <artifactId>spring-boot-kit-nogen</artifactId>
         </dependency>
         <dependency>
-            <groupId>spring-boot-kit</groupId>
+            <groupId>io.github.jevonsnotes</groupId>
             <artifactId>spring-boot-kit-workflow</artifactId>
         </dependency>
         <dependency>
-            <groupId>spring-boot-kit</groupId>
+            <groupId>io.github.jevonsnotes</groupId>
             <artifactId>spring-boot-kit-jasypt</artifactId>
         </dependency>
         <dependency>
-            <groupId>spring-boot-kit</groupId>
+            <groupId>io.github.jevonsnotes</groupId>
             <artifactId>spring-boot-kit-rocketmq</artifactId>
         </dependency>
         <dependency>
-            <groupId>spring-boot-kit</groupId>
+            <groupId>io.github.jevonsnotes</groupId>
             <artifactId>spring-boot-kit-okhttp</artifactId>
         </dependency>
         <dependency>
-            <groupId>spring-boot-kit</groupId>
+            <groupId>io.github.jevonsnotes</groupId>
             <artifactId>spring-boot-kit-api</artifactId>
         </dependency>
         <dependency>

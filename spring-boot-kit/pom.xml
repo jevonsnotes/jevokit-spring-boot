@@ -2,19 +2,44 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <version>3.5.0.0-SNAPSHOT</version>
-    <groupId>spring-boot-kit</groupId>
+    <groupId>io.github.jevonsnotes</groupId>
     <artifactId>spring-boot-kit-parent</artifactId>
     <packaging>pom</packaging>
 
+    <!-- Central 发布元数据（模块经继承全覆盖；BOM 因 parent 为 Boot 官方需独立配同套） -->
+    <name>Spring Boot Kit</name>
+    <description>A Spring Boot starter kit covering security hardening, data desensitization, audit logging, distributed locks, idempotent number generation and encrypted configuration.</description>
+    <url>https://github.com/jevonsnotes/spring-boot-kit</url>
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0</url>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <id>jevonsnotes</id>
+            <name>jevonsnotes</name>
+            <email>jevonsnotes@163.com</email>
+        </developer>
+    </developers>
+    <scm>
+        <connection>scm:git:https://github.com/jevonsnotes/spring-boot-kit.git</connection>
+        <developerConnection>scm:git:git@github.com:jevonsnotes/spring-boot-kit.git</developerConnection>
+        <url>https://github.com/jevonsnotes/spring-boot-kit</url>
+    </scm>
+
     <!--    <parent>-->
-    <!--        <groupId>spring-boot-kit</groupId>-->
+    <!--        <groupId>io.github.jevonsnotes</groupId>-->
     <!--        <artifactId>spring-boot-kit-dependencies</artifactId>-->
     <!--        <version>2.7.1.1.XC-SNAPSHOT</version>-->
     <!--        <relativePath /> &lt;!&ndash; lookup parent from repository &ndash;&gt;-->
     <!--    </parent>-->
 
     <properties>
-        <maven.javadoc.skip>true</maven.javadoc.skip>
+        <!-- 统一编码声明：compiler/javadoc/source 等插件默认读取（javadoc fork 场景下比插件参数更稳） -->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 <!--        <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>-->
 <!--        <maven-deploy-plugin.version>2.8.2</maven-deploy-plugin.version>-->
 <!--        <versions-maven-plugin.version>2.8.1</versions-maven-plugin.version>-->
@@ -31,7 +56,7 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>spring-boot-kit</groupId>
+                <groupId>io.github.jevonsnotes</groupId>
                 <artifactId>spring-boot-kit-dependencies</artifactId>
                 <version>${project.version}</version>
                 <type>pom</type>
@@ -174,9 +199,77 @@
                     </execution>
                 </executions>
             </plugin>
+            <!-- Central 发布配套（#11）：source/javadoc 附加构件，日常 package 即产出。
+                 版本钉定（本 pom 无 Maven parent，插件不钉版会回落仓库 metadata）；
+                 javadoc doclint 关闭——存量注释不规整不拦发布，仅语法级硬错误会失败（需修）。 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.11.3</version>
+                <configuration>
+                    <doclint>none</doclint>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
-
+    <!-- Central 发布（#11）：签名与发布仅 release profile 激活（-Prelease），
+         日常构建零签名零发布开销。gpg 口令取 settings.xml 的 gpg.passphrase server；
+         sample 模块 maven.deploy.skip=true 会同时抑制 central-publishing（不发布示例应用）。 -->
+    <profiles>
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>3.2.7</version>
+                        <configuration>
+                            <keyname>71080C224E332E21</keyname>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>0.7.0</version>
+                        <configuration>
+                            <publishingServerId>central</publishingServerId>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>

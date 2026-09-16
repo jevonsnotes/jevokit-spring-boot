@@ -82,7 +82,7 @@ public class XxStringPropertiesEditChain implements StringPropertiesSupportChain
 ### 快速使用
 ```
 <dependency>
-  <groupId>spring-boot-kit</groupId>
+  <groupId>io.github.jevonsnotes</groupId>
   <artifactId>spring-boot-kit-security-all</artifactId>
   <version>${project.version}</version>
 </dependency>
@@ -178,7 +178,7 @@ spkit:
 
 ```
  <dependency>
-                <groupId>spring-boot-kit</groupId>
+                <groupId>io.github.jevonsnotes</groupId>
                 <artifactId>spring-boot-kit-audit-log</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -245,7 +245,7 @@ spkit:
 
 ```
             <dependency>
-                <groupId>spring-boot-kit</groupId>
+                <groupId>io.github.jevonsnotes</groupId>
                 <artifactId>spring-boot-kit-excel</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -273,7 +273,7 @@ public class ExcelApi {
 
 ```
            <dependency>
-                <groupId>spring-boot-kit</groupId>
+                <groupId>io.github.jevonsnotes</groupId>
                 <artifactId>spring-boot-kit-desensitization</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -558,7 +558,7 @@ public class RedisService {
 ##### 快速使用
 ```xml
         <dependency>
-            <groupId>spring-boot-kit</groupId>
+            <groupId>io.github.jevonsnotes</groupId>
             <artifactId>spring-boot-kit-nogen</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -609,7 +609,7 @@ spring:
 ##### 引入
 ```xml
         <dependency>
-            <groupId>spring-boot-kit</groupId>
+            <groupId>io.github.jevonsnotes</groupId>
             <artifactId>spring-boot-kit-jasypt</artifactId>
             <version>${project.version}</version>
         </dependency>
