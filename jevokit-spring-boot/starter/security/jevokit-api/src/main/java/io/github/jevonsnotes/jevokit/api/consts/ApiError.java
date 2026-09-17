@@ -11,7 +11,9 @@ import lombok.Data;
 
 @AllArgsConstructor
 public enum ApiError {
+    /** 成功（协议级）。 */
     SUCCESS("0","成功"),
+    /** 失败（协议级兜底码，业务细分错误经 message 表达）。 */
     FAIL("999","失败");
 
     private final String code;

@@ -7,7 +7,7 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import io.github.jevonsnotes.jevokit.nogen.interceptor.NoGenInterceptor;
 
-/**
+ /**
  * nogen Web 装配：注册 NoGenInterceptor 到 /jevokit/nogen/**（最低优先级，令业务拦截器
  * 先行），对发号 API 做 accessToken 校验。enableApi=false 时拦截器空转（无 API 可拦）。
  */
@@ -17,7 +17,7 @@ import io.github.jevonsnotes.jevokit.nogen.interceptor.NoGenInterceptor;
 public class JevokitNoGenWebConfiguration  implements WebMvcConfigurer {
     private final JevokitNoGenProperties properties;
     @Override
-/**
+    /**
     * 注册 NoGenInterceptor 到 /jevokit/nogen/**（LOWEST_PRECEDENCE，业务拦截器先行）。
     * @param registry 拦截器注册器
     */

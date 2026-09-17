@@ -15,7 +15,7 @@ import java.time.Duration;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
-/**
+ /**
  * 自定义RedisCache 重写 put putIfAbsent 逻辑，实现配置ttl或者动态ttl
  */
 public class JevokitRedisCache extends RedisCache {
@@ -33,7 +33,7 @@ public class JevokitRedisCache extends RedisCache {
     }
 
     @Override
-/**
+    /**
     * 写缓存：按键名后缀 #expire=秒 提取 TTL（无后缀走配置默认），null 值且未允许时抛异常。
     * @param key 缓存键（支持 TTL 后缀语法）
     * @param value 缓存值（null 受 isAllowNullValues 约束）
@@ -56,7 +56,7 @@ public class JevokitRedisCache extends RedisCache {
     }
 
     @Override
-/**
+    /**
     * 缺席写入：键已存在时不覆盖，返回现存值。
     * @param key 缓存键
     * @param value 候选值
@@ -82,6 +82,9 @@ public class JevokitRedisCache extends RedisCache {
         return new SimpleValueWrapper(fromStoreValue(deserializeCacheValue(result)));
     }
 
+    /**
+    * 从键名解析 TTL：#expire=秒 后缀优先；USER 前缀键回落随机 TTL（防雪崩）；否则 null 走配置默认。
+    */
     private Duration getTtl(String keyStr){
         String name = getName();
         Duration ttl = null;
@@ -106,10 +109,16 @@ public class JevokitRedisCache extends RedisCache {
         return ttl;
     }
 
+    /**
+    * TTL 是否会在探测窗口内到期（预判失效用途）。
+    */
     private static boolean shouldExpireWithin(@Nullable Duration ttl) {
         return ttl != null && !ttl.isZero() && !ttl.isNegative();
     }
 
+    /**
+    * 键对象序列化为字节并计入前缀计算。
+    */
     private byte[] createAndConvertCacheKey(Object key) {
         return serializeCacheKey(createCacheKey(key));
     }

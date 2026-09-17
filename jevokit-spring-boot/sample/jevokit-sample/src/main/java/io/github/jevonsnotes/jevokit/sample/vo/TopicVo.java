@@ -4,7 +4,7 @@ import lombok.Data;
 
 import java.util.UUID;
 
-/**
+ /**
  * MQ 演示消息体：id（随机）作为顺序消息的 messageGroup 与并发锁键路由目标，
  * type/sendMsg 为演示业务字段。
  */

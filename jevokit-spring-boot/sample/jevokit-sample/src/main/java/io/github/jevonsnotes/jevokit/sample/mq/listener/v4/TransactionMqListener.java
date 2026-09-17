@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 import io.github.jevonsnotes.jevokit.sample.consts.MqConst;
 import io.github.jevonsnotes.jevokit.sample.vo.TopicVo;
 
-/**
+ /**
  * 在业务场景中常用于另一个服务中监听事务消息
  */
 @Slf4j
@@ -18,7 +18,7 @@ public class TransactionMqListener implements RocketMQListener<TopicVo> {
 
 
     @Override
-/**
+    /**
     * 事务消息消费端演示。
     * @param message 消息体
     */

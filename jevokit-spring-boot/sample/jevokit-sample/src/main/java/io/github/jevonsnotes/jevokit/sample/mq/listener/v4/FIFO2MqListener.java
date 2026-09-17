@@ -21,7 +21,7 @@ public class FIFO2MqListener implements RocketMQListener<TopicVo> {
 
     @Lock(namespace = "TOPIC_CONCURRENT_LOCK", fallbackWithException = RuntimeException.class, fallbackStr = "禁止并发消费", key = @Key(route = "messageId"))
     @Override
-/**
+    /**
     * 顺序消息第二消费组演示（并发防护策略与 FIFO1 相同）。
     * @param message 消息体
     */

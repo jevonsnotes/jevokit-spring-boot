@@ -12,6 +12,9 @@ import lombok.extern.slf4j.Slf4j;
 public class DesensitizedRollingFileAppender<E> extends RollingFileAppender<E> implements IDesensitizedAppender{
 
     @Override
+    /**
+     * 输出前脱敏事件参数再写文件（@Deprecated：改用 DesensitizedLogFilter）。
+     */
     protected void subAppend(E event) {
         try {
             iterateArgs((LoggingEvent) event);

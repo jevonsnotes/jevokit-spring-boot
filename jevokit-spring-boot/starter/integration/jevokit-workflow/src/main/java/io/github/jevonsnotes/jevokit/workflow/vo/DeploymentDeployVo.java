@@ -7,7 +7,7 @@ import lombok.experimental.SuperBuilder;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
+ /**
  * 部署流程入参：在基座 name 之上携带 BPMN 资源清单（DeploymentResource 列表），
  * 供 deploy 以非缺省资源集部署。
  */

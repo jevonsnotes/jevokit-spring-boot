@@ -58,6 +58,10 @@ public class JevokitStringEncryptor implements StringEncryptor {
         singleton = new Singleton<>(() -> createDefault(e));
     }
 
+    /**
+     * 创建默认 PooledPBE 加密器：参数取 jasypt.encryptor.*（缺失降级 jasypt 官方默认值），
+     * 口令强制必填（见 getRequiredPassword）。
+     */
     private StringEncryptor createDefault(Environment e) {
         PooledPBEStringEncryptor encryptor = new PooledPBEStringEncryptor();
         SimpleStringPBEConfig config = new SimpleStringPBEConfig();
@@ -75,6 +79,14 @@ public class JevokitStringEncryptor implements StringEncryptor {
         return encryptor;
     }
 
+    /**
+     * 读配置并兜底默认值（未命中记 INFO 日志说明降级，便于排查参数拼写错误）。
+     *
+     * @param environment 环境
+     * @param key         配置键（支持原样/驼峰/中划线变体查找）
+     * @param defaultValue 默认值
+     * @return 配置值或默认值
+     */
     private static String getProperty(Environment environment, String key, String defaultValue) {
 
         return getProperty(environment, key).orElseGet(() -> {
@@ -101,6 +113,9 @@ public class JevokitStringEncryptor implements StringEncryptor {
         return Optional.ofNullable(val);
     }
 
+    /**
+     * 读必填配置，缺失抛 IllegalStateException（fail-fast，不静默降级）。
+     */
     private static String getRequiredProperty(Environment environment, String key) {
         return getProperty(environment, key).orElseThrow(() -> new IllegalStateException(String.format("Required Encryption configuration property missing: %s", key)));
     }

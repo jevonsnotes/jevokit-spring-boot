@@ -38,21 +38,21 @@ public class LockAspect {
 
     private static final String KEY_PATTERN = "lock:%s:%s:%s";
 
-    @Pointcut("@annotation(io.github.jevonsnotes.jevokit.redis.lock.annotation.Lock)")
-/**
+    /**
     * 切点：@Lock 注解标注的方法（切点表达式含包名，包名迁移时须同步——rename 教训项）。
     */
+    @Pointcut("@annotation(io.github.jevonsnotes.jevokit.redis.lock.annotation.Lock)")
     public void Lock() {
     }
 
-    @Around("Lock()")
-/**
+    /**
     * @Lock 环绕：按 value/route 提键，键为空白直接放行（锁失效而非报错）；
     * 拿锁失败时按优先级降级——fallback 类 > fallbackWithException 抛出 > 仅 warn 日志（返回 null）。
     * @param joinPoint 连接点
     * @return 业务原返回值；或降级路径产物（fallback 结果 / null）
     * @throws Throwable 业务异常，或降级配置的 fallbackWithException 异常实例
     */
+    @Around("Lock()")
     public Object doAround(ProceedingJoinPoint joinPoint) throws Throwable {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         Lock lock = signature.getMethod().getAnnotation(Lock.class);
@@ -90,6 +90,9 @@ public class LockAspect {
         return o;
     }
 
+    /**
+    * 组装降级文案：@Key.print=true 时追加键值便于排查。
+    */
     private String getFallbackStr(Lock lock,String key) {
         return lock.key().print() ? new StrBuilder().append(lock.fallbackStr()).append("：").append(key).toString() : lock.fallbackStr();
     }
@@ -113,6 +116,9 @@ public class LockAspect {
         return Lock.fallback() != null && Lock.fallback().length > 0;
     }
 
+    /**
+    * 取锁命名空间：注解显式声明优先，否则以 类名.方法名 兜底。
+    */
     private String getNamespace(MethodSignature signature) {
         Lock Lock = signature.getMethod().getAnnotation(Lock.class);
         if (Lock == null || StrUtil.isBlank(Lock.namespace())) {
@@ -125,6 +131,9 @@ public class LockAspect {
 
     }
 
+    /**
+    * 提锁键：value 直取 > paramAt+route 属性路由；解析失败记日志返回 null（上层按空白放行）。
+    */
     private String getKey(Lock lock, Object[] args) {
         if (lock != null) {
             if (StrUtil.isNotBlank(lock.key().value())) {
@@ -159,6 +168,9 @@ public class LockAspect {
     }
 
 
+    /**
+    * 沿 a.b.c 属性路径反射取值（逐段 getter）。
+    */
     private String getValueByRoute(String route, Object o) {
         route = StrUtil.trimToEmpty(route);
         String[] properties = route.split("\\.");

@@ -134,6 +134,9 @@ public class JevokitAuditLogConfiguration {
         return new JevokitAuditLogAutoInitDB(jdbcTemplate,dao,properties);
     }
 
+    /**
+     * 取当前数据源的 JDBC URL（方言判定依据；连接即取即还，异常上抛 fail-fast）。
+     */
     private String getJdbcUrl(JdbcTemplate jdbcTemplate){
         Connection connection = null;
         try {
@@ -145,6 +148,11 @@ public class JevokitAuditLogConfiguration {
             IoUtil.close(connection);
         }
     }
+    /**
+     * 按 JDBC URL 前缀选择方言 DAO：mysql:/postgresql:/h2: 三选一。
+     *
+     * @throws UnsupportedOperationException 其他数据库类型抛出（宁可启动失败不静默丢审计）
+     */
     private AuditLogDao convert(String jdbcUrl,JdbcTemplate jdbcTemplate){
         if(jdbcUrl.matches(".*"+ DBType.MYSQL.getJdbcName()+":.*")){
             return new MySQLDao(jdbcTemplate,properties);

@@ -26,7 +26,7 @@ import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-/**
+ /**
  * 单号生成演示端点（/nogen/*）：经 BzNoHelper 发号与回收（RECYCLE 模式），
  * E2E 断言单号递增与回收复用的靶点。
  */
@@ -40,7 +40,7 @@ public class NoGenApi {
     ExecutorService executor = ThreadUtil.newExecutor(200, 200, Integer.MAX_VALUE);
 
     @RequestMapping("/test")
-/**
+    /**
     * 发号压测端点：loop 次并发取号计时（E2E 发号递增断言靶点）。
     * @param bizNo 业务标签
     * @param loop 循环次数
@@ -70,7 +70,7 @@ public class NoGenApi {
         return "success";
     }
     @RequestMapping("/testRecycle")
-/**
+    /**
     * 回收模式压测端点：发号后回收再复用。
     * @param bizNo 业务标签
     * @param loop 循环次数

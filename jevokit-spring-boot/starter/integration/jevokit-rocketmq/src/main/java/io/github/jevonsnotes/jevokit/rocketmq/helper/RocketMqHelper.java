@@ -56,15 +56,15 @@ public class RocketMqHelper {
 
 
 
-    @PostConstruct
-/**
+    /**
     * 生命周期日志（@PostConstruct）：装配完成即打点，无其他副作用。
     */
+    @PostConstruct
     public void init() {
         log.info("RocketMqHelper 初始化");
     }
 
-/**
+    /**
     * 异步发送（枚举 topic 取 name()），回调用默认实现（成败各打一条日志）。
     * @param topic 目标 Topic（枚举名即 topic 名）
     * @param message 业务消息，自动包装为 Spring Messaging Message
@@ -73,7 +73,7 @@ public class RocketMqHelper {
         asyncSend(topic.name(), message, getDefaultSendCallBack());
     }
 
-/**
+    /**
     * 异步发送（枚举 topic + 已包装消息），默认回调。
     * @param topic 目标 Topic
     * @param message 已包装消息
@@ -82,7 +82,7 @@ public class RocketMqHelper {
         asyncSend(topic.name(), message, getDefaultSendCallBack());
     }
 
-/**
+    /**
     * 异步发送（字符串 topic），默认回调。语义同 {@link #asyncSend(String, Message, SendCallback)}。
     * @param topic 目标 Topic（destination 语法，支持 topic:tag）
     * @param message 业务消息
@@ -90,7 +90,7 @@ public class RocketMqHelper {
     public void asyncSend(String topic, Object message) {
         asyncSend(topic, convertMessage(message));
     }
-/**
+    /**
     * 异步发送（字符串 topic + 已包装消息），默认回调。
     * @param topic 目标 Topic
     * @param message 已包装消息
@@ -99,7 +99,7 @@ public class RocketMqHelper {
         asyncSend(topic, message, getDefaultSendCallBack());
     }
 
-/**
+    /**
     * 异步顺序发送：相同 messageGroup 哈希到同一队列，组内保序。
     * @param topic 目标 Topic
     * @param message 业务消息
@@ -110,7 +110,7 @@ public class RocketMqHelper {
     }
 
 
-/**
+    /**
     * 异步发送（枚举 topic + 自定义回调）。
     * @param topic 目标 Topic
     * @param message 业务消息
@@ -119,7 +119,7 @@ public class RocketMqHelper {
     public void asyncSend(Enum topic, Object message, SendCallback sendCallback) {
         asyncSend(topic.name(), message, sendCallback);
     }
-/**
+    /**
     * 异步发送（枚举 topic + 已包装消息 + 自定义回调）。
     * @param topic 目标 Topic
     * @param message 已包装消息
@@ -129,7 +129,7 @@ public class RocketMqHelper {
         asyncSend(topic.name(), message, sendCallback);
     }
 
-/**
+    /**
     * 异步发送全参形态：按 topicMsgType 路由 NORMAL/DELAY/FIFO 三分支。
     * @param topic 目标 Topic
     * @param message 已包装消息
@@ -159,7 +159,7 @@ public class RocketMqHelper {
 
     }
 
-/**
+    /**
     * 异步发送（字符串 topic + 业务消息 + 自定义回调）。
     * @param topic 目标 Topic
     * @param message 业务消息
@@ -168,7 +168,7 @@ public class RocketMqHelper {
     public void asyncSend(String topic, Object message, SendCallback sendCallback) {
         asyncSend(topic, convertMessage(message), sendCallback);
     }
-/**
+    /**
     * 异步发送便捷形态：等价全参形态的 NORMAL + 默认超时。
     * @param topic 目标 Topic
     * @param message 已包装消息
@@ -178,6 +178,9 @@ public class RocketMqHelper {
         asyncSend(topic, message, null,null,null,TopicMsgType.NORMAL,sendCallback);
     }
 
+    /**
+    * 已是 Message 直接返回，否则以业务对象为 payload 包装。
+    */
     private Message convertMessage(Object message){
         if(message instanceof Message){
             return (Message) message;
@@ -186,7 +189,7 @@ public class RocketMqHelper {
         }
     }
 
-/**
+    /**
     * 异步延迟发送便捷形态：固定走 DELAY 分支。
     * @param topic 目标 Topic
     * @param message 已包装消息
@@ -199,7 +202,7 @@ public class RocketMqHelper {
     }
 
 
-/**
+    /**
     * 同步顺序发送（枚举 topic）。语义同 {@link #syncSendOrderly(String, Message, String)}。
     * @param topic 目标 Topic
     * @param message 已包装消息
@@ -210,7 +213,7 @@ public class RocketMqHelper {
     }
 
 
-/**
+    /**
     * 同步顺序发送：阻塞至 broker 确认。
     * @param topic 目标 Topic
     * @param message 已包装消息
@@ -219,7 +222,7 @@ public class RocketMqHelper {
     public void syncSendOrderly(String topic, Message message, String messageGroup) {
         rocketMQTemplate.syncSendOrderly(topic, message, messageGroup);
     }
-/**
+    /**
     * 同步顺序发送（业务消息自动包装）。
     * @param topic 目标 Topic
     * @param message 业务消息
@@ -228,7 +231,7 @@ public class RocketMqHelper {
     public void syncSendOrderly(String topic, Object message, String messageGroup) {
         rocketMQTemplate.syncSendOrderly(topic, convertMessage(message), messageGroup);
     }
-/**
+    /**
     * 同步普通发送（业务消息自动包装）：阻塞至 broker 确认，失败抛异常。
     * @param topic 目标 Topic
     * @param message 业务消息
@@ -237,7 +240,7 @@ public class RocketMqHelper {
         syncSend(topic,convertMessage(message));
     }
 
-/**
+    /**
     * 同步普通发送（已包装消息）。
     * @param topic 目标 Topic
     * @param message 已包装消息
@@ -247,7 +250,7 @@ public class RocketMqHelper {
     }
 
 
-/**
+    /**
     * 同步延迟发送（业务消息自动包装，默认超时）。
     * @param topic 目标 Topic
     * @param message 业务消息
@@ -256,7 +259,7 @@ public class RocketMqHelper {
     public void syncSendDelay(String topic, Object message, int delayLevel) {
         syncSendDelay(topic,convertMessage(message),null,delayLevel);
     }
-/**
+    /**
     * 同步延迟发送全参形态：超时 null 时取 producer sendMsgTimeout。
     * @param topic 目标 Topic
     * @param message 已包装消息
@@ -269,7 +272,7 @@ public class RocketMqHelper {
     }
 
 
-/**
+    /**
     * 同步事务消息：半消息发出后由本地事务执行器的执行结果驱动提交/回滚。
     * @param topic 目标 Topic
     * @param message 已包装消息
@@ -287,11 +290,17 @@ public class RocketMqHelper {
      */
     private SendCallback getDefaultSendCallBack() {
         return new SendCallback() {
+            /**
+            * 匿名回调覆写：成功打 msgId 日志。
+            */
             @Override
             public void onSuccess(SendResult sendResult) {
                 log.info("发送消息成功：{}",sendResult.getMsgId());
             }
 
+            /**
+            * 匿名回调覆写：失败打异常消息日志。
+            */
             @Override
             public void onException(Throwable e) {
                 log.info("发送消息失败：{}",e.getMessage());
@@ -301,7 +310,7 @@ public class RocketMqHelper {
 
 
     @PreDestroy
-/**
+    /**
     * 生命周期日志（@PreDestroy）：销毁打点，无其他清理（客户端由官方 starter 托管）。
     */
     public void destroy() {

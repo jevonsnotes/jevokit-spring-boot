@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import io.github.jevonsnotes.jevokit.workflow.service.JevokitWorkflowService;
 
-/**
+ /**
  * 工作流组件自动化配置
  */
 @Configuration
@@ -14,7 +14,7 @@ public class JevokitWorkflowConfiguration {
 
     @ConditionalOnMissingBean(JevokitWorkflowService.class)
     @Bean
-/**
+    /**
     * 工作流门面 Bean：注入 Camunda 五大引擎服务。
     * @return 门面服务
     */

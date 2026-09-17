@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-/**
+ /**
  * 工作流演示端点（/workflow/*）：发起/查询/办结全链路，E2E 用 H2 内嵌 Camunda
  * 验证流程实例状态流转。
  */
@@ -41,7 +41,7 @@ public class WorkflowApi {
 
 
     @RequestMapping("/start")
-/**
+    /**
     * 发起流程演示：@FlowVo 扩展点 + 租户隔离下的 taskStart。
     * @param vo 发起参数
     * @return 流程实例 id
@@ -58,7 +58,7 @@ public class WorkflowApi {
     }
 
     @RequestMapping("/search")
-/**
+    /**
     * 任务查询演示：四维过滤组合查当前任务。
     * @param vo 查询条件
     * @return 任务快照列表
@@ -87,7 +87,7 @@ public class WorkflowApi {
      * @return
      */
     @RequestMapping("/claim/do")
-/**
+    /**
     * 签收演示。
     * @param vo taskId + assignee
     * @return 操作结果
@@ -107,7 +107,7 @@ public class WorkflowApi {
      * @return
      */
     @RequestMapping("/claim/undo")
-/**
+    /**
     * 撤销签收演示（含签收人一致性校验）。
     * @param vo taskId + 当前 assignee
     * @return 操作结果
@@ -122,7 +122,7 @@ public class WorkflowApi {
      * @return
      */
     @RequestMapping("/complete")
-/**
+    /**
     * 办结演示：flowState 驱动流转 + 泛型业务数据随办结写入。
     * @param vo 办结参数
     * @return 操作结果
@@ -143,7 +143,7 @@ public class WorkflowApi {
      * @return
      */
     @RequestMapping("/comment")
-/**
+    /**
     * 审批意见演示：落库后回填 id/createTime。
     * @param vo 意见参数
     * @return 回填后的意见参数
@@ -165,7 +165,7 @@ public class WorkflowApi {
      * @return
      */
     @RequestMapping("/fallback/first")
-/**
+    /**
     * 回退演示：按 FlowState 语义回上一级或起草人。
     * @param vo taskId + assignee
     * @return 操作结果
@@ -186,7 +186,7 @@ public class WorkflowApi {
      * @return
      */
     @RequestMapping("/fallback/last")
-/**
+    /**
     * 回退上一级演示。
     * @param vo taskId + assignee
     * @return 操作结果
@@ -203,6 +203,9 @@ public class WorkflowApi {
         return ApiResponse.ok();
     }
 
+    /**
+    * 取历史节点实例级变量。
+    */
     private Map<String,Object> getVars(HistoricActivityInstance instance){
         Map<String, Object> variables = new HashMap<>();
         variables.put("userCode",instance.getAssignee());
@@ -214,7 +217,7 @@ public class WorkflowApi {
      * @return
      */
     @RequestMapping("/deployment/get")
-/**
+    /**
     * 部署版本查询演示。
     * @param deploymentName 部署名
     * @return 部署列表
@@ -233,7 +236,7 @@ public class WorkflowApi {
      * @return
      */
     @RequestMapping("/deployment/delete")
-/**
+    /**
     * 删除部署演示（级联删实例与历史）。
     * @param deploymentId 部署 id
     * @return 操作结果
@@ -252,7 +255,7 @@ public class WorkflowApi {
      * @return
      */
     @RequestMapping("/deployment/deploy")
-/**
+    /**
     * 部署演示：classpath/字符串资源三形态。
     * @param vo 部署参数
     * @return 部署结果
@@ -271,7 +274,7 @@ public class WorkflowApi {
      * @return
      */
     @RequestMapping("/deployment/deploy/rollback")
-/**
+    /**
     * 部署回滚演示。
     * @param vo 回滚参数
     * @return 新部署结果

@@ -33,6 +33,10 @@ public class DesensitizationAspect {
      * 拦截启用脱敏的方法
      */
 //    @Pointcut("@annotation(io.github.jevonsnotes.jevokit.desensitization.annotation.Desensitization) || @annotation(io.github.jevonsnotes.jevokit.desensitization.annotation.DstProperty) ")
+    /**
+     * 切点：标注 @Desensitization 的方法（仅方法级标注触发；字段级 @DstProperty 单独存在不触发，
+     * 由外层方法标注统一驱动）。
+     */
     @Pointcut("@annotation(io.github.jevonsnotes.jevokit.desensitization.annotation.Desensitization) ")
     public void desensitizationPointCut() {
     }
@@ -80,6 +84,17 @@ public class DesensitizationAspect {
         return null;
     }
 
+    /**
+     * 返回值脱敏核心：递归遍历对象字符串值，注解解析优先级为——字段级 @DstProperty 优先，
+     * 字段无标注时回退方法级 defaultDstProperty（入参，即切面方法上的 @DstProperty），
+     * 两者皆无时按属性名规则兜底（DesUtil.desByProperties）。
+     * <p>type=CUSTOM 且指定了非默认脱敏器时反射实例化委托（实例化失败仅 debug 记录并跳过——
+     * 防御性降级，脱敏器配置错误不阻断业务返回）；ignore=true 的标注直接跳过。
+     *
+     * @param obj                业务返回值
+     * @param defaultDstProperty 方法级兜底脱敏标注（可 null）
+     * @return 脱敏后的返回值
+     */
     private Object desensitize(Object obj, DstProperty defaultDstProperty) {
 
         return SecurityUtil.filterStr(obj, (o, field, s) -> {

@@ -79,6 +79,11 @@ public class ApiResponse<T> implements Serializable {
         this.message = this.statusText;
     }
 
+    /**
+     * 取状态码（0 成功，负数为异常态，常量见 {@link #SUCCESS} 族）
+     *
+     * @return 状态码
+     */
     public long getStatus() {
         return this.status;
     }
@@ -121,15 +126,30 @@ public class ApiResponse<T> implements Serializable {
         this.message = this.statusText;
     }
 
+    /**
+     * 设置消息（statusText 联动为同一值）
+     *
+     * @param message 消息
+     */
     public void setMessage(String message) {
         this.message = message;
         this.statusText = this.message;
     }
 
+    /**
+     * 取响应时间戳（构造时的毫秒值）
+     *
+     * @return 时间戳
+     */
     public long getTimestamp() {
         return this.timestamp;
     }
 
+    /**
+     * 覆盖响应时间戳
+     *
+     * @param timestamp 毫秒时间戳
+     */
     public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
     }

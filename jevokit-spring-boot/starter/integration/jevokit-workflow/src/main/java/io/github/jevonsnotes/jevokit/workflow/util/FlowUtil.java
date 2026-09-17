@@ -11,7 +11,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-/**
+ /**
  * 流程变量提取器：反射读取 VO 实例上 @FlowVar 标注的字段，按 scope 归类产出变量表——
  * getVarsLocal 任务级（LOCAL）/ getVarsGlobal 实例级（GLOBAL），供流程启动与任务办结写入。
  *
@@ -20,7 +20,7 @@ import java.util.Set;
  * 差异源于 ignoreIfNull 只对 String 放宽（见 @FlowVar 定义处）。
  */
 public class FlowUtil {
-/**
+    /**
     * 提取 LOCAL 域流程变量（任务级）。
     * @param vo 带 @FlowVar 声明的载体对象
     * @return LOCAL 域变量表（仅含非静态/非 final、scope 匹配的实例字段）
@@ -28,7 +28,7 @@ public class FlowUtil {
     public static <T>Map<String,Object> getVarsLocal(T vo){
         return getVars(vo,false);
     }
-/**
+    /**
     * 提取 GLOBAL 域流程变量（实例级）。
     * @param vo 带 @FlowVar 声明的载体对象
     * @return GLOBAL 域变量表
@@ -37,7 +37,7 @@ public class FlowUtil {
         return getVars(vo,true);
     }
 
-/**
+    /**
     * 提取器实现：按 scope 归类反射收集；String 字段 null 显式写入（覆盖旧值），非 String null 跳过。
     * @param vo 载体对象
     * @param isGlobal true 取 GLOBAL 域，false 取 LOCAL 域

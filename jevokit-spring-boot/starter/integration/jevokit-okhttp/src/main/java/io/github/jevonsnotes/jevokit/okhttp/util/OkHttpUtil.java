@@ -31,7 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
+ /**
  * OkHttp 调用门面：GET / POST / JSON / XML / 表单 / multipart 分片 / 下载等常用请求形态的一站式封装，
  * 由 jevokit-okhttp-spring-boot-starter 装配为单例 Bean 直接注入；个性化定制走 CustomOkhttpConfiguration
  * Bean 改写底层 Builder，或经 ofProxy(...) 克隆出携带自定义客户端的独立副本（CloneSupport 深拷贝）。
@@ -62,7 +62,7 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
     private OkHttpClient customOkhttpClient;
 
 
-/**
+     /**
      * 构造门面实例（由 JevokitOkhttpConfiguration 装配调用，业务侧注入使用而非自建）
      * @param properties 行为配置（error-mode/状态敏感开关/代理模式）
      * @param okHttpClient 直连客户端
@@ -85,7 +85,7 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         return get(url, null, null);
     }
 
-/**
+     /**
      * GET 取字节（二进制下载）。语义同 {@link #getByte(String, Map, Map)} 便捷形态
      * @param url 请求地址
      * @return 返回响应体字节；throwout 模式异常同上抛出；quiet/log 吞错时异常返回 <b>null</b>
@@ -129,7 +129,7 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         return executeBody(prepareGetRequest(url, params, headers));
     }
 
-/**
+     /**
      * GET 取字节全参形态（二进制内容，响应不按文本解码）
      * @param url 请求地址
      * @param params 查询参数，拼入 URL，可空
@@ -141,12 +141,15 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         return executeByte(prepareGetRequest(url, params, headers));
     }
 
+    /**
+    * 组装 GET 请求（参数拼 URL + 请求头）。
+    */
     private Request prepareGetRequest(String url, Map<String, String> params, Map<String, String> headers) {
         return buildHeaders(headers).url(buildUrlByQueryParams(url, params)).build();
     }
 
 
-/**
+     /**
      * 空体 POST（无参数无请求头），UTF-8。语义同 {@link #post(String, Map, Map, Charset)} 便捷形态
      * @param url 请求地址
      * @return 返回语义由 error-mode 支配（见类注释）：throwout 抛 OkHttpStatusRuntimeException（非 2xx）
@@ -157,7 +160,7 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         return post(url, null, StandardCharsets.UTF_8);
     }
 
-/**
+     /**
      * 空体 POST，指定字符集。语义同 {@link #post(String, Map, Map, Charset)} 便捷形态
      * @param url 请求地址
      * @param charset 表单参数编码 + 响应解码字符集，null 走 UTF-8/自动探测
@@ -169,7 +172,7 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         return post(url, null, charset);
     }
 
-/**
+     /**
      * 表单 POST（参数以 application/x-www-form-urlencoded 提交），UTF-8。语义同全参形态便捷版本
      * @param url 请求地址
      * @param params 表单参数，null/空则发空体
@@ -181,7 +184,7 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         return post(url, params, StandardCharsets.UTF_8);
     }
 
-/**
+     /**
      * 原始报文体 POST：contentType 缺省按 text/html + charset 补齐，已含 charset 则原样使用
      * @param url 请求地址
      * @param body 原始报文体
@@ -195,7 +198,7 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         return postBody(url, body, null, contentType, charset);
     }
 
-/**
+     /**
      * 原始报文体 POST 全参形态（带请求头）
      * @param url 请求地址
      * @param body 原始报文体
@@ -225,7 +228,7 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         return post(url, params, null, null);
     }
 
-/**
+     /**
      * multipart 文件分片上传（无附加表单字段）。语义同 {@link #postFormDataPart(String, Map, Map, List, String)} 便捷形态
      * @param url 请求地址
      * @param parts 文件分片清单，file 与 mediaType 必填（缺省断言失败）
@@ -237,7 +240,7 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         return postFormDataPart(url, null, null, parts, null);
     }
 
-/**
+     /**
      * multipart 上传（表单字段 + 文件分片）。语义同全参形态便捷版本
      * @param url 请求地址
      * @param params 普通表单字段，可空
@@ -250,7 +253,7 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         return postFormDataPart(url, params, null, parts, null);
     }
 
-/**
+     /**
      * multipart 上传（表单字段 + 单个文件分片）。语义同全参形态便捷版本
      * @param url 请求地址
      * @param params 普通表单字段，可空
@@ -263,7 +266,7 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         return postFormDataPart(url, params, null, CollectionUtil.toList(part), null);
     }
 
-/**
+     /**
      * multipart 上传（单分片 + 自定义边界）。语义同全参形态便捷版本
      * @param url 请求地址
      * @param params 普通表单字段，可空
@@ -277,7 +280,7 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         return postFormDataPart(url, params, null, CollectionUtil.toList(part), boundary);
     }
 
-/**
+     /**
      * multipart 上传（多分片 + 自定义边界）。语义同全参形态便捷版本
      * @param url 请求地址
      * @param params 普通表单字段，可空
@@ -460,6 +463,9 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         return execute(request, charset);
     }
 
+    /**
+    * 请求头写入 Builder（空表原样返回）。
+    */
     private Request.Builder buildHeaders(Map<String, String> headers) {
         Request.Builder builder = new Request.Builder();
         if (CollectionUtil.isNotEmpty(headers)) {
@@ -470,7 +476,7 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         return builder;
     }
 
-/**
+     /**
      * GET 下载为字节数组。语义同 {@link #download(String, Map, Map)} 便捷形态
      * @param url 下载地址
      * @return 返回响应体字节；throwout 模式异常同上抛出；quiet/log 吞错时异常返回 <b>null</b>
@@ -480,7 +486,7 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         return download(url, null, null);
     }
 
-/**
+     /**
      * 带请求头 GET 下载。语义同 {@link #download(String, Map, Map)} 便捷形态
      * @param url 下载地址
      * @param headers 请求头，可空（鉴权类下载必带）
@@ -491,7 +497,7 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         return download(url, null, headers);
     }
 
-/**
+     /**
      * 带查询参数 GET 下载。语义同 {@link #download(String, Map, Map)} 便捷形态
      * @param url 下载地址
      * @param params 查询参数，拼入 URL
@@ -502,7 +508,7 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         return download(url, params, null);
     }
 
-/**
+     /**
      * GET 下载全参形态（大文件建议改用 downloadAsStream 避免整包进内存）
      * @param url 下载地址
      * @param params 查询参数，可空
@@ -514,7 +520,7 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         return executeByte(prepareGetRequest(url, params, headers));
     }
 
-/**
+     /**
      * GET 下载为流。语义同 {@link #downloadAsStream(String, Map, Map)} 便捷形态
      * @param url 下载地址
      * @return 返回响应体流，<b>所有权移交调用方</b>——必须自行 close（连带归还连接池连接）；
@@ -524,7 +530,7 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         return downloadAsStream(url, null, null);
     }
 
-/**
+     /**
      * 带请求头 GET 下载为流。语义同 {@link #downloadAsStream(String, Map, Map)} 便捷形态
      * @param url 下载地址
      * @param headers 请求头，可空
@@ -535,7 +541,7 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         return downloadAsStream(url, null, headers);
     }
 
-/**
+     /**
      * 带查询参数 GET 下载为流。语义同 {@link #downloadAsStream(String, Map, Map)} 便捷形态
      * @param url 下载地址
      * @param params 查询参数
@@ -546,7 +552,7 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         return downloadAsStream(url, params, null);
     }
 
-/**
+     /**
      * GET 下载为流全参形态：Response 由内部包装持有，调用方 close 流时连带释放
      * @param url 下载地址
      * @param params 查询参数，可空
@@ -558,7 +564,7 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         return executeStream(prepareGetRequest(url, params, headers));
     }
 
-/**
+     /**
      * POST（表单）取字节：以表单参数发起 POST 并按二进制收取响应
      * @param url 请求地址
      * @param params 表单参数
@@ -571,7 +577,7 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         return executeByte(request);
     }
 
-/**
+     /**
      * POST（表单）下载为流：所有权语义同 GET 流形态
      * @param url 请求地址
      * @param params 表单参数
@@ -584,10 +590,16 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         return executeStream(request);
     }
 
+    /**
+    * 文本执行便捷形态（charset=null，body().string() 语义）。
+    */
     private String execute(Request request) {
         return execute(request, null);
     }
 
+    /**
+    * 文本执行核心：checkStatus → 读取响应（charset 指定解码）→ 非 2xx 按 error-mode 分派 → 异常 processError。
+    */
     private String execute(Request request, Charset charset) {
         log(request);
         try (Response response = getClient().newCall(request).execute()) {
@@ -610,6 +622,9 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
     }
 
 
+    /**
+    * 字节执行：吞错路径异常返回 null（文本方法返回空串，差异见各公开方法注释）。
+    */
     private byte[] executeByte(Request request) {
         log(request);
         try (Response response = getClient().newCall(request).execute()) {
@@ -623,6 +638,9 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         return null;
     }
 
+    /**
+    * 流执行：Response 包装移交调用方（所有权语义见 ResponseBodyStreamWrapper）。
+    */
     private InputStream executeStream(Request request) {
         log(request);
         try {
@@ -639,10 +657,16 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         return null;
     }
 
+    /**
+    * 请求打点日志。
+    */
     private void log(Request request) {
         log.info("do request [{}]", request.url());
     }
 
+    /**
+    * BUG-3 修复后委托 execute（消除姊妹方法错误体语义不对称）。
+    */
     private String executeBody(Request request) {
         // BUG-3 修复：原实现是 execute 的姊妹方法但无 isSuccessful 分支（错误体当正常串返回），
         // 现直接委托 execute（charset=null 即 body().string() 语义），从根上消除姊妹方法不对称
@@ -662,8 +686,7 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
             this.response = response;
         }
 
-        @Override
-/**
+        /**
         * 关闭流并 finally 连带关闭持有的 Response（流所有权移交的实现点，见外层类注释）。
         * @throws java.io.IOException 底层流关闭异常
         */
@@ -676,6 +699,9 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         }
     }
 
+    /**
+    * http-status-sensitive 开启时非 2xx 抛 OkHttpStatusRuntimeException（先于 error-mode 判定）。
+    */
     private void checkStatus(Response response){
         if(!response.isSuccessful() && properties.isHttpStatusSensitive()){
             String body = StrUtil.EMPTY;
@@ -689,6 +715,9 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         }
     }
 
+    /**
+    * error-mode 分派：quiet 无动作 / log_simple 简单日志 / log_detail 详细日志 / throwout 按异常类型重抛。
+    */
     private void processError(Throwable e) {
         OkhttpProperties.ErrorMode errorMode = properties.getErrorMode();
         switch (errorMode) {
@@ -713,7 +742,7 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         }
     }
 
-/**
+     /**
      * 取重定向目标地址：探测目标 URL，3xx 且携带非空 Location 头时返回该地址
      * @param url 探测地址
      * @return 重定向目标（Location 头）；<b>非重定向、Location 缺失或吞错模式下异常时原样返回入参 url</b>（不返回 null）；throwout 模式异常照抛
@@ -796,7 +825,7 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
 //        return isIgnore;
 //    }
 
-/**
+     /**
      * 取容器装配的门面单例（默认客户端，proxy-mode 决定直连还是代理）
      * @return 容器中的 OkHttpUtil 单例
      */
@@ -840,7 +869,7 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         return bean;
     }
 
-/**
+     /**
      * 克隆门面并定制代理客户端：以基础 Builder + 代理初始化后经 config 二次改写，得到独立副本（不影响单例）
      * @param config 代理客户端定制回调（超时/拦截器等）
      * @return 携带 customOkhttpClient 的新门面副本，后续调用全部走该定制客户端
@@ -856,7 +885,7 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         return bean;
     }
 
-/**
+     /**
      * 克隆门面并强制切到代理客户端（manual 模式下的显式走代理入口，不影响单例）
      * @return 强制使用代理客户端的新门面副本
      */
@@ -866,6 +895,9 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         return bean;
     }
 
+    /**
+    * 表单体构建（charset 进 FormBody 编码）。
+    */
     private static FormBody buildFormBody(Map<String, String> params, Charset charset) {
         FormBody.Builder builder = charset != null ? new FormBody.Builder(charset) : new FormBody.Builder();
         if (CollectionUtil.isNotEmpty(params)) {

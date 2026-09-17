@@ -53,6 +53,12 @@ public class DefaultXssCleaner implements XssCleaner{
         return content;
     }
 
+    /**
+     * reject 模式校验：jsoup 白名单校验 + 附加污染表逐条包含匹配，全部通过才算合法。
+     *
+     * @param content 待校验内容
+     * @return true 合法（白名单内且无附加污染命中）
+     */
     private boolean isValid(String content){
         if(!Jsoup.isValid(content,HtmlSafeList.INSTANCE)){
             return false;
@@ -66,6 +72,10 @@ public class DefaultXssCleaner implements XssCleaner{
         return true;
     }
 
+    /**
+     * 附加污染表后处理：clear 模式逐条 replaceAll 剥离；reject 模式命中即抛异常
+     * （对 escape/clean 主流程产出的串做二次加固，规则来自 addition-tainted-patterns）。
+     */
     private String additionClean(String content){
         List<String> taintedPatterns = properties.getAllTaintedPatterns();
         if(StrUtil.isNotBlank(content) && CollectionUtil.isNotEmpty(taintedPatterns)){

@@ -9,7 +9,7 @@ import org.camunda.bpm.engine.impl.persistence.entity.ByteArrayEntity;
 
 import java.util.Date;
 
-/**
+ /**
  * 任务附件描述：字段与 Camunda Attachment 一一对应，内容以 url 外链形态承载
  * （引擎只存描述与链接，不存文件本体）。
  */

@@ -21,7 +21,7 @@ import io.github.jevonsnotes.jevokit.core.lang.ApiResponse;
 import io.github.jevonsnotes.jevokit.sample.vo.TestVo;
 import io.github.jevonsnotes.jevokit.sample.vo.TopicVo;
 
-/**
+ /**
  * POST localhost:8080/rocketmq/test
  * {
  * "type":1,
@@ -55,7 +55,7 @@ public class RocketMqApi {
     }
 
     @RequestMapping("/test")
-/**
+    /**
     * 四形态发送分发演示：type 1-4 对应普通/顺序/延迟/事务（helper 缺位时快速失败并说明原因）。
     * @param vo 消息体（type 决定形态）
     * @return 发送结果
@@ -104,6 +104,9 @@ public class RocketMqApi {
         }
 
     }
+    /**
+    * 顺序消息发送演示分发。
+    */
     private void testTopicFIFO(TopicVo vo){
         String messageGroup1 = "sameQueue1";
         String messageGroup2 = "sameQueue2";
@@ -119,6 +122,9 @@ public class RocketMqApi {
         requireMqHelper().syncSendOrderly(MqConst.TOPIC_FIFO,vo,messageGroup2);
 
     }
+    /**
+    * 延迟消息发送演示分发。
+    */
     private void testTopicDelay(TopicVo vo){
 //        Message<TopicVo> msg = MessageBuilder
 //                .withPayload(vo)
@@ -129,6 +135,9 @@ public class RocketMqApi {
         requireMqHelper().syncSendDelay(MqConst.TOPIC_DELAY,data,1);
         requireMqHelper().syncSendDelay(MqConst.TOPIC_DELAY,data,2);
     }
+    /**
+    * 事务消息发送演示分发。
+    */
     private void testTopicTransaction(TopicVo vo){
         final TestVo testVo = TestVo.builder().address("xxxx地址").mobile("123456487").build();
         final Message<TopicVo> msg = MessageBuilder
@@ -139,6 +148,9 @@ public class RocketMqApi {
         final TransactionSendResult transactionSendResult = requireMqHelper().syncSendTran(MqConst.TOPIC_TRANSACTION, msg, testVo);
         System.out.println("本地事务状态：" + transactionSendResult.getLocalTransactionState());
     }
+    /**
+    * 按消息 id 分组循环发送（顺序演示的分组发送器）。
+    */
     private void looper(TopicVo vo,CallbackP callback) {
         for(int i=0;i<vo.getLoop();i++){
             callback.call(i);

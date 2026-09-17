@@ -27,18 +27,39 @@ public class BigDecimalHolder {
     private BigDecimal current;
     private RoundingMode roundingMode =  RoundingMode.HALF_UP;
 
+    /**
+     * 全参私有构造（缺省项走默认值）
+     *
+     * @param current       初始值
+     * @param scale         最终保留小数位
+     * @param roundingMode  舍入模式
+     */
     private BigDecimalHolder(BigDecimal current , Integer scale, RoundingMode roundingMode){
         this.current = current;
         this.scale = ObjectUtil.defaultIfNull(scale,this.scale);
         this.calcScale = Math.max(this.scale * 2, 16);
         this.roundingMode = ObjectUtil.defaultIfNull(roundingMode,this.roundingMode);
     }
+    /**
+     * 私有构造：无初始值、默认精度
+     */
     private BigDecimalHolder(){
         this(null,null,null);
     }
+    /**
+     * 私有构造：无初始值、指定精度
+     *
+     * @param scale 最终保留小数位
+     */
     private BigDecimalHolder(int scale){
         this(null,scale,null);
     }
+    /**
+     * 私有构造：无初始值、指定精度与舍入模式
+     *
+     * @param scale         最终保留小数位
+     * @param roundingMode  舍入模式
+     */
     private BigDecimalHolder(int scale, RoundingMode roundingMode){
         this(null,scale,roundingMode);
     }

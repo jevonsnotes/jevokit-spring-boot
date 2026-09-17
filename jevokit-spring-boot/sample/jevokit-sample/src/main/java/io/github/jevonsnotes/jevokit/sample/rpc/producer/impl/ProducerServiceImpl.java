@@ -9,7 +9,7 @@ import jakarta.jws.WebMethod;
 import jakarta.jws.WebService;
 
 
-/**
+ /**
  * SOAP 服务实现：@WebService 的 endpointInterface 指向 SEI 全限定名（包名迁移
  * 时此字符串必须同步，见 rename 教训），targetNamespace 按新包反演命名。
  */
@@ -22,7 +22,7 @@ import jakarta.jws.WebService;
 public class ProducerServiceImpl implements ProducerService {
 
     @Override
-/**
+    /**
     * SOAP 服务实现：按名构造账户回显（演示用途）。
     * @param name 姓名
     * @return 账户对象

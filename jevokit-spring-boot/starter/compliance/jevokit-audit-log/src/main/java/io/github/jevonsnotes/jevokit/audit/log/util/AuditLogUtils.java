@@ -67,6 +67,10 @@ public class AuditLogUtils {
         SRC_SERVLET_PATH.set(path);
     }
 
+    /**
+     * 来源 IP 解析：x-forwarded-for → Proxy-Client-IP → WL-Proxy-Client-IP → remoteAddr 逐级回退
+     * （unknown 视为无效继续回退，代理链常见形态）。
+     */
     private static String getRemoteIpAddr(HttpServletRequest request) {
         if(request == null){
             return null;
@@ -258,6 +262,15 @@ public class AuditLogUtils {
         }
     }
 
+    /**
+     * 报文体截断：超限时按策略处理——TRUNCATE 截前 limit 位；ABORT 或 limit=0 直接丢弃（null）；
+     * limit=-1 表示不限制原样返回。
+     *
+     * @param content  报文内容
+     * @param limit    长度上限（-1 不限制，0 丢弃）
+     * @param strategy 超限策略
+     * @return 处理后的内容（可能为 null 表示丢弃该字段）
+     */
     private static String processContentLimit(String content , Integer limit,AuditLogContentLimitProperties.Strategy strategy){
         if( limit > -1 && content.length() > limit){
             if(limit == 0 || AuditLogContentLimitProperties.Strategy.ABORT.equals(strategy)){
@@ -294,6 +307,9 @@ public class AuditLogUtils {
                 && !DefaultAuditLogProcessor.DEF_USER_CODE.equals(processor.getUserCode()));
     }
 
+    /**
+     * 递归判定请求是否被内容缓存包装（任意包装层下存在 RequestContentCachingRequestWrapper 即可读缓存体）。
+     */
     private static boolean isRequestWrapper(HttpServletRequest request) {
         if(request instanceof ServletRequestWrapper){
             if(request instanceof RequestContentCachingRequestWrapper){
@@ -304,6 +320,9 @@ public class AuditLogUtils {
         }
         return false;
     }
+    /**
+     * 递归判定响应是否被读取器包装（同 {@link #isRequestWrapper} 的逐层解包逻辑）。
+     */
     private static boolean isResponseWrapper(HttpServletResponse response) {
         if(response instanceof ServletResponseWrapper){
             if(response instanceof ResponseReaderHttpServletResponseWrapper){

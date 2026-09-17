@@ -73,6 +73,12 @@ public class AuditLogFilter implements Filter {
     }
 
 
+    /**
+     * 事件类型识别：按 HTTP 方法分组匹配 event-types.patterns 的 Ant 路径规则（遍历首个命中即返回）。
+     *
+     * @param request 请求
+     * @return 命中的事件类型；未命中返回 null（该请求不做审计）
+     */
     private String getEventType(HttpServletRequest request) {
         AuditLogProperties properties = SpringUtil.getBean(AuditLogProperties.class);
         Map<HttpMethod, Map<String, List<String>>> eventTypesPatterns = properties.getEventTypes().getPatterns();

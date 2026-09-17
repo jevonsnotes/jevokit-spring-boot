@@ -131,11 +131,13 @@ public class DecryptRequestAdviceAdapter extends RequestBodyAdviceAdapter {
 
             ByteArrayInputStream utf8Stream = IoUtil.toUtf8Stream(finalMessage);
             return new HttpInputMessage() {
+                /** 解密后的协议报文流（内容为填充 view/target 的 JSON）。 */
                 @Override
                 public InputStream getBody() {
                     return utf8Stream;
                 }
 
+                /** 透传原请求头（内容协商结果不受解密影响）。 */
                 @Override
                 public HttpHeaders getHeaders() {
                     return inputMessage.getHeaders();
@@ -297,18 +299,27 @@ public class DecryptRequestAdviceAdapter extends RequestBodyAdviceAdapter {
 //        return clients.isEmpty() ? null : clients.get(0);
 //    }
 
+    /**
+     * 取请求头时间戳（头名按终端前缀拼接；缺失抛协议异常，防重放与验签都依赖它）。
+     */
     private String getTimestamp(JevokitApiClientProperties client, HttpInputMessage inputMessage) {
         List<String> headers = inputMessage.getHeaders().get(ApiUtil.rebuildHeader(client.getHeader().getTimestampName(), client.getHeader().getPrefix()));
         Assert.isTrue(CollectionUtil.isNotEmpty(headers), () -> new JSecureApiException("请求头时间戳为空"));
         return headers.get(0);
     }
 
+    /**
+     * 取请求头随机码（缺失抛协议异常，防重放与验签都依赖它）。
+     */
     private String getNonce(JevokitApiClientProperties client, HttpInputMessage inputMessage) {
         List<String> headers = inputMessage.getHeaders().get(ApiUtil.rebuildHeader(client.getHeader().getNonceName(), client.getHeader().getPrefix()));
         Assert.isTrue(CollectionUtil.isNotEmpty(headers), () -> new JSecureApiException("请求头随机码为空"));
         return headers.get(0);
     }
 
+    /**
+     * 取请求头签名值（缺失抛协议异常）。
+     */
     private String getSignature(JevokitApiClientProperties client, HttpInputMessage inputMessage) {
         List<String> headers = inputMessage.getHeaders().get(ApiUtil.rebuildHeader(client.getHeader().getSignatureName(), client.getHeader().getPrefix()));
         Assert.isTrue(CollectionUtil.isNotEmpty(headers), () -> new JSecureApiException("请求头签名为空"));

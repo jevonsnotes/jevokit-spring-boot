@@ -80,6 +80,13 @@ public class SecurityUtil {
         }
     }
 
+    /**
+     * 校验密钥已注入，未注入抛 ISE 并在消息中给出对应配置键
+     *
+     * @param key       密钥值
+     * @param configKey 对应的配置键名（拼进异常消息）
+     * @return 原密钥值
+     */
     private static String requireKey(String key, String configKey) {
         if (StrUtil.isBlank(key)) {
             throw new IllegalStateException("crypto keys not configured: " + configKey);
@@ -347,6 +354,11 @@ public class SecurityUtil {
         return o;
     }
 
+    /**
+     * 从去重缓存移除对象；缓存清空时顺带清理 ThreadLocal 防泄漏
+     *
+     * @param o 已处理完的对象
+     */
     private static void removeFilterCache(Object o) {
         Set<Object> objects = getFilterCache();
         if (CollectionUtil.isNotEmpty(objects)) {
@@ -357,10 +369,20 @@ public class SecurityUtil {
         }
     }
 
+    /**
+     * 把对象加入去重缓存（配合 {@link #hasFiltered(Object)} 防嵌套循环引用死循环）
+     *
+     * @param o 待处理对象
+     */
     private static void addFilterCache(Object o) {
         getFilterCache().add(o);
     }
 
+    /**
+     * 取当前线程的去重缓存（无则懒初始化）
+     *
+     * @return 线程内对象缓存集合
+     */
     private static Set<Object> getFilterCache() {
         Set<Object> objects = FILTER_CACHE.get();
         if (objects == null) {
@@ -369,12 +391,27 @@ public class SecurityUtil {
         return objects;
     }
 
+    /**
+     * 判断对象是否已在本轮过滤中处理过
+     *
+     * @param o 目标对象
+     * @return 已处理过返回 true（跳过递归）
+     */
     private static boolean hasFiltered(Object o) {
         Set<Object> filterCache = getFilterCache();
         return filterCache.contains(o);
     }
 
 
+    /**
+     * 处理 Map 字段（旧签名，仅保留兼容，内部转发三参版本）
+     *
+     * @param src      宿主对象
+     * @param field    所在字段
+     * @param callback 字符串转换回调
+     * @param <T>      宿主类型
+     * @deprecated 内部兼容入口，统一走三参回调版本
+     */
     @Deprecated
     private static <T> void processMap(T src, Field field, CallbackPR<String, String> callback) {
         processMap(src, field, (T, field1, s) -> callback.call(s));
@@ -434,6 +471,15 @@ public class SecurityUtil {
         }
     }
 
+    /**
+     * 处理 Collection 字段（旧签名，仅保留兼容，内部转发三参版本）
+     *
+     * @param src      宿主对象
+     * @param field    所在字段
+     * @param callback 字符串转换回调
+     * @param <T>      宿主类型
+     * @deprecated 内部兼容入口，统一走三参回调版本
+     */
     @Deprecated
     private static <T> void processCollection(T src, Field field, CallbackPR<String, String> callback) {
         processCollection(src, field, (t, field1, s) -> callback.call(s));

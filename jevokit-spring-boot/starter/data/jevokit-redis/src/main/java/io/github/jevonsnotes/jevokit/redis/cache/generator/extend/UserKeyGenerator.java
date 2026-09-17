@@ -14,7 +14,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
 
 
-/**
+ /**
  * 基于用户代码的缓存key生成策略，防止同名方法读取缓存一致的问题
  *
  */
@@ -26,7 +26,7 @@ public class UserKeyGenerator extends AbstractKeyGenerator {
 
 
     @Override
-/**
+    /**
     * 用户维度键：前缀含用户标识 + 方法全名 + 入参 JSON——同方法不同用户天然分键。
     * @param target 目标对象
     * @param method 目标方法
@@ -48,7 +48,7 @@ public class UserKeyGenerator extends AbstractKeyGenerator {
     }
 
     @Override
-/**
+    /**
     * 用户键前缀。
     * @return USER:
     */
@@ -57,7 +57,7 @@ public class UserKeyGenerator extends AbstractKeyGenerator {
     }
 
     @Override
-/**
+    /**
     * 用户键格式化前缀：取请求头 userCode（无请求上下文回落 00000000 占位）。
     * @return 形如 USER:用户码: 的前缀
     */

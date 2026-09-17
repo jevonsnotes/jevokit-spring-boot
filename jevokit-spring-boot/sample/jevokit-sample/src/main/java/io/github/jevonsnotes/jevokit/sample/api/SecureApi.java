@@ -25,7 +25,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
+ /**
  * JSecure 安全接口演示端点（/secure/test*）：@JSecureApi 标注后走加签验签 + SM2/SM4
  * 混合加解密 + 防重放通道，E2E 以 client-demo-1 密钥组做密文往返断言。
  */
@@ -40,7 +40,7 @@ public class SecureApi {
     @JSecureApi(transType = {"T030421", StrUtil.EMPTY})
     @RequestMapping("/test")
     @ResponseBody
-/**
+    /**
     * JSecure 全链演示：请求密文解密→验签→防重放→业务→响应加密（client-demo-1 密钥组）。
     * @param testVo JSecure 请求包装（target 为业务体）
     * @return JSecure 响应包装（通道自动加密）
@@ -55,7 +55,7 @@ public class SecureApi {
     @JSecureApi(transType = {"T030421"})
     @RequestMapping("/test4")
     @ResponseBody
-/**
+    /**
     * JSecure 演示（client-demo-2 密钥组：AES secret + 不同国密对）。
     * @param testVo JSecure 请求包装
     * @return JSecure 响应包装
@@ -70,7 +70,7 @@ public class SecureApi {
 
     @RequestMapping("/test2")
     @ResponseBody
-/**
+    /**
     * 裸业务体入口的 JSecure 形态：无 JSecureRequest 包装同样走安全通道。
     * @param testVo 业务体
     * @return JSecure 响应包装
@@ -80,7 +80,7 @@ public class SecureApi {
     }
     @RequestMapping("/test3")
     @ResponseBody
-/**
+    /**
     * 普通（非 JSecure）对照端点：无加密通道，演示同一应用内两种形态并存。
     * @return 普通响应包装
     */

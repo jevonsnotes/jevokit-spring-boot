@@ -39,7 +39,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-/**
+ /**
  * Camunda 7 工作流门面服务：以 VO 约定封装流程的发起 / 查询 / 签收 / 办结 / 回退 / 意见 /
  * 附件 / 部署 / 回滚全生命周期，业务侧注入本 Bean 即可，无需直接触碰 Camunda 引擎 API。
  *
@@ -70,7 +70,7 @@ public class JevokitWorkflowService {
     @Value("${spring.application.name:default}")
     private String tenantId;
 
-/**
+    /**
     * 发起流程实例：以起草人身份鉴权后按流程定义 key 启动，@FlowVar 全局变量随启动写入。
     * @param vo 发起参数（processDefinitionKey 须与 BPMN process id 一致，起草人不可空）
     * @return 流程实例 id（processInstanceId）
@@ -92,7 +92,7 @@ public class JevokitWorkflowService {
         return processInstance.getProcessInstanceId();
     }
 
-/**
+    /**
     * 查当前任务（流程定义 + 节点定义集合维度）。语义同全参形态。
     * @param processDefinitionKey 流程定义 key，可空
     * @param taskDefinitionKeys 节点定义 key 集合，可空
@@ -101,7 +101,7 @@ public class JevokitWorkflowService {
     public List<TaskInfoVo> taskQuery(String processDefinitionKey, List<String> taskDefinitionKeys) {
         return taskQuery(null,processDefinitionKey, null, taskDefinitionKeys);
     }
-/**
+    /**
     * 查当前任务（流程定义 + 单节点维度）。
     * @param processDefinitionKey 流程定义 key，可空
     * @param taskDefinitionKey 节点定义 key，可空
@@ -111,7 +111,7 @@ public class JevokitWorkflowService {
         return taskQuery(null,processDefinitionKey, null, CollectionUtil.toList(taskDefinitionKey));
     }
 
-/**
+    /**
     * 按任务 id 精确查当前任务。
     * @param taskId 任务 id
     * @return 命中的任务快照（0 或 1 条）
@@ -120,7 +120,7 @@ public class JevokitWorkflowService {
         return taskQuery(null,null, taskId, null);
     }
 
-/**
+    /**
     * 查当前任务全参形态：四个维度 AND 组合，全部施加本租户过滤。
     * @param processInstanceId 流程实例 id，可空
     * @param processDefinitionKey 流程定义 key，可空
@@ -152,7 +152,7 @@ public class JevokitWorkflowService {
                 .collect(Collectors.toList());
     }
 
-/**
+    /**
     * 按流程实例 id 查其全部当前任务。
     * @param processId 流程实例 id
     * @return 该实例的当前任务列表
@@ -161,7 +161,7 @@ public class JevokitWorkflowService {
         return taskQuery(processId,null, null, null);
     }
 
-/**
+    /**
     * 流程历史时间线（默认 TaskInfoVo 形态）：已完成 userTask 按结束时间倒序，附意见/附件/局部变量。
     * @param processInstanceId 流程实例 id
     * @return 历史任务时间线，无历史返回空列表
@@ -169,7 +169,7 @@ public class JevokitWorkflowService {
     public List<TaskInfoVo> taskHisTimelines(String processInstanceId) {
         return taskHisTimelines(processInstanceId,TaskInfoVo.class,null);
     }
-/**
+    /**
     * 历史时间线全参形态：自定义返回 VO 类型（须有无参构造）+ 每条回读回调。
     * @param processInstanceId 流程实例 id
     * @param taskClass 返回 VO 类型（newInstance 反射构造）
@@ -237,7 +237,7 @@ public class JevokitWorkflowService {
      * @param vo
      */
     @Transactional
-/**
+    /**
     * 办结当前任务：校验任务在且办理人匹配后 complete，FlowState 语义驱动流转。
     * @param vo 办结参数（taskId + assignee + flowState + 泛型业务数据）
     * @throws cn.hutool.core.lang.AssertException 任务不存在或办理人不匹配
@@ -258,7 +258,7 @@ public class JevokitWorkflowService {
      * @param vo
      */
     @Transactional
-/**
+    /**
     * 带意见办结：先落审批意见再 complete（意见与办结同事务）。
     * @param vo 办结参数（含 comment 意见内容）
     * @throws cn.hutool.core.lang.AssertException 任务不存在或办理人不匹配
@@ -275,7 +275,7 @@ public class JevokitWorkflowService {
     }
 
 
-/**
+    /**
     * 委派归还：被委派人处理完毕后 resolve 回委派人（与 complete 的区别见 Camunda 委派语义）。
     * @param vo 办结参数（taskId + 流转变量）
     */
@@ -283,7 +283,7 @@ public class JevokitWorkflowService {
         taskService.resolveTask(vo.getTaskId(), operationWorkflow(vo));
     }
 
-/**
+    /**
     * 添加审批意见（不办结任务）：落库后回填 vo 的 id/createTime 供调用方回显。
     * @param vo 意见参数（taskId/procInsId 定位 + comment 内容）
     * @throws cn.hutool.core.lang.AssertException 目标任务不存在
@@ -300,7 +300,7 @@ public class JevokitWorkflowService {
         vo.setCreateTime(comment.getTime());
     }
 
-/**
+    /**
     * 附件同步：以目标清单与引擎现存附件 diff，执行增删并返回三桶结果。空清单直接返回空壳（不删任何现存附件）。
     * @param taskId 目标任务 id
     * @param vos 目标附件清单（带 id 视为保留，无 id 视为新增）
@@ -323,7 +323,7 @@ public class JevokitWorkflowService {
         return res;
     }
 
-/**
+    /**
     * 签收任务（claim 到指定办理人，抢占语义）。
     * @param vo taskId + assignee
     */
@@ -331,7 +331,7 @@ public class JevokitWorkflowService {
         taskService.claim(vo.getTaskId(), vo.getAssignee());
     }
 
-/**
+    /**
     * 撤销签收：先校验当前签收人一致再释放（防越权释放他人签收）。
     * @param vo taskId + 当前 assignee
     * @throws RuntimeException 任务不存在或签收人不匹配
@@ -353,7 +353,7 @@ public class JevokitWorkflowService {
      * @param vo
      */
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
-/**
+    /**
     * 回退到上一节点（按历史 userTask 序列取最近一个），事务内执行。
     * @param vo taskId + assignee
     * @throws cn.hutool.core.lang.AssertException 任务不存在或无历史可回退
@@ -376,7 +376,7 @@ public class JevokitWorkflowService {
      * @param vo
      */
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
-/**
+    /**
     * 回退到起草节点（历史 userTask 序列第一个），事务内执行。
     * @param vo taskId + assignee
     * @throws cn.hutool.core.lang.AssertException 任务不存在或无历史可回退
@@ -391,7 +391,7 @@ public class JevokitWorkflowService {
     }
 
 
-/**
+    /**
     * 部署流程定义：资源三选一形态——name+path 走 classpath 输入流、仅 path 走 classpath 直载、
     * text 走字符串部署；全空抛不支持异常。
     * @param vo 部署名 + 资源清单（至少一条）
@@ -434,7 +434,7 @@ public class JevokitWorkflowService {
         return buildDeploymentInfo(deploy);
     }
 
-/**
+    /**
     * 部署回滚：以既有部署的资源重建新部署版本（引擎不删旧版，靠版本序回退）。
     * @param vo 部署名 + 目标 deploymentId + 可选 resourceIds 子集（空则整包复制）
     * @return 新部署结果视图
@@ -457,7 +457,7 @@ public class JevokitWorkflowService {
         return buildDeploymentInfo(deploy);
     }
 
-/**
+    /**
     * 按部署名查本租户全部部署版本。
     * @param deploymentName 部署名
     * @return 部署视图列表（含资源清单）
@@ -474,7 +474,7 @@ public class JevokitWorkflowService {
         return infoVos;
     }
 
-/**
+    /**
     * 删除部署（引擎默认级联删除关联流程实例与历史——删前自行确认）。
     * @param deploymentNameId 部署 id
     */
@@ -482,6 +482,9 @@ public class JevokitWorkflowService {
         repositoryService.deleteDeployment(deploymentNameId);
     }
 
+    /**
+    * 部署结果封装：DeploymentEntity 时懒加载资源并转 VO（资源字节转文本）。
+    */
     private DeploymentInfoVo buildDeploymentInfo(Deployment deployment) {
         // 封装部署信息
         DeploymentInfoVo deploymentInfoVo = DeploymentInfoVo.builder()
@@ -510,6 +513,9 @@ public class JevokitWorkflowService {
         return deploymentInfoVo;
     }
 
+    /**
+    * 懒加载兜底：无上下文取资源 NPE 时改走 repositoryService 查询并回填（防部署视图空指针）。
+    */
     private boolean canLazyLoadResources(DeploymentEntity deployment) {
         Map<String, ResourceEntity> resources;
         try {
@@ -525,10 +531,16 @@ public class JevokitWorkflowService {
         return resources != null;
     }
 
+    /**
+    * 资源名补 .bpmn 后缀（缺省后缀场景）。
+    */
     private String rebuildResourceName(String resourceName) {
         return StrUtil.isBlank(resourceName) || resourceName.endsWith(".bpmn") ? resourceName : resourceName + ".bpmn";
     }
 
+    /**
+    * 办结变量组装：合并既有变量 + GLOBAL 域写入实例级，LOCAL 域写任务级。
+    */
     private <T> Map<String, Object> operationWorkflow(TaskCompletedVo<T> vo) {
         Map<String, Object> variables = taskService.getVariables(vo.getTaskId());
         log.info(JSONObject.toJSONString(variables));
@@ -537,6 +549,9 @@ public class JevokitWorkflowService {
         return variables;
     }
 
+    /**
+    * 回退目标序列：历史 userTask 按结束时间正序（首元素即起草节点；断言非空且当前非初始）。
+    */
     private List<HistoricActivityInstance> getHisActInstanceByUserTaskForFallBack(Task task) {
 
 
@@ -555,6 +570,9 @@ public class JevokitWorkflowService {
         return userTask;
     }
 
+    /**
+    * 回退执行：引擎流转变更（取消当前节点全部实例→目标节点前启动）+ 恢复局部变量 + 自动签收原办理人。
+    */
     private void fallbackToHisActInstance(Task currentTask, HistoricActivityInstance hisActInstance) {
         runtimeService.createProcessInstanceModification(currentTask.getProcessInstanceId())
                 .cancelAllForActivity(currentTask.getTaskDefinitionKey())

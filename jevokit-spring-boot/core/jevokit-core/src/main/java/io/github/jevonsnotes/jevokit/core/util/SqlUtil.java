@@ -132,6 +132,13 @@ public class SqlUtil {
         return new SqlBundleDto().setSql(selectClause.toString()).setArgs(setArgs.toArray());
     }
 
+    /**
+     * 解析表名：优先 @Table.name，缺省用类简单名
+     *
+     * @param clazz 实体类
+     * @param <T>   实体类型
+     * @return 表名
+     */
     private static <T>String getTableName(Class<T> clazz){
         String tableName = clazz.getSimpleName();
         Table annotation = clazz.getAnnotation(Table.class);
@@ -140,6 +147,13 @@ public class SqlUtil {
         }
         return tableName;
     }
+    /**
+     * 解析列名：优先 @Column.name，缺省驼峰转下划线，统一小写
+     *
+     * @param field        实体字段
+     * @param toUnderscore 缺省命名是否转下划线（字段名已含下划线则不再转换）
+     * @return 列名
+     */
     private static String getColumnName(Field field,boolean toUnderscore){
         String column = field.getName();
         Column annotation = field.getAnnotation(Column.class);

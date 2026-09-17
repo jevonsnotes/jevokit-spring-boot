@@ -3,7 +3,7 @@ package io.github.jevonsnotes.jevokit.workflow.consts;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-/**
+ /**
  * 任务办结状态语义表：code 供引擎与持久化使用，msg 为中文含义。
  * 办结（taskCompleted）时按此表语义驱动流转：通过/驳回/逐级回退/回起草人/办结/加签。
  */
@@ -21,14 +21,14 @@ public enum FlowState {
     private final String code;
     private final String msg;
 
-/**
+    /**
     * 取状态码。
     * @return 状态码字符串
     */
     public String code(){
         return this.code;
     }
-/**
+    /**
     * 取中文含义。
     * @return 含义文本
     */

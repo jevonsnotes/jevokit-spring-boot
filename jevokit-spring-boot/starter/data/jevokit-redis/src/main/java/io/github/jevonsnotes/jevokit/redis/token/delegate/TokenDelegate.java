@@ -36,6 +36,9 @@ public class TokenDelegate {
             return token;
         } else {
             return new ReentrantLocker<String>() {
+                /**
+                * 匿名类覆写：锁内执行策略刷新。
+                */
                 @Override
                 public String wrap() {
                     String token = (String) ops.get(strategy.getTokenKey());
@@ -46,6 +49,9 @@ public class TokenDelegate {
                     }
                 }
 
+                /**
+                * 匿名类覆写：同 getToken 的锁参数。
+                */
                 @Override
                 public boolean lock(String key) {
                     return RedisLock.tryLock(key, 2, 60, TimeUnit.SECONDS);
@@ -74,11 +80,17 @@ public class TokenDelegate {
      */
     public String refreshToken(TokenStrategy strategy) {
         return new ReentrantLocker<String>() {
+            /**
+            * 匿名类覆写：锁内执行策略刷新（refreshToken 场景）。
+            */
             @Override
             public String wrap() {
                 return strategy.refreshToken(strategy.getTokenKey());
             }
 
+            /**
+            * 匿名类覆写：2 秒等待 / 60 秒持有取锁（refreshToken 场景）。
+            */
             @Override
             public boolean lock(String key) {
                 return RedisLock.tryLock(key, 2, 60, TimeUnit.SECONDS);

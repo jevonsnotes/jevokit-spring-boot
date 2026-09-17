@@ -55,6 +55,7 @@ public class JevokitDesensitizationConfiguration{
     public SensitizationPowerInterceptor sensitizationPowerInterceptor(){
         return new DefaultSensitizationPowerInterceptor();
     }
+    /** 注册解密端点控制器（/jevokit/desensitization/decrypt）。 */
     @Bean
     public DesensitizeApi desensitizeApi(){
         return new DesensitizeApi();

@@ -135,6 +135,9 @@ public class EncryptResponseAdviceAdapter implements ResponseBodyAdvice<Object>,
         }
     }
 
+    /**
+     * 按需打印响应密文（debug 或终端 print.response-ciphertext 开启时，带协议日志前缀）。
+     */
     private void printCiphertext(JSecureResponse<?> response) {
         JevokitApiClientProperties client = JSecureContext.getCurrentClient();
         if (log.isDebugEnabled() || (client != null && client.getPrint().isResponseCiphertext())) {
@@ -143,6 +146,9 @@ public class EncryptResponseAdviceAdapter implements ResponseBodyAdvice<Object>,
 
     }
 
+    /**
+     * 按需打印响应明文（debug 或终端 print.response-plaintext 开启时；仅密文形态出网，此处仅供排障）。
+     */
     private void printPlaintext(JSecureResponse<?> response) {
         JevokitApiClientProperties client = JSecureContext.getCurrentClient();
         if (log.isDebugEnabled() || (client != null && client.getPrint().isResponsePlaintext())) {
@@ -150,6 +156,9 @@ public class EncryptResponseAdviceAdapter implements ResponseBodyAdvice<Object>,
         }
     }
 
+    /**
+     * 对齐请求编码设置响应字符集（请求未声明时兜底 UTF-8，防密文/签名因编码漂移损坏）。
+     */
     private void setResponseCharset() {
         if (RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes) {
             ServletRequestAttributes attr = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
@@ -165,6 +174,9 @@ public class EncryptResponseAdviceAdapter implements ResponseBodyAdvice<Object>,
         }
     }
 
+    /**
+     * 回填交易信息：响应未显式指定 transNo/transType 时继承请求值（对端可按交易号关联请求响应）。
+     */
     private void fillTransInfo(JSecureRequest<?> jsr, JSecureResponse<?> resp) {
         if (jsr != null) {
             if (StrUtil.isBlank(resp.getTransNo())) {

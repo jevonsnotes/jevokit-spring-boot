@@ -27,7 +27,7 @@ import io.github.jevonsnotes.jevokit.sample.vo.TestVo;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
+ /**
  * 脱敏演示端点（/desensitization/*）：/test 走 @Desensitization 切面 + LogBuilder 结构化
  * 日志脱敏；/test2 演示 @DstProperty 属性级声明。请求体同时被 spkit.api.access 的
  * token 访问控制覆盖（见 application.yml tokens 段）。
@@ -42,7 +42,7 @@ public class DesensitizationApi {
     private final DesHelper desHelper;
     @Desensitization()
     @RequestMapping("/test")
-/**
+    /**
     * 切面脱敏演示：@Desensitization 标注方法返回对象自动脱敏 + LogBuilder 结构化日志。
     * @param testVo 请求体
     * @return 脱敏后回显
@@ -60,7 +60,7 @@ public class DesensitizationApi {
     @DstProperty(type = DstType.MOBILE,level = DstLevel.LV0)
     @RequestMapping("/test2")
     @ResponseBody
-/**
+    /**
     * 属性级脱敏演示：@DstProperty(type=MOBILE, level=LV0) 内联声明。
     * @param testVo 请求体
     * @return 脱敏结果文本
@@ -70,7 +70,7 @@ public class DesensitizationApi {
     }
 
     @RequestMapping("/test3")
-/**
+    /**
     * DesHelper 显式调用演示：深度克隆后脱敏（不依赖切面）。
     * @param testVo 请求体
     * @return 脱敏副本
@@ -81,7 +81,7 @@ public class DesensitizationApi {
     }
     @RequestMapping("/test4")
     @ResponseBody
-/**
+    /**
     * logback 脱敏 appender 演示：参数化日志中的对象自动脱敏（DesensitizedConsoleAppender）。
     * @param testVo 请求体
     * @return 原样回显（脱敏发生在日志侧）
@@ -92,7 +92,7 @@ public class DesensitizationApi {
     }
     @RequestMapping("/test5")
     @ResponseBody
-/**
+    /**
     * logback 字符串脱敏演示：xml/json 结构字符串的入参日志脱敏。
     * @param content 结构化字符串
     * @return 原样回显

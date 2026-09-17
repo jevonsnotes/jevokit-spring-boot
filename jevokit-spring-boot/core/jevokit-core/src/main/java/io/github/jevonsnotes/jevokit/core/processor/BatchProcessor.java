@@ -32,6 +32,9 @@ public class BatchProcessor<B, R> {
      */
     private boolean multiThread;
 
+    /**
+     * 私有构造，统一经 {@link #create()} 创建实例
+     */
     private BatchProcessor() {
 
     }
@@ -48,6 +51,9 @@ public class BatchProcessor<B, R> {
     }
 
 
+    /**
+     * 按线程模式初始化结果容器（多线程用并发队列，单线程用 ArrayList）
+     */
     private void initContainer() {
         if (multiThread) {
             results = new ConcurrentLinkedQueue();

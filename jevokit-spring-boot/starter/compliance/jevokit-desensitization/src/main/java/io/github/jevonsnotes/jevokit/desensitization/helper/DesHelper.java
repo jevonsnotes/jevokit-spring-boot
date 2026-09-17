@@ -137,6 +137,10 @@ public class DesHelper {
     }
 
 
+    /**
+     * 数据脱敏实体方法：按需深克隆后原值返回——真正遍历由 @Desensitization 切面对本方法的环绕完成
+     * （切面经 SecurityUtil.filterStr 逐字段清洗，见 DesensitizationAspect）。
+     */
     private <T> T desensitizeData(T data, boolean deepClone) {
         if (deepClone) {
             data = CloneUtil.deep(data);
@@ -175,10 +179,12 @@ public class DesHelper {
         return desensitizeData(data, true);
     }
 
+    /** 取容器中的 DesHelper 单例（静态入口转发用）。 */
     private static DesHelper getInstance() {
         return SpringUtil.getBean(DesHelper.class);
     }
 
+    /** 取启动时提升的静态配置引用（init 前为 null，调用方自行判空）。 */
     private static JevokitDesensitizationProperties getProperties() {
         return staticProperties;
     }
@@ -206,6 +212,10 @@ public class DesHelper {
         return DesUtil.desByProcessTypeWrap(DstProcessType.LOG, () -> desensitizeLogAfterClone(CloneUtil.deep(obj)));
     }
 
+    /**
+     * 克隆后递归脱敏日志对象：String 按 JSON/XML 报文规则（非报文原样）；Map 按键名规则处理
+     * 字符串值、复杂值递归；List 逐元素递归；普通对象走标注脱敏（desensitize，不二次克隆）。
+     */
     private static Object desensitizeLogAfterClone(Object obj){
         if (obj != null) {
             if (obj instanceof String) {

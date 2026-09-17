@@ -11,6 +11,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DesensitizedConsoleAppender<E> extends ConsoleAppender<E> implements IDesensitizedAppender{
     @Override
+    /**
+     * 输出前脱敏事件参数再写控制台（@Deprecated：改用 DesensitizedLogFilter，理由见接口注释）。
+     */
     protected void subAppend(E event) {
         try {
             iterateArgs((LoggingEvent) event);

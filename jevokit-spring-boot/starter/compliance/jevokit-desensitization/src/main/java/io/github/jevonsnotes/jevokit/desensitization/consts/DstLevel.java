@@ -15,6 +15,12 @@ public enum DstLevel {
 
     LV0,LV1,LV2,LV3,LV4,LV5,LV6,LV7,LV8,LV9;
 
+    /**
+     * 解析级别名（大小写敏感的枚举名匹配）。
+     *
+     * @param level 级别名（如 LV3）；空白或非法名返回 null（容错降级，不抛错）
+     * @return 对应级别；无法解析返回 null
+     */
     public static DstLevel of(String level) {
         if(StrUtil.isNotBlank(level)) {
             try {

@@ -17,7 +17,7 @@ public class NoGenInterceptor implements AsyncHandlerInterceptor {
     private final JevokitNoGenProperties properties;
 
     @Override
-/**
+    /**
     * accessToken 校验：请求头 accessToken 与配置不符即 401。
     * @param request 请求
     * @param response 响应（401 写回）
@@ -41,7 +41,7 @@ public class NoGenInterceptor implements AsyncHandlerInterceptor {
     }
 
     @Override
-/**
+    /**
     * 空实现（仅实现契约）。
     * @param request 请求
     * @param response 响应
@@ -53,7 +53,7 @@ public class NoGenInterceptor implements AsyncHandlerInterceptor {
     }
 
     @Override
-/**
+    /**
     * 空实现（仅实现契约）。
     * @param request 请求
     * @param response 响应

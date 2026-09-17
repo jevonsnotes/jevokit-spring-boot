@@ -15,7 +15,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
 
 
-/**
+ /**
  * 基于用户代码的缓存key生成策略，防止同名方法读取缓存一致的问题
  *
  */
@@ -27,7 +27,7 @@ public class RocketMqV5KeyGenerator extends AbstractKeyGenerator {
 
 
 	@Override
-/**
+ /**
  * MQ 消费场景键：以消息 messageId 为身份段（消费幂等键形态）。
  * @param target 目标对象
  * @param method 目标方法
@@ -52,7 +52,7 @@ public class RocketMqV5KeyGenerator extends AbstractKeyGenerator {
 	}
 
 	@Override
-/**
+ /**
  * MQ 键前缀。
  * @return 前缀串
  */
@@ -60,7 +60,7 @@ public class RocketMqV5KeyGenerator extends AbstractKeyGenerator {
 		return PREFIX;
 	}
 
-/**
+ /**
  * MQ 键格式化前缀。
  * @return 前缀串
  */

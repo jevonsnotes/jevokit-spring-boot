@@ -9,7 +9,7 @@ import io.github.jevonsnotes.jevokit.excel.resolver.ExcelResolver;
 
 import java.util.List;
 
-/**
+ /**
  * excel 导入自动装配：注册 ExcelResolver 为 HandlerMethodArgumentResolver，
  * 使 Controller 方法可直接声明 @Excel List&lt;T&gt; 入参（multipart 文件或 JSON 数组
  * 统一解析绑定）。仅 SERVLET web 环境生效。
@@ -20,7 +20,7 @@ import java.util.List;
 @Slf4j
 public class JevokitExcelConfiguration implements WebMvcConfigurer {
     @Override
-/**
+    /**
     * 注册 ExcelResolver 到解析器链（@Excel 入参绑定的装配点）。
     * @param resolvers 解析器注册表
     */

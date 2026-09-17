@@ -54,6 +54,14 @@ public class HtmlSafeList extends Safelist {
     }
 
     @Override
+    /**
+     * 属性放行判定（jsoup 净化回调）：按构造器登记的属性白名单决定是否保留该属性。
+     *
+     * @param tagName 标签名
+     * @param el      元素
+     * @param attr    待判定属性
+     * @return true 保留属性；false 剥离
+     */
     protected boolean isSafeAttribute(String tagName, Element el, Attribute attr) {
         //不允许 javascript 开头的 src 和 href
         if ("src".equalsIgnoreCase(attr.getKey()) || "href".equalsIgnoreCase(attr.getKey())) {

@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit;
 public class RedisLock {
     private static RedissonClient client;
 
-/**
+    /**
     * 构造即把容器中的 RedissonClient 写入 static 字段（静态门面由 Spring 装配驱动——
     * 单元测试自行 new 多实例会互相覆盖，属已知取舍）。
     * @param redissonClient 容器装配的 Redisson 客户端
@@ -18,7 +18,7 @@ public class RedisLock {
         client = redissonClient;
     }
 
-/**
+    /**
     * 阻塞获取锁（不等待，拿不到就挂起），到 leaseTime 自动释放。
     * @param key 锁键
     * @param leaseTime 持有时长
@@ -27,7 +27,7 @@ public class RedisLock {
     public static void lock(String key, long leaseTime, TimeUnit unit){
         client.getLock(key).lock(leaseTime,unit);
     }
-/**
+    /**
     * 阻塞获取锁，无 leaseTime（Redisson watchdog 续期，进程存活即持有）。
     * @param key 锁键
     */
@@ -35,7 +35,7 @@ public class RedisLock {
         client.getLock(key).lock();
     }
 
-/**
+    /**
     * 尝试获取（不等待），默认 60 秒自动释放。
     * @param key 锁键
     * @return true=获得锁；false=被占用或线程被中断（中断按失败处理，不抛出）
@@ -44,7 +44,7 @@ public class RedisLock {
         return tryLock(key,60);
     }
 
-/**
+    /**
     * 尝试获取（不等待），指定释放秒数。
     * @param key 锁键
     * @param leaseTime 持有秒数
@@ -54,7 +54,7 @@ public class RedisLock {
         return tryLock(key,0,leaseTime, TimeUnit.SECONDS);
     }
 
-/**
+    /**
     * 尝试获取全参形态：最多等待 waitTime。
     * @param key 锁键
     * @param waitTime 最长等待时长
@@ -69,7 +69,7 @@ public class RedisLock {
             return false;
         }
     }
-/**
+    /**
     * 释放锁（未持有时调用由 Redisson 抛 IllegalMonitorStateException）。
     * @param key 锁键
     */
@@ -77,7 +77,7 @@ public class RedisLock {
         client.getLock(key).unlock();
     }
 
-/**
+    /**
     * 锁内执行模板：拿锁→执行→finally 释放。
     * @param key 锁键
     * @param waitTime 最长等待秒
@@ -96,7 +96,7 @@ public class RedisLock {
         }
         return null;
     }
-/**
+    /**
     * 锁内执行模板（无返回值）：未拿到锁时<b>静默跳过</b>业务。
     * @param key 锁键
     * @param waitTime 最长等待秒

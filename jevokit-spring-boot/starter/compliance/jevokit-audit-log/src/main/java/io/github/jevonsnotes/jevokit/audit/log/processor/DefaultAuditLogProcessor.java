@@ -62,12 +62,18 @@ public class DefaultAuditLogProcessor implements AuditLogProcessor {
         }
     }
 
+    /**
+     * DB 落库：无 AuditLogDao bean（无 DB 环境）时静默跳过（降级不报错）。
+     */
     private void processPersistentDB(AuditLogDto dto) {
         AuditLogDao dao = SpringUtil.getBean(AuditLogDao.class);
         if(dao != null) {
             dao.saveOrUpdate(dto);
         }
     }
+    /**
+     * 日志落盘：反射取全部字段按 [{}] 占位结构化输出（AUDIT_LOG 主题）。
+     */
     private void processPersistentLog(AuditLogDto dto) {
         StrBuilder sb = new StrBuilder();
         Field[] declaredFields = dto.getClass().getDeclaredFields();

@@ -10,7 +10,7 @@ import io.github.jevonsnotes.jevokit.nogen.po.BizNo;
 
 import java.util.List;
 
-/**
+ /**
  * NoGenDao 的 MySQL 方言实现：建表 SQL 与错误文案探测按 MySQL 语义提供。
  */
 @RequiredArgsConstructor
@@ -19,7 +19,7 @@ public class MySQLDao implements NoGenDao {
 
 
     @Override
-/**
+    /**
     * MySQL 方言建表 SQL。
     * @return biz_no 表 DDL
     */
@@ -38,7 +38,7 @@ public class MySQLDao implements NoGenDao {
     }
 
     @Override
-/**
+    /**
     * MySQL 环境校验语句。
     * @return 校验 SQL
     */
@@ -47,7 +47,7 @@ public class MySQLDao implements NoGenDao {
     }
 
     @Override
-/**
+    /**
     * MySQL"表不存在"报错匹配正则。
     * @return 正则串（对应 NGConsts.PATTERN_TABLE_NOT_EXISTS）
     */
@@ -57,7 +57,7 @@ public class MySQLDao implements NoGenDao {
 
 
     @Override
-/**
+    /**
     * 查全部单号配置（MySQL 方言）。
     * @return 配置行列表
     */
@@ -68,7 +68,7 @@ public class MySQLDao implements NoGenDao {
     }
 
     @Override
-/**
+    /**
     * 按主键选择性更新配置（MySQL 方言）。
     * @param bizNo 待更新字段载体
     * @return 影响行数

@@ -36,7 +36,7 @@ import io.github.jevonsnotes.jevokit.redis.token.delegate.TokenDelegate;
 import io.github.jevonsnotes.jevokit.redis.token.strategy.DefaultTokenStrategy;
 import io.github.jevonsnotes.jevokit.redis.util.RedisLock;
 
-/**
+ /**
  * redis 增强自动装配：分布式锁（RedisLock + @Lock 切面）、缓存体系（CacheManager 支持
  * "name#expire=秒"过期语法与随机 TTL 防雪崩、全局/用户双 Key 生成器）、token 策略 Bean。
  *
@@ -50,7 +50,7 @@ public class JevokitRedisConfiguration {
 
     /************************ redis lock *****************************/
     @Bean
-/**
+    /**
     * 静态锁门面 Bean（实例构造写 static 字段，见 RedisLock 类注释）。
     * @param redissonClient Redisson 客户端
     * @return RedisLock 静态门面
@@ -65,7 +65,7 @@ public class JevokitRedisConfiguration {
      * @return
      */
     @Bean
-/**
+    /**
     * @Lock 切面 Bean（方法级分布式锁的拦截入口）。
     * @return 切面实例
     */
@@ -79,7 +79,7 @@ public class JevokitRedisConfiguration {
      * @return
      */
     @Bean
-/**
+    /**
     * Redisson 定制：JsonJacksonCodec 编码 + 关闭从节点同步检查（非主从部署语义）。
     * 本 Bean 必须先于官方 Redisson 装配生效——类上 @AutoConfigureBefore 已锚定。
     * @return 定制回调
@@ -100,7 +100,7 @@ public class JevokitRedisConfiguration {
      * @return
      */
     @Bean
-/**
+    /**
     * JSON 序列化模板：value/hash 全 Jackson（带默认类型信息，跨服务存取对象需同类路径），
     * key 用 String 序列化。
     * @param redisConnectionFactory 连接工厂
@@ -130,6 +130,9 @@ public class JevokitRedisConfiguration {
     }
 
 
+    /**
+    * 构建带默认类型信息的 ObjectMapper（PolymorphicTypeValidator 在类路径时启用新版 API，否则回落旧版）。
+    */
     private ObjectMapper getObjectMapper() {
         ObjectMapper om = new ObjectMapper();
         om.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
@@ -143,7 +146,7 @@ public class JevokitRedisConfiguration {
     }
 
     @Bean
-/**
+    /**
     * 缓存键前缀 Bean（多系统共库键空间隔离）。
     * @return 前缀计算器
     */
@@ -157,7 +160,7 @@ public class JevokitRedisConfiguration {
      * @return
      */
     @Bean
-/**
+    /**
     * 缓存注解默认配置：entryTtl 默认时效 + 前缀计算器挂接。
     * @param globalCacheKeyPrefix 键前缀
     * @return 缓存默认配置
@@ -179,7 +182,7 @@ public class JevokitRedisConfiguration {
      * @return
      */
     @Bean
-/**
+    /**
     * 用户维度键生成器 Bean（Bean 名 userKeyGenerator，@Cacheable keyGenerator 引用名）。
     * @return 生成器
     */
@@ -191,7 +194,7 @@ public class JevokitRedisConfiguration {
      * @return
      */
     @Bean
-/**
+    /**
     * MQ 消费幂等键生成器 Bean。
     * @return 生成器
     */
@@ -204,7 +207,7 @@ public class JevokitRedisConfiguration {
      * @return
      */
     @Bean
-/**
+    /**
     * 全局键生成器 Bean。
     * @return 生成器
     */
@@ -219,7 +222,7 @@ public class JevokitRedisConfiguration {
         private final RedisCacheConfiguration redisCacheConfiguration;
 
         @Override
-/**
+        /**
         * 缓存管理器：JevokitRedisCacheManager 支持 name#expire=秒 TTL 语法。
         * @return 缓存管理器
         */
@@ -238,7 +241,7 @@ public class JevokitRedisConfiguration {
          * @return LoggingCacheErrorHandler
          */
         @Override
-/**
+        /**
         * 缓存错误处理：Redis 异常仅记日志并视为未命中（降级直查数据库，不阻断业务）。
         * @return 日志型错误处理器
         */
@@ -251,7 +254,7 @@ public class JevokitRedisConfiguration {
          * @return
          */
         @Override
-/**
+        /**
         * 缺省键生成器（@Cacheable 未指定 keyGenerator 时使用）：全局键形态。
         * @return 全局键生成器
         */
@@ -267,7 +270,7 @@ public class JevokitRedisConfiguration {
          * @return
          */
         @Bean
-/**
+        /**
         * hash 操作便捷 Bean。
         * @param redisTemplate 字符串模板
         * @return hash 操作
@@ -283,7 +286,7 @@ public class JevokitRedisConfiguration {
          * @return
          */
         @Bean
-/**
+        /**
         * value 操作便捷 Bean。
         * @param redisTemplate 字符串模板
         * @return value 操作
@@ -299,7 +302,7 @@ public class JevokitRedisConfiguration {
          * @return
          */
         @Bean
-/**
+        /**
         * list 操作便捷 Bean。
         * @param redisTemplate 字符串模板
         * @return list 操作
@@ -315,7 +318,7 @@ public class JevokitRedisConfiguration {
          * @return
          */
         @Bean
-/**
+        /**
         * set 操作便捷 Bean。
         * @param redisTemplate 字符串模板
         * @return set 操作
@@ -331,7 +334,7 @@ public class JevokitRedisConfiguration {
          * @return
          */
         @Bean
-/**
+        /**
         * zset 操作便捷 Bean。
         * @param redisTemplate 字符串模板
         * @return zset 操作
@@ -349,7 +352,7 @@ public class JevokitRedisConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean(TokenDelegate.class)
-/**
+    /**
     * token 委托 Bean（@ConditionalOnMissingBean，业务可整体替换）。
     * @param redisTemplate JSON 模板
     * @return token 委托
@@ -364,7 +367,7 @@ public class JevokitRedisConfiguration {
      * @return
      */
     @Bean
-/**
+    /**
     * 缺省 token 策略 Bean。
     * @param redisTemplate JSON 模板
     * @return 缺省策略

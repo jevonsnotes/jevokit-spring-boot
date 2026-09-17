@@ -20,6 +20,12 @@ public class JasyptUtil {
     private final StringEncryptor encryptor;
     private final EncryptablePropertyDetector detector;
 
+    /**
+     * 构造并锁定全局单实例（重复构造抛 IllegalStateException，理由见类注释 BUG-6 说明）。
+     *
+     * @param encryptor 加密器
+     * @param detector  密文探测器（decrypt 时用于识别并去 ENC() 包装）
+     */
     public JasyptUtil(StringEncryptor encryptor, EncryptablePropertyDetector detector){
         synchronized (JasyptUtil.class) {
             if (instance != null) {

@@ -20,7 +20,7 @@ import io.github.jevonsnotes.jevokit.sample.vo.TestVo;
 
 import java.util.concurrent.TimeUnit;
 
-/**
+ /**
  * redis 能力演示端点（/redis/*）：/testLock 演示 @Lock 并发锁 + DefaultLockFallback
  * 降级文案；/testCache 演示随机 TTL 缓存——E2E token 往返与撞锁降级的靶点。
  */
@@ -37,7 +37,7 @@ public class RedisApi {
      */
     @Lock(namespace = "testLock",fallback = DefaultLockFallback.class,key = @Key(route = "name"))
     @RequestMapping("/testLock")
-/**
+    /**
     * @Lock 并发锁演示：同名请求并发时仅一个进入，其余走 DefaultLockFallback 文案降级
     * （E2E 断言降级返回的靶点）。注解细节在方法上方声明，此处不赘。
     * @param testVo 请求体（name 参与 @Key 路由）
@@ -49,7 +49,7 @@ public class RedisApi {
     }
 
     @RequestMapping("/testCache")
-/**
+    /**
     * 缓存三形态演示：随机 TTL / 指定 TTL（#expire= 后缀）/ 全局与用户双键空间。
     * @param testVo 请求体
     * @return 回显 name（缓存行为在 RedisService 内部观察）
@@ -62,7 +62,7 @@ public class RedisApi {
     }
 
     @RequestMapping("/testCacheEvict")
-/**
+    /**
     * 缓存逐出演示：用户/全局两个键空间的 allEntries 清除。
     * @param testVo 请求体
     * @return 回显 name

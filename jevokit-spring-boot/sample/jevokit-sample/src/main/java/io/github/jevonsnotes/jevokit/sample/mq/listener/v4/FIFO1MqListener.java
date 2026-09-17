@@ -11,7 +11,7 @@ import io.github.jevonsnotes.jevokit.redis.lock.annotation.Lock;
 import io.github.jevonsnotes.jevokit.sample.consts.MqConst;
 import io.github.jevonsnotes.jevokit.sample.vo.TopicVo;
 
-/**
+ /**
  * 顺序消息消费示例：FIFO topic 消费端，@Lock(route=messageId) 演示顺序消费的
  * 兜底并发防护（同一 messageId 不允许并发处理）。
  */
@@ -25,7 +25,7 @@ public class FIFO1MqListener implements RocketMQListener<TopicVo> {
 
     @Lock(namespace = "TOPIC_CONCURRENT_LOCK", fallbackWithException = RuntimeException.class, fallbackStr = "禁止并发消费", key = @Key(route = "messageId"))
     @Override
-/**
+    /**
     * 顺序消息消费：@Lock(route=messageId) 兜底防同消息并发处理。
     * @param message 消息体
     */

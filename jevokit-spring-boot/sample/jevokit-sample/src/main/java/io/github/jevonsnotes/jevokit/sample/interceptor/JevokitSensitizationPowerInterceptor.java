@@ -8,7 +8,7 @@ import io.github.jevonsnotes.jevokit.desensitization.interceptor.SensitizationPo
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/**
+ /**
  * 脱敏权限拦截器示例：实现 SensitizationPowerInterceptor，按敏感级 + 权限键决定
  * 当前调用是否可见明文。演示实现刻意用计数器取模（每 3 次放行 1 次）模拟动态权限，
  * 便于人工观察"权限变化→可见性变化"的效果，无对应自动化用例。
@@ -19,7 +19,7 @@ public class JevokitSensitizationPowerInterceptor implements SensitizationPowerI
     private AtomicInteger counter = new AtomicInteger(0);
 
     @Override
-/**
+    /**
     * 权限判定演示：计数器取模（每 3 次放行 1 次）模拟动态权限，便于人工观察可见性变化。
     * @param level 敏感级
     * @param powerKey 权限键集合

@@ -103,7 +103,7 @@ public class BzNoHelper {
         return bizNo;
     }
 
-/**
+    /**
     * 取单号：RECYCLE 模式先从回收池取，取不到/DEFAULT 模式走 Redis 自增发号（异步落 DB）。
     * @param bizTag 业务标签
     * @return 单号（回收池命中为历史号，否则为新自增号）
@@ -113,6 +113,9 @@ public class BzNoHelper {
         return StrUtil.isEmpty(no) ? String.valueOf(noGen(bizTag)) : no;
     }
 
+    /**
+    * RECYCLE 模式先走回收池，DEFAULT/池空返回 null 由上层走自增。
+    */
     private String getByMode(String bizTag){
         String no = null;
         BizNo config = getConfig(bizTag);
@@ -156,7 +159,7 @@ public class BzNoHelper {
         return no;
     }
 
-/**
+    /**
     * 回收单号入池（Redis 阻塞队列 offer）。
     * @param bizTag 业务标签
     * @param bizNo 单号
@@ -212,14 +215,14 @@ public class BzNoHelper {
         return CACHE_INIT_STATUS.computeIfAbsent(bizTag, s -> false);
     }
 
-/**
+    /**
     * 查全部单号配置。
     * @return 配置行列表
     */
     public List<BizNo> getTags(){
         return dao.getTags();
     }
-/**
+    /**
     * 查全部配置并转视图对象。
     * @return 配置视图列表
     */
@@ -227,13 +230,16 @@ public class BzNoHelper {
         List<BizNo> tags = getTags();
         return CollectionUtil.extract(tags, new Func1<BizNo, BizNoVo>() {
 
+            /**
+            * 匿名转换器：BizNo → BizNoVo（Bean 拷贝）。
+            */
             @Override
             public BizNoVo call(BizNo parameter) throws Exception {
                 return BeanUtil.toBean(parameter,BizNoVo.class);
             }
         });
     }
-/**
+    /**
     * 取当前最大号（本地缓存 → Redis → DB 三级，双检防击穿）。
     * @param bizTag 业务标签
     * @return 当前最大号
@@ -241,6 +247,7 @@ public class BzNoHelper {
     public long getMaxId(String bizTag) {
         Long maxId = CACHE_MAX_ID.get(bizTag);
         if(maxId == null ){
+            // 双检锁：仅首个回源线程重建缓存，其余线程锁外复查后直接复用（防击穿）
             synchronized (LockUtil.getKey(bizTag)){
                 if((maxId = CACHE_MAX_ID.get(bizTag))== null){
                     RAtomicLong atomicLong = getRMaxId(bizTag);
@@ -269,6 +276,7 @@ public class BzNoHelper {
     public BizNo getConfig(String bizTag) {
         BizNo bizNo = CACHE_CONFIG.get(bizTag);
         if(bizNo == null){
+            // 双检锁：仅首个回源线程重建缓存，其余线程锁外复查后直接复用（防击穿）
             synchronized (LockUtil.getKey(bizTag)){
                 if((bizNo = CACHE_CONFIG.get(bizTag)) == null){
                     CACHE_CONFIG.put(bizTag,bizNo = dao.getBizNo(bizTag));
@@ -334,35 +342,62 @@ public class BzNoHelper {
         CACHE_MAX_ID.put(bizTag,bizNo.getMaxId());
     }
 
+    /**
+    * 取发号原子序列（Redis key 见 getBizNoKey）。
+    */
     private RAtomicLong getRNo(String bizTag) {
         return client.getAtomicLong(getBizNoKey(bizTag));
     }
 
+    /**
+    * 取最大号原子序列（Redis key 见 getMaxIdKey）。
+    */
     private RAtomicLong getRMaxId(String bizTag) {
         return client.getAtomicLong(getMaxIdKey(bizTag));
     }
 
+    /**
+    * 发号初始化锁（防并发回源 DB 重建序列）。
+    */
     private boolean lock(String bizTag) {
         return RedisLock.tryLock(getLockKey(bizTag), -1);
     }
 
+    /**
+    * 释放发号初始化锁。
+    */
     private void unlock(String bizTag) {
         RedisLock.unlock(getLockKey(bizTag));
     }
 
+    /**
+    * 初始化锁 Redis key 拼装。
+    */
     private String getLockKey(String bizTag) {
         return KEY_CACHE_LOCK.computeIfAbsent(bizTag, t -> String.format(BzNoHelper.PATTERN_LOCK, t));
     }
+    /**
+    * 最大号 Redis key 拼装。
+    */
     private String getMaxIdKey(String bizTag) {
         return KEY_CACHE_MAX_ID.computeIfAbsent(bizTag, t -> String.format(BzNoHelper.PATTERN_MAX_ID, t));
     }
+    /**
+    * 发号序列 Redis key 拼装。
+    */
     private String getBizNoKey(String bizTag) {
         return KEY_CACHE_BIZ_NO.computeIfAbsent(bizTag, t -> String.format(BzNoHelper.PATTERN_BIZ_NO, t));
     }
+    /**
+    * 回收池 Redis key 拼装。
+    */
     private String getRecycleKey(String bizTag) {
         return KEY_CACHE_RECYCLE.computeIfAbsent(bizTag, t -> String.format(BzNoHelper.PATTERN_RECYCLE, t));
     }
 
+    /**
+    * 自引用（克隆场景保留原实例语义）。
+    */
     private BzNoHelper _this(){
         return SpringUtil.getBean(BzNoHelper.class);
     }

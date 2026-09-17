@@ -72,6 +72,7 @@ public class LogBuilder {
         return this;
     }
 
+    /** 拼接标题与元数据为文本（不做脱敏——脱敏仅发生在 {@link #build()}）。 */
     @Override
     public String toString() {
         StrBuilder sb = new StrBuilder();

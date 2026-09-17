@@ -62,6 +62,13 @@ public class RequestContentCachingRequestWrapper extends ContentCachingRequestWr
         }
     }
 
+    /**
+     * 获取输入流：multipart 透传原始流（预读会致 getParts 为空），其余返回基于缓存的新流
+     * （jersey 类调用方复用同一份缓存流，防其反复取流导致内存溢出）
+     *
+     * @return 可重复读的 ServletInputStream
+     * @throws IOException 透传原始流时可能抛出
+     */
     @Override
     public ServletInputStream getInputStream() throws IOException {
         // MultiPart请求只能获取单例，已读的输入流会导致getParts为空
@@ -79,6 +86,9 @@ public class RequestContentCachingRequestWrapper extends ContentCachingRequestWr
         }
     }
 
+    /**
+     * 构造时预读请求体进缓存（读到文件尾即可，内容留存于父类 ContentCachingRequestWrapper）
+     */
     private void forceReadToCacheIfFirst(){
         try {
             IoUtil.read(super.getInputStream());
@@ -125,6 +135,11 @@ public class RequestContentCachingRequestWrapper extends ContentCachingRequestWr
         return param != null && param.length > 0 ? param[0] : null;
     }
 
+    /**
+     * 取参数表（multipart 走容器原生，其余走 query + 表单体缓存的合并解析）
+     *
+     * @return 参数名到值数组的 Map
+     */
     @Override
     public Map<String, String[]> getParameterMap() {
         if(isMultiPartFormPost()){
@@ -135,6 +150,11 @@ public class RequestContentCachingRequestWrapper extends ContentCachingRequestWr
         }
     }
 
+    /**
+     * 取参数名枚举（匿名 Enumeration 视图，遍历 getParameterMap 的键）
+     *
+     * @return 全部参数名的枚举
+     */
     @Override
     public Enumeration<String> getParameterNames() {
         return new Enumeration<>() {
@@ -175,16 +195,31 @@ public class RequestContentCachingRequestWrapper extends ContentCachingRequestWr
         String contentType = this.getContentType();
         return contentType != null && contentType.contains("multipart/form-data") && HttpMethod.POST.matches(this.getMethod());
     }
+    /**
+     * 判断是否为 POST 的 urlencoded 表单请求（此类型的表单体需要并入参数解析）
+     *
+     * @return Content-Type 含 application/x-www-form-urlencoded 且方法为 POST 时 true
+     */
     private boolean isFormPost() {
         String contentType = this.getContentType();
         return contentType != null && contentType.contains("application/x-www-form-urlencoded") && org.springframework.http.HttpMethod.POST.matches(this.getMethod());
     }
 
+    /**
+     * 取请求字符集（未声明时兜底 UTF-8）
+     *
+     * @return 字符集名，不会返回 null
+     */
     @Override
     public String getCharacterEncoding() {
         return getCharset().name();
     }
 
+    /**
+     * 判断当前输入流调用方是否只支持单例流（按调用栈第 4 层类名匹配 SINGLETON_INPUT_STREAM_ONLY_OF_CALLER 正则）
+     *
+     * @return 命中的调用方全限定名；未命中返回空 Optional
+     */
     public Optional<String> singletonInputStreamSupportOnlyOfCaller() {
 
         // 暂时写死层级4 用于解决jersey反复获取新的输入流并调用read方法导致内存溢出问题 InputStreamWrapper.getWrappedIOE().read()
@@ -200,6 +235,9 @@ public class RequestContentCachingRequestWrapper extends ContentCachingRequestWr
                 .findFirst();
     }
 
+    /**
+     * 解析并缓存参数（query string + urlencoded 表单体，首次调用后短路）
+     */
     private void parseBody(){
         if( parameters != null ){ return;}
 
@@ -245,6 +283,11 @@ public class RequestContentCachingRequestWrapper extends ContentCachingRequestWr
         parameters = map;
     }
 
+    /**
+     * 取请求字符集（未声明时兜底 UTF-8，解析失败回退 null 由调用方处理）
+     *
+     * @return 解析出的 Charset
+     */
     private Charset getCharset() {
         try {
             if (charset == null) {

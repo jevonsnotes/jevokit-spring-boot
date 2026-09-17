@@ -60,6 +60,12 @@ public class HttpUtil extends cn.hutool.http.HttpUtil {
         }
         return StrUtil.EMPTY;
     }
+    /**
+     * 判断探测到的 IP 是否无效（空白或占位值 "unknown"）
+     *
+     * @param ip 候选 IP
+     * @return 无效返回 true（继续尝试下一个探测头）
+     */
     private static boolean isInvalidIP(String ip) {
         return StrUtil.isBlank(ip) || "unknown".equalsIgnoreCase(ip);
     }

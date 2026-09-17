@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import io.github.jevonsnotes.jevokit.rocketmq.helper.RocketMqHelper;
 
-/**
+ /**
  * rocketmq 自动装配：官方 RocketMQTemplate 在位时装配 RocketMqHelper 门面 Bean。
  *
  * <p>关键约束：@ConditionalOnBean(RocketMQTemplate.class) + @AutoConfigureAfter
@@ -43,7 +43,7 @@ public class JevokitRocketMqConfiguration {
      */
     @ConditionalOnBean(RocketMQTemplate.class)
     @Bean
-/**
+    /**
     * 装配 RocketMqHelper 门面。
     * @param rocketMQTemplate 官方模板（@ConditionalOnBean 守卫的前提 Bean）
     * @return 发送门面单例

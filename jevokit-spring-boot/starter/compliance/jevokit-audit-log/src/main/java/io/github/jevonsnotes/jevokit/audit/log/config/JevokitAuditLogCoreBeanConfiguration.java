@@ -41,6 +41,7 @@ import java.util.List;
 @Slf4j
 public class JevokitAuditLogCoreBeanConfiguration {
 
+    /** 注册审计配置（@RefreshScope，热更新语义见类注释）。 */
     @RefreshScope
     @Bean
     public AuditLogProperties auditLogProperties(){

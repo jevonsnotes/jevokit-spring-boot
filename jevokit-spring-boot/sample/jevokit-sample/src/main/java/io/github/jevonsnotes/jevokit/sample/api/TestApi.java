@@ -29,7 +29,7 @@ public class TestApi {
      * @return
      */
     @RequestMapping("xss/form")
-/**
+    /**
     * form 参数 XSS 清洗演示：拦截器清洗后到达，回显附加风险串供验证。
     * @param content 表单参数
     * @return 处理后内容
@@ -40,7 +40,7 @@ public class TestApi {
     }
 
     @RequestMapping("xss/file")
-/**
+    /**
     * 文件上传 XSS 演示：文件体 Base64 回显（验证文件通道的清洗边界）。
     * @param multipartFile 上传文件
     * @return Base64 文本
@@ -56,7 +56,7 @@ public class TestApi {
     }
 
     @RequestMapping("xss/form/res")
-/**
+    /**
     * 响应侧 XSS 演示：返回对象列表经响应清洗（ignore-response 开启时生效）。
     * @param content 注入内容
     * @return 构造的响应列表
@@ -73,7 +73,7 @@ public class TestApi {
         return vos;
     }
     @RequestMapping("xss/form/res2")
-/**
+    /**
     * 响应侧 XSS 演示（包装体形态）。
     * @param content 注入内容
     * @return 统一响应
@@ -89,7 +89,7 @@ public class TestApi {
         return ApiResponse.ok(testVo1);
     }
     @RequestMapping("xss/json")
-/**
+    /**
     * JSON 体 XSS 清洗演示。
     * @param vo 请求体
     * @return 回显
@@ -98,7 +98,7 @@ public class TestApi {
         return vo;
     }
     @RequestMapping("xss/json/list")
-/**
+    /**
     * JSON 数组体 XSS 清洗演示。
     * @param vos 请求体列表
     * @return 回显
@@ -108,7 +108,7 @@ public class TestApi {
     }
 
     @RequestMapping("xss/form/exclude")
-/**
+    /**
     * 排除路径演示：该路径在 url-exclude-patterns 中，不做清洗原样返回。
     * @param content 原始内容
     * @return 原样内容
@@ -118,7 +118,7 @@ public class TestApi {
     }
 
     @ExceptionHandler(SecurityException.class)
-/**
+    /**
     * reject 模式异常处理演示：拒绝访问抛 SecurityException 时的兜底回显。
     * @param e 安全异常
     * @return 异常消息

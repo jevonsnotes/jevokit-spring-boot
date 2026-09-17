@@ -5,7 +5,7 @@ import io.github.jevonsnotes.jevokit.redis.cache.generator.AbstractKeyGenerator;
 
 import java.lang.reflect.Method;
 
-/**
+ /**
  * 全局缓存key生成策略，防止同名方法读取缓存一致的问题
  *
  */
@@ -16,7 +16,7 @@ public class GlobalKeyGenerator extends AbstractKeyGenerator {
 	public static final String EVICT = "*" + PREFIX + "*";
 
     @Override
-/**
+    /**
     * 全局键：无身份段，方法全名 + 入参 JSON。
     * @param target 目标对象
     * @param method 目标方法
@@ -36,7 +36,7 @@ public class GlobalKeyGenerator extends AbstractKeyGenerator {
     }
 
     @Override
-/**
+    /**
     * 全局键前缀。
     * @return GLOBAL:
     */
@@ -45,7 +45,7 @@ public class GlobalKeyGenerator extends AbstractKeyGenerator {
     }
 
     @Override
-/**
+    /**
     * 全局键格式化前缀（无身份维度）。
     * @return 前缀串
     */

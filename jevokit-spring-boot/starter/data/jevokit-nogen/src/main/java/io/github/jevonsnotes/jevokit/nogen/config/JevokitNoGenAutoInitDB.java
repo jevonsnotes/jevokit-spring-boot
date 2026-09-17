@@ -10,7 +10,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import io.github.jevonsnotes.jevokit.core.util.ExceptionUtil;
 import io.github.jevonsnotes.jevokit.nogen.dao.NoGenDao;
 
-/**
+ /**
  * 初始化
  */
 @Slf4j
@@ -26,7 +26,7 @@ public class JevokitNoGenAutoInitDB implements ApplicationRunner {
      * @throws Exception on error
      */
     @Override
-/**
+    /**
     * 启动期自动建表/校验（ApplicationRunner）：探测 biz_no 表不存在则按库种方言建表。
     * @param args 启动参数
     * @throws Exception 建表 SQL 执行失败
@@ -38,6 +38,9 @@ public class JevokitNoGenAutoInitDB implements ApplicationRunner {
         log.info("****** 单号服务初始化完成 ******");
     }
 
+    /**
+    * 建表探测：方言正则匹配"表不存在"才执行 DDL（已存在零动作）。
+    */
     private void initTableBizNo(){
         try {
             jdbcTemplate.queryForList(dao.validation());
@@ -49,6 +52,9 @@ public class JevokitNoGenAutoInitDB implements ApplicationRunner {
             }
         }
     }
+    /**
+    * 启动校验：enableApi 开启但 accessToken 为空时告警（不阻断启动）。
+    */
     private void checkAccessToken(){
         if(properties.isEnableApi() && StrUtil.isEmpty(properties.getAccessToken())){
             log.warn("单号服务API访问密钥未配置,建议配置 spkit.nogen.access-token！");

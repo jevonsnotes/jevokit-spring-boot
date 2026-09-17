@@ -62,10 +62,20 @@ public abstract class InheritTransactionSupplier<T> implements Supplier<T> {
         history.clear();
     }
 
+    /**
+     * 判断构造时是否捕获到事务资源绑定
+     *
+     * @return 有事务资源返回 true
+     */
     private boolean hasTransaction() {
         return !transactionResourceMap.isEmpty();
     }
 
+    /**
+     * 判断当前执行线程是否已离开构造线程（异步场景才需要手工传播事务资源）
+     *
+     * @return 非构造线程返回 true
+     */
     private boolean isAsyncThread(){
         return !Thread.currentThread().equals(caller);
     }

@@ -34,6 +34,7 @@ public class LockUtil {
     static {
         //创建一个WATCH_DOG
         WATCH_DOG = new WatchDog("LockUtil-Watcher") {
+            // 看门狗周期任务：移除超过 12 小时未活跃的锁对象，防锁池无限增长
             @Override
             public void watch() {
 

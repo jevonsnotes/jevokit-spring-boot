@@ -8,13 +8,13 @@ import io.github.jevonsnotes.jevokit.sample.vo.TestVo;
 
 import java.lang.reflect.Field;
 
-/**
+ /**
  * 自定义字段脱敏器示例：按对象 idType 动态改写脱敏类型（证件类型 1 走身份证规则，
  * 其余走 DEFAULT）——演示 Desensitizer 扩展点"类型随行"的用法。
  */
 public class CardDesensitizer implements Desensitizer<TestVo> {
     @Override
-/**
+    /**
     * 证件类型动态脱敏：idType=1 按身份证规则，否则 DEFAULT；object 为 null 时整体走 DEFAULT。
     * @param object 目标对象（读 idType 分流）
     * @param currentField 当前字段

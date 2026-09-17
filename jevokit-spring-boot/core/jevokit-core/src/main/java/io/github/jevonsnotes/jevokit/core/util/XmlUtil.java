@@ -48,6 +48,12 @@ public class XmlUtil extends cn.hutool.core.util.XmlUtil {
         return toStr(document);
     }
 
+    /**
+     * 深度优先遍历节点树，对每个叶子节点执行回调（含相邻兄弟节点递归）
+     *
+     * @param root     起始节点
+     * @param callback 节点编辑回调
+     */
     private static void iterateNodes(Node root, CallbackP<Node> callback) {
         try {
             if (root.hasChildNodes()) {

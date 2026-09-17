@@ -40,6 +40,9 @@ public class JevokitAuditLogAutoInitDB implements ApplicationRunner {
         log.info("****** 审计日志组件初始化结束 ******");
     }
 
+    /**
+     * 建主表：探测 SQL 抛"表不存在"（匹配方言模式）时执行方言 DDL，已存在则跳过（幂等）。
+     */
     private void initTableAuditLog(){
         try {
             jdbcTemplate.queryForList(dao.validation());
@@ -51,6 +54,9 @@ public class JevokitAuditLogAutoInitDB implements ApplicationRunner {
             }
         }
     }
+    /**
+     * 建历史表：主表就绪后同幂等策略创建 HIS 表（供迁移 Job 使用）。
+     */
     private void initTableAuditLogHis(){
         try {
             jdbcTemplate.queryForList(dao.validationHis());

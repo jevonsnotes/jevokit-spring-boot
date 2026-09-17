@@ -104,6 +104,11 @@ public class RequestReaderHttpServletRequestWrapper extends HttpServletRequestWr
 
     }
 
+    /**
+     * 基于缓存请求体新建字节流
+     *
+     * @return 缓冲体包装流
+     */
     private ByteArrayInputStream createByteArrayInputStream() {
         return new ByteArrayInputStream(body);
     }
@@ -140,6 +145,11 @@ public class RequestReaderHttpServletRequestWrapper extends HttpServletRequestWr
     }
 
 
+    /**
+     * 解析并缓存参数（query string + urlencoded 表单体，首次调用后短路）
+     *
+     * @throws IOException 理论不会抛出（读的是已缓存内容）
+     */
     private void parseRequest() throws IOException {
         if (parameters != null)
             return; //already parsed
@@ -207,6 +217,11 @@ public class RequestReaderHttpServletRequestWrapper extends HttpServletRequestWr
         parameters = map;
     }
 
+    /**
+     * 取请求字符集（未声明时兜底 Tomcat 默认请求体字符集）
+     *
+     * @return 解析出的 Charset
+     */
     private Charset getCharset() {
 
         try {
@@ -226,6 +241,11 @@ public class RequestReaderHttpServletRequestWrapper extends HttpServletRequestWr
     }
 
 
+    /**
+     * 判断请求是否携带需要缓冲的请求体（有 Content-Length 或 chunked 传输）
+     *
+     * @return 需要缓冲返回 true
+     */
     private boolean shouldBufferBody() {
 
         if (log.isDebugEnabled()) {
@@ -345,6 +365,11 @@ public class RequestReaderHttpServletRequestWrapper extends HttpServletRequestWr
                 .findFirst();
     }
 
+    /**
+     * 判断是否为 POST 的 urlencoded 表单请求（此类型的表单体需要并入参数解析）
+     *
+     * @return Content-Type 含 application/x-www-form-urlencoded 且方法为 POST 时 true
+     */
     private boolean isFormPost() {
         String contentType = this.getContentType();
         return contentType != null && contentType.contains("application/x-www-form-urlencoded") && HttpMethod.POST.matches(this.getMethod());

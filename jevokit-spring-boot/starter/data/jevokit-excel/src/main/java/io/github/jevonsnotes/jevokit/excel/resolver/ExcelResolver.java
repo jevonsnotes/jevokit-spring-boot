@@ -28,7 +28,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 
-/**
+ /**
  * 上传excel解析器
  * 支持格式：json、multipart/form-data
  */
@@ -37,7 +37,7 @@ public class ExcelResolver implements HandlerMethodArgumentResolver {
     private static final String CHARSET = "utf-8";
 
     @Override
-/**
+    /**
     * 支持性判定：参数带 @Excel 注解即接管。
     * @param parameter 目标参数
     * @return true=带 @Excel 注解
@@ -47,7 +47,7 @@ public class ExcelResolver implements HandlerMethodArgumentResolver {
     }
 
     @Override
-/**
+    /**
     * 解析绑定：multipart 文件按 @BeanField 列序展开为 List&lt;T&gt;，JSON 数组请求体同样绑定；
     * @NotNull 等校验随绑定生效。
     * @param parameter 目标参数

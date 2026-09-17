@@ -10,7 +10,7 @@ import io.github.jevonsnotes.jevokit.nogen.po.BizNo;
 
 import java.util.List;
 
-/**
+ /**
  * 单号持久化 DAO 契约：建表 SQL / 库种校验 / 表不存在正则三件套由各库种实现，
  * getBizNo/getTags 等查询以 default 方法提供（经 SpringUtil 取 JdbcTemplate，SQL 通用）。
  */
@@ -19,6 +19,9 @@ public interface NoGenDao {
     String validation();
     String getPattenNotExists();
 
+    /**
+    * 按业务标签查配置行（通用 SQL，方言无关）。
+    */
     default BizNo getBizNo(String bizTag){
         JdbcTemplate jdbcTemplate = SpringUtil.getBean(JdbcTemplate.class);
         SqlBundleDto sqlBundleDto = SqlUtil.generateSelectSelectivePreSql(new BizNo().setBizTag(bizTag), new String[]{"biz_tag"});

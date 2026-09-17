@@ -99,6 +99,7 @@ public class PageUtil extends cn.hutool.core.util.PageUtil {
                 // 避免异步执行时主线程已完成 page.value++ 导致 consumer 收到错乱页号（值捕获竞态）
                 final int pageIndex = page.value;
                 Supplier<R> supplier = new InheritTransactionSupplier<R>() {
+                        // 页号已用 final 快照，事务上下文由父类传播（见类注释与上方竞态说明）
                         @Override
                         public R inheritedGet() {
                             return consumer.apply(sub, pageIndex);

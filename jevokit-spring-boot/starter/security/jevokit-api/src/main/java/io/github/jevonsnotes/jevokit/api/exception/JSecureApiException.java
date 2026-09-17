@@ -16,20 +16,38 @@ public class JSecureApiException extends RuntimeException {
     private static final long serialVersionUID = 1L;
     private String code;
     private String message;
+    /** 无参构造（code/message 为 null）。 */
     public JSecureApiException() {
         super();
     }
+    /**
+     * 指定协议码构造。
+     *
+     * @param code    协议码（写入 code 字段）
+     * @param message 提示消息
+     */
     public JSecureApiException(final String code,final String message) {
         super(message);
         this.code = code;
         this.message = message;
     }
+    /**
+     * 默认 FAIL 码构造。
+     *
+     * @param message 提示消息
+     */
     public JSecureApiException(final String message) {
         super(message);
         this.code = ApiError.FAIL.code();
         this.message = message;
     }
 
+    /**
+     * 默认 FAIL 码构造（携带原因链）。
+     *
+     * @param message 提示消息
+     * @param e       原因异常
+     */
     public JSecureApiException(final String message,Throwable e) {
         super(message,e);
         this.code = ApiError.FAIL.code();

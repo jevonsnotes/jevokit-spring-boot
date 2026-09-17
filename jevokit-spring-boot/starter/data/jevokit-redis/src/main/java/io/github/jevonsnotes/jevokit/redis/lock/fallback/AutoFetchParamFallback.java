@@ -7,7 +7,7 @@ import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Map;
 
-/**
+ /**
  * 入参回传降级实现：按方法返回类型在入参中找类型相容的参数原样返回
  * （含 Collection/Map 泛型实参匹配，找不到返回 null）——语义是"把调用方的请求当作
  * 幂等结果还给调用方"，仅适用于"入参即出参"形态的接口。
@@ -15,7 +15,7 @@ import java.util.Map;
 public class AutoFetchParamFallback implements LockFallback<Object>{
 
 
-/**
+    /**
     * 按返回类型回传入参：泛型/集合逐层匹配类型相容参数，无匹配返回 null。
     * @param signature 被拦截方法签名（取返回/入参类型）
     * @param args 被拦截方法入参
@@ -38,6 +38,9 @@ public class AutoFetchParamFallback implements LockFallback<Object>{
         }
         return null;
     }
+    /**
+    * 找 Object 型参数下标（无可辨类型时回退首参）。
+    */
     private int getObjectClassIndex(Type[] argTypes){
         for(int i = 0;i<argTypes.length;i++){
             if(Object.class.equals(getClass(argTypes[i]))){
@@ -47,6 +50,9 @@ public class AutoFetchParamFallback implements LockFallback<Object>{
         return 0;
     }
 
+    /**
+    * 取原始类型（泛型取 RawType）。
+    */
     private Class getClass(Type resType){
         if(resType instanceof ParameterizedType){
             return (Class) ((ParameterizedType)resType).getRawType();
@@ -54,16 +60,25 @@ public class AutoFetchParamFallback implements LockFallback<Object>{
             return (Class)resType;
         }
     }
+    /**
+    * 取泛型实参（非泛型时按开关回落 Object 或 null）。
+    */
     private Class getActualTypeArguments(Type resType,int index,boolean nullToObject){
         if(resType instanceof ParameterizedType){
             return (Class) ((ParameterizedType)resType).getActualTypeArguments()[index];
         }
         return nullToObject ? Object.class : null;
     }
+    /**
+    * 取泛型实参（非泛型返回 null）。
+    */
     private Class getActualTypeArguments(Type resType,int index){
         return getActualTypeArguments(resType,index,false);
     }
 
+    /**
+    * 按返回类型在入参中找类型相容项（集合/Map 按泛型实参逐层比对）。
+    */
     private int getIndex(Type returnType,Type[] argTypes){
         final Class resClass = getClass(returnType);
         for(int i = 0;i<argTypes.length;i++){

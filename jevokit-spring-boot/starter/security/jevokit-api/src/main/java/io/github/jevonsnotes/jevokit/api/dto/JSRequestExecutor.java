@@ -51,6 +51,7 @@ public class JSRequestExecutor<T,R> {
     private boolean prepare;
     private JevokitApiClientProperties client;
 
+    /** 无参构造（仅 create 工厂入口使用）。 */
     private JSRequestExecutor(){}
 
     /**

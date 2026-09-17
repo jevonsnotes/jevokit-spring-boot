@@ -21,6 +21,11 @@ public class OkHttpRuntimeException extends RuntimeException {
         super(ExceptionUtil.getMessage(e), e);
     }
 
+    /**
+     * 以固定消息构造
+     *
+     * @param message 异常消息
+     */
     public OkHttpRuntimeException(String message) {
         super(message);
     }
@@ -35,10 +40,23 @@ public class OkHttpRuntimeException extends RuntimeException {
         super(StrUtil.format(messageTemplate, params));
     }
 
+    /**
+     * 以消息与原因构造
+     *
+     * @param message   异常消息
+     * @param throwable 原因
+     */
     public OkHttpRuntimeException(String message, Throwable throwable) {
         super(message, throwable);
     }
 
+    /**
+     * 以原因与模板串构造消息（{} 占位符由 StrUtil.format 填充）
+     *
+     * @param throwable       原因
+     * @param messageTemplate 消息模板
+     * @param params          填充参数
+     */
     public OkHttpRuntimeException(Throwable throwable, String messageTemplate, Object... params) {
         super(StrUtil.format(messageTemplate, params), throwable);
     }

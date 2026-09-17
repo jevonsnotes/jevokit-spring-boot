@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-/**
+ /**
  * okhttp 自动装配：构建直连/代理双客户端 + 连接池 + OkHttpUtil 门面 Bean。
  *
  * <p>用法：按 spkit.ok.http.* 配置装配；个性化定制注册 CustomOkhttpConfiguration Bean
@@ -63,7 +63,7 @@ public class JevokitOkhttpConfiguration {
     private OkhttpProperties properties;
 
     @Bean
-/**
+    /**
     * 门面 Bean：直连 + 代理双客户端一次装配。
     * @param properties 行为配置
     * @param customOkhttpConfiguration 使用方个性化定制（缺省空实现占位）
@@ -75,7 +75,7 @@ public class JevokitOkhttpConfiguration {
     }
     @RefreshScope
     @Bean
-/**
+    /**
     * 配置 Bean（@RefreshScope 支持热更新）。
     * @return spkit.ok.http.* 绑定实例
     */
@@ -85,18 +85,24 @@ public class JevokitOkhttpConfiguration {
 
     @ConditionalOnMissingBean
     @Bean
-/**
+    /**
     * 个性化定制缺省占位：空实现，@ConditionalOnMissingBean 兜底——使用方注册自己的
     * CustomOkhttpConfiguration Bean 即覆盖。
     * @return 空实现实例
     */
     public CustomOkhttpConfiguration customOkhttpInterceptor(){
         return new CustomOkhttpConfiguration() {
+            /**
+            * 匿名覆写：直连客户端空定制（缺省占位）。
+            */
             @Override
             public void configClient(OkHttpClient.Builder builder) {
 
             }
 
+            /**
+            * 匿名覆写：代理客户端空定制（缺省占位）。
+            */
             @Override
             public void configProxyClient(OkHttpClient.Builder builder) {
 
@@ -105,7 +111,7 @@ public class JevokitOkhttpConfiguration {
     }
     @Primary
     @Bean
-/**
+    /**
     * 直连客户端 Bean（@Primary）：基础 Builder + 个性化定制，不带代理。
     * @param customOkhttpConfiguration 个性化定制回调
     * @param pool 共享连接池
@@ -121,7 +127,7 @@ public class JevokitOkhttpConfiguration {
         return builder.build();
     }
     @Bean(name = "OKHTTP_PROXY_CLIENT")
-/**
+    /**
     * 代理客户端 Bean：基础 Builder + initProxy（ProxySelector 多代理切换 + 可选代理认证）
     * + 个性化定制。
     * @param customOkhttpConfiguration 个性化定制回调（作用于代理客户端）
@@ -162,6 +168,9 @@ public class JevokitOkhttpConfiguration {
         builder
                 .hostnameVerifier((hostname, session) -> true)
                 .eventListener(new EventListener() {
+                    /**
+                    * EventListener 覆写：代理连接失败时按 CheckLevel 从缓存剔除该代理（uri 级或全局）。
+                    */
                     @Override
                     public void connectFailed(@NotNull Call call, @NotNull InetSocketAddress inetSocketAddress, @NotNull Proxy proxy, @Nullable Protocol protocol, @NotNull IOException ioe) {
                         if(properties.getProxyCheckLevel().equals(OkhttpProperties.CheckLevel.all)){
@@ -181,6 +190,9 @@ public class JevokitOkhttpConfiguration {
                 })
                 // 设置代理
                 .proxySelector(new ProxySelector() {
+                    /**
+                    * ProxySelector 覆写：忽略名单直连；缓存命中返回；耗尽则重建代理表。
+                    */
                     @Override
                     public List<Proxy> select(URI uri) {
                         boolean proxyIgnored = isProxyIgnored(uri.getHost());
@@ -193,6 +205,9 @@ public class JevokitOkhttpConfiguration {
                         return CollectionUtil.isEmpty(proxies) ? resetProxies(uri) : proxies;
                     }
 
+                    /**
+                    * ProxySelector 覆写：失败仅记日志（剔除逻辑在 EventListener 侧）。
+                    */
                     @Override
                     public void connectFailed(URI uri, SocketAddress sa, IOException ioe) {
                         log.error("connect failed, url [{}] , socket [{}]", uri,sa);
@@ -212,18 +227,27 @@ public class JevokitOkhttpConfiguration {
         }
     }
     @Bean
-/**
+    /**
     * 信任所有证书的 TrustManager（兼容自签内网代理的有意取舍，见类注释）。
     * @return 空校验实现
     */
     public X509TrustManager x509TrustManager() {
         return new X509TrustManager() {
+            /**
+            * TrustManager 覆写：空实现（信任所有，见类注释取舍）。
+            */
             @Override
             public void checkClientTrusted(X509Certificate[] chain, String authType){
             }
+            /**
+            * TrustManager 覆写：空实现（信任所有）。
+            */
             @Override
             public void checkServerTrusted(X509Certificate[] chain, String authType){
             }
+            /**
+            * TrustManager 覆写：返回空数组（不限制签发者）。
+            */
             @Override
             public X509Certificate[] getAcceptedIssuers() {
                 return new X509Certificate[0];
@@ -231,7 +255,7 @@ public class JevokitOkhttpConfiguration {
         };
     }
     @Bean
-/**
+    /**
     * 随信任策略构建的 SSLSocketFactory；构建失败记日志并返回 null（OkHttp 回落默认工厂）。
     * @return TLS SSLSocketFactory，失败时 null
     */
@@ -247,7 +271,7 @@ public class JevokitOkhttpConfiguration {
         return null;
     }
     @Bean
-/**
+    /**
     * 两客户端共享的连接池：容量与保活时长取自配置（maxIdleConnections/keepAliveDuration）。
     * @param properties 连接池参数来源
     * @return 共享连接池
@@ -258,6 +282,9 @@ public class JevokitOkhttpConfiguration {
 
 
 
+    /**
+    * Ant 风格匹配代理绕过名单。
+    */
     private boolean isProxyIgnored(String host) {
         boolean isIgnore = false;
         AntPathMatcher antPathMatcher = new AntPathMatcher();
@@ -271,6 +298,9 @@ public class JevokitOkhttpConfiguration {
         }
         return isIgnore;
     }
+    /**
+    * 按 CheckLevel 从进程级/uri 级缓存取可用代理表。
+    */
     private List<Proxy> getProxyFromCache(URI uri) {
         if(properties.getProxyCheckLevel().equals(OkhttpProperties.CheckLevel.all)){
             if(CollectionUtil.isNotEmpty(PROXY_CACHE)){
@@ -284,6 +314,9 @@ public class JevokitOkhttpConfiguration {
         return null;
     }
 
+    /**
+    * 从配置重建代理表并写回缓存（剔除耗尽后的恢复路径，仅重建时触发）。
+    */
     private List<Proxy> resetProxies(URI uri){
         List<Proxy> proxies = new ArrayList<>();
         properties.getProxyHosts().forEach(proxy ->{

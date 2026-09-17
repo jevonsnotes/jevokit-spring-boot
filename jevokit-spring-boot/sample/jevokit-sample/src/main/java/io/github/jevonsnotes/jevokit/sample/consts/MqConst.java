@@ -1,6 +1,6 @@
 package io.github.jevonsnotes.jevokit.sample.consts;
 
-/**
+ /**
  * MQ 演示用 topic/group 常量表：TOPIC_NORMAL/FIFO/DELAY/TRANSACTION 四类
  * 与两组消费者 group 的组合命名（值无品牌语义，与 broker 侧预先建好的 topic 对应）。
  */

@@ -552,6 +552,7 @@ public class DesUtil {
     }
 
 
+    /** 取容器中的脱敏配置（静态方法惰性查找，容器未就绪返回 null 由调用方降级）。 */
     private static JevokitDesensitizationProperties getProperties() {
         return SpringUtil.getBean(JevokitDesensitizationProperties.class);
     }
@@ -949,6 +950,10 @@ public class DesUtil {
     private static boolean isSimilarStrJsonPlaceHolder(String val){
         return StrUtil.isNotBlank(val) && (val.contains(STR_JSON_PLACEHOLDER_PREFIX));
     }
+    /**
+     * 脱敏 CDATA 节点：先处理 CDATA（防其内容被普通节点正则误切），返回后再由
+     * desensitizeXmlForNormal 处理普通文本节点——两段式是为了让 CDATA 边界不被普通节点模式吞掉。
+     */
     private static String desensitizeXmlForCData(String data) {
         if(data.contains(XML_C_DATA_START)){
             String snapshot = data;

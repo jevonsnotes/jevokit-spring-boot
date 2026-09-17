@@ -19,6 +19,14 @@ public class OkHttpStatusRuntimeException extends OkHttpRuntimeException {
     @Getter
     private String body;
 
+    /**
+     * 以响应上下文构造（getMessage 为四元拼接串）
+     *
+     * @param code    HTTP 响应码
+     * @param message 状态消息
+     * @param url     请求地址
+     * @param body    响应体
+     */
     public OkHttpStatusRuntimeException(Integer code,String message,String url,String body) {
         super(String.format("%s %s %s %s",code,message,url,body));
         this.code = code;
@@ -26,6 +34,13 @@ public class OkHttpStatusRuntimeException extends OkHttpRuntimeException {
         this.url = url;
         this.body = body;
     }
+    /**
+     * 以响应上下文构造（响应体置空串，getMessage 为四元拼接串）
+     *
+     * @param code    HTTP 响应码
+     * @param message 状态消息
+     * @param url     请求地址
+     */
     public OkHttpStatusRuntimeException(Integer code,String message,String url) {
         super(String.format("%s %s %s %s",code,message,url, StrUtil.EMPTY));
         this.code = code;

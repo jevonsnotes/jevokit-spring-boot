@@ -8,7 +8,7 @@ import org.apache.rocketmq.spring.core.RocketMQLocalTransactionState;
 import org.springframework.messaging.Message;
 import org.springframework.stereotype.Component;
 
-/**
+ /**
  * 事务回查时间设置参考 https://rocketmq.apache.org/zh/docs/introduction/03limits
  */
 @Slf4j
@@ -18,7 +18,7 @@ public class LocalTransactionMqListener implements RocketMQLocalTransactionListe
 
 
     @Override
-/**
+    /**
     * 事务消息本地事务执行演示：返回 COMMIT 驱动半消息投递。
     * @param msg 半消息
     * @param arg 发起时透传上下文
@@ -30,7 +30,7 @@ public class LocalTransactionMqListener implements RocketMQLocalTransactionListe
     }
 
     @Override
-/**
+    /**
     * 事务回查演示：长时间未收到本地事务结果时引擎回调。
     * @param msg 半消息
     * @return 回查结论状态

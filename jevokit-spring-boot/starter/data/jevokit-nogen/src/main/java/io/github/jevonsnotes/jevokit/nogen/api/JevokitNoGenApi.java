@@ -37,7 +37,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-/**
+ /**
  * 单号生成API
  */
 @Slf4j
@@ -58,7 +58,7 @@ public class JevokitNoGenApi {
     private final BzNoHelper bzNoHelper;
 
     @RequestMapping("/getNo")
-/**
+    /**
     * 取单个单号（/jevokit/nogen/getNo）。
     * @param bizTag 业务标签
     * @return 单号字符串
@@ -69,7 +69,7 @@ public class JevokitNoGenApi {
     }
 
     @RequestMapping("/view/tags")
-/**
+    /**
     * 查全部单号配置（/jevokit/nogen/view/tags）。
     * @return 配置清单 JSON
     */
@@ -88,7 +88,7 @@ public class JevokitNoGenApi {
      * @return
      */
     @RequestMapping("/getNoLPad")
-/**
+    /**
     * 取单个单号并左侧补零到指定位数。
     * @param bizTag 业务标签
     * @param length 目标位数
@@ -107,7 +107,7 @@ public class JevokitNoGenApi {
      * @return
      */
     @RequestMapping("/getNoRPad")
-/**
+    /**
     * 取单个单号并右侧补零到指定位数。
     * @param bizTag 业务标签
     * @param length 目标位数
@@ -126,7 +126,7 @@ public class JevokitNoGenApi {
      * @return
      */
     @RequestMapping("/recycle")
-/**
+    /**
     * 回收单号（仅 RECYCLE 模式业务有意义，回池复用）。
     * @param bizTag 业务标签
     * @param bizNo 待回收单号
@@ -144,7 +144,7 @@ public class JevokitNoGenApi {
      * @return
      */
     @RequestMapping("/getNos")
-/**
+    /**
     * 批量取单号。
     * @param bizTag 业务标签
     * @param size 数量
@@ -170,7 +170,7 @@ public class JevokitNoGenApi {
     }
 
     @RequestMapping("/cache/clear")
-/**
+    /**
     * 清除 Redis 发号缓存（下次取号回源 DB 重建——配置变更后的手工复位入口）。
     * @return 操作结果描述
     */
