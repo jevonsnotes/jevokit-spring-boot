@@ -11,9 +11,8 @@ import jakarta.validation.Valid;
 import java.util.List;
 
 /**
- * @Description TODO
- * @Date 2022/7/6 9:55
- * @Version 0.0.1
+ * excel 导入演示端点（/excel/importExcel）：@Excel List&lt;ExcelVo&gt; 入参直接绑定
+ * multipart 上传（支持多文件、按 sheet/ignoreRows 区分），无需手写解析。
  */
 @RestController
 @RequestMapping("excel")

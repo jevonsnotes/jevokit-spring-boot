@@ -24,9 +24,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * @Description TODO
- * @Date 2023/5/9 16:01
- * @Version 0.0.1
+ * 工作流演示端点（/workflow/*）：发起/查询/办结全链路，E2E 用 H2 内嵌 Camunda
+ * 验证流程实例状态流转。
  */
 @Slf4j
 @RestController

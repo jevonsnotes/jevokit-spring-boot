@@ -12,9 +12,7 @@ import io.github.jevonsnotes.jevokit.configuration.security.xss.XssProperties;
 
 import java.io.IOException;
 /**
- * @Description json提交处理器
- * @Date 2022/5/23 15:33
- * @Version 0.0.1
+ * json提交处理器
  */
 @Slf4j
 @RequiredArgsConstructor

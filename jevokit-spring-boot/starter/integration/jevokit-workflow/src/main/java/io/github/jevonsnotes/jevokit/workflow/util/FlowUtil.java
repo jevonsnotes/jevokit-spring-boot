@@ -12,9 +12,12 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * @Description TODO
- * @Date 2023/5/11 18:04
- * @Version 0.0.1
+ * 流程变量提取器：反射读取 VO 实例上 @FlowVar 标注的字段，按 scope 归类产出变量表——
+ * getVarsLocal 任务级（LOCAL）/ getVarsGlobal 实例级（GLOBAL），供流程启动与任务办结写入。
+ *
+ * <p>关键约束：静态与 final 字段跳过；同名子类/父类字段以先遇者（子类）为准去重；
+ * String 字段的 null 默认显式写入（覆盖引擎中的旧值），非 String 的 null 跳过——
+ * 差异源于 ignoreIfNull 只对 String 放宽（见 @FlowVar 定义处）。
  */
 public class FlowUtil {
     public static <T>Map<String,Object> getVarsLocal(T vo){

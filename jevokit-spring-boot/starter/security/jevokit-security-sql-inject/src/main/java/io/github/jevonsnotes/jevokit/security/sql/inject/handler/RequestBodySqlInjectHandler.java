@@ -16,10 +16,7 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 
 /**
- * @Description Xml报文处理器
- *
- * @Date 2022/5/24 10:50
- * @Version 0.0.1
+ * Xml报文处理器
  */
 @ControllerAdvice
 @RequiredArgsConstructor

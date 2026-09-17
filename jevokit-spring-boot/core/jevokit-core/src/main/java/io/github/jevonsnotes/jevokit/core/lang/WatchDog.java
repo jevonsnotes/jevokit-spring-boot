@@ -4,9 +4,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 /**
- * @Description 监视器
- * @Date 2024/12/13
- * @Version 0.0.1
+ * 监视器
  */
 public abstract class WatchDog extends TimerTask{
     private final Timer timer;

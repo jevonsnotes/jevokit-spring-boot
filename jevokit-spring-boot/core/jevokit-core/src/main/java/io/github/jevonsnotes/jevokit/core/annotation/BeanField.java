@@ -3,9 +3,7 @@ package io.github.jevonsnotes.jevokit.core.annotation;
 import java.lang.annotation.*;
 
 /**
- * @Description 标注字段顺序
- * @Date 2022/7/6 9:21
- * @Version 0.0.1
+ * 标注字段顺序
  */
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)

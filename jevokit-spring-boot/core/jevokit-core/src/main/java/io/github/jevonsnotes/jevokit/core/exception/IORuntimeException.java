@@ -4,9 +4,9 @@ import cn.hutool.core.exceptions.ExceptionUtil;
 import cn.hutool.core.util.StrUtil;
 
 /**
- * @Description TODO
- * @Date 2024/9/5
- * @Version 0.0.1
+ * HTTP 传输层 IO 异常：连接超时、网络中断等 IO 失败的运行时包装。
+ * <p>归入 {@link OkHttpRuntimeException} 异常族，调用方可统一 catch 父类后再用
+ * {@code causeInstanceOf} 区分 IO 失败与状态异常。构造器语义与父类一致（支持 {} 模板串）。
  */
 public class IORuntimeException extends OkHttpRuntimeException {
 

@@ -3,9 +3,11 @@ package io.github.jevonsnotes.jevokit.security.pt.exception;
 import io.github.jevonsnotes.jevokit.core.exception.SecurityException;
 
 /**
- * @Description TODO
- * @Date 2022/5/24 14:52
- * @Version 0.0.1
+ * 路径穿越防护拒绝交互异常：reject 模式下入参命中污染规则时由
+ * {@link io.github.jevonsnotes.jevokit.security.pt.util.PathTraversalUtil#clean(String, java.util.List)} 抛出，
+ * 表示疑似路径穿越报文被整体拒绝（区别于 clear 模式的静默剥离）。
+ * 使用方式：属 jevokit 安全异常体系（继承 {@link io.github.jevonsnotes.jevokit.core.exception.SecurityException}），
+ * 由全局异常处理统一兜底，业务方一般不捕获。
  */
 public class PathTraversalException extends SecurityException {
     /**

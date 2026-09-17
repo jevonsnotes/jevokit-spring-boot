@@ -9,9 +9,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @Description TODO
- * @Date 2024/8/29
- * @Version 0.0.1
+ * okhttp 配置项（spkit.ok.http.*）。
+ *
+ * <p>除常规超时/连接池外，三个开关直接改变调用方可见行为（详见 OkHttpUtil 类注释）：
+ * errorMode 决定异常"抛出还是吞掉返回空串"、httpStatusSensitive 决定非 2xx 是否算错误、
+ * proxyMode 决定是否需要 ofProxy() 显式走代理。代理地址 proxyHosts 支持"host:port"多个，
+ * 前序不可用时自动切换；proxyIgnores 按 Ant 风格匹配 host 直连绕行。
  */
 @Data
 @ConfigurationProperties(prefix = OkhttpProperties.CONFIG_PREFIX)

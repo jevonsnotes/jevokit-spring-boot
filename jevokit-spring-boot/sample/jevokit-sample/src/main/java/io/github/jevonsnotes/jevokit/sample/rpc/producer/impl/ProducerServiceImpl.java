@@ -10,9 +10,8 @@ import jakarta.jws.WebService;
 
 
 /**
- * @Description TODO
- * @Date 2024/6/11 10:26
- * @Version 0.0.1
+ * SOAP 服务实现：@WebService 的 endpointInterface 指向 SEI 全限定名（包名迁移
+ * 时此字符串必须同步，见 rename 教训），targetNamespace 按新包反演命名。
  */
 
 @Slf4j

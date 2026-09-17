@@ -9,9 +9,12 @@ import org.jasypt.exceptions.EncryptionOperationNotPossibleException;
 import org.springframework.util.Assert;
 
 /**
- * @Description TODO
- * @Date 2023/7/5 9:11
- * @Version 0.0.1
+ * jevokit 配置属性解密解析器：在 Spring 属性绑定阶段识别 {@code ENC(...)} 密文并解密为明文。
+ * 使用方式：由 {@link io.github.jevonsnotes.jevokit.jasypt.config.JevokitJasyptConfiguration} 注册，
+ * 替代 jasypt-spring-boot 默认解析器；是否为密文由注入的 {@link EncryptablePropertyDetector} 判定
+ * （默认 {@link DefaultPropertyDetector}：{@code ENC(} 前缀 + {@code )} 后缀）。
+ * <p>判定与返回语义：非密文原样返回（不触碰普通属性）；密文先 trim 再解密；
+ * 解密失败（口令不匹配/密文损坏）抛 {@link DecryptionException} fail-fast，防止把密文串当明文流入业务。
  */
 public class JevokitEncryptPropertyResolver implements EncryptablePropertyResolver {
 

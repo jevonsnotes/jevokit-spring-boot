@@ -7,9 +7,8 @@ import lombok.experimental.Accessors;
 import lombok.experimental.SuperBuilder;
 
 /**
- * @Description TODO
- * @Date 2025/3/4
- * @Version 0.0.1
+ * 部署内单个资源描述（BPMN 文件等）：id/deploymentId 为引擎标识，
+ * name/text/path 描述资源名、文本内容与资源路径。
  */
 @Data
 @AllArgsConstructor

@@ -22,7 +22,6 @@ import io.github.jevonsnotes.jevokit.sample.vo.TestVo;
 import io.github.jevonsnotes.jevokit.sample.vo.TopicVo;
 
 /**
- * @Description
  * POST localhost:8080/rocketmq/test
  * {
  * "type":1,
@@ -31,9 +30,6 @@ import io.github.jevonsnotes.jevokit.sample.vo.TopicVo;
  * "loop":1
  * }
  *
- *
- * @Date 2024/7/3 14:54
- * @Version 0.0.1
  */
 @Slf4j
 @RestController

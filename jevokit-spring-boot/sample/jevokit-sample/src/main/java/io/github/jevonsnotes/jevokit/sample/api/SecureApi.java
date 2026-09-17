@@ -26,9 +26,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * @Description TODO
- * @Date 2025/4/10
- * @Version 0.0.1
+ * JSecure 安全接口演示端点（/secure/test*）：@JSecureApi 标注后走加签验签 + SM2/SM4
+ * 混合加解密 + 防重放通道，E2E 以 client-demo-1 密钥组做密文往返断言。
  */
 @Slf4j
 @RestController

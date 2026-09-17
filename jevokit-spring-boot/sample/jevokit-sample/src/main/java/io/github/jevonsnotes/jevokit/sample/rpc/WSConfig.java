@@ -17,9 +17,8 @@ import io.github.jevonsnotes.jevokit.sample.rpc.producer.ProducerService;
 
 
 /**
- * @Description TODO
- * @Date 2024/6/11 10:32
- * @Version 0.0.1
+ * CXF WebService 端点发布配置：将 ProducerService 以 /webService/producerService
+ * 路径发布为 SOAP 端点（endpointAddr/port 运行时取值），演示 kit 与 CXF 共存。
  */
 @Slf4j
 @Configuration

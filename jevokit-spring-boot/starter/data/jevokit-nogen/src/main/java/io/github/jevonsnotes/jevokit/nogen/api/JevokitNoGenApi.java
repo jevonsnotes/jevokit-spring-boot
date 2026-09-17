@@ -38,13 +38,11 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
- * @Description 单号生成API
- * @Date 2023/3/13 17:52
- * @Version 0.0.1
+ * 单号生成API
  */
 @Slf4j
 @RestController
-@RequestMapping("/spring-boot-kit/nogen")
+@RequestMapping("/jevokit/nogen")
 @RequiredArgsConstructor
 public class JevokitNoGenApi {
     /**

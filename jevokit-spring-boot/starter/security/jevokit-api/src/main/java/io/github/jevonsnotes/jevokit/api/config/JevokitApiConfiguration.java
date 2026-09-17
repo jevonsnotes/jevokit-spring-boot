@@ -12,9 +12,12 @@ import io.github.jevonsnotes.jevokit.api.service.impl.DefaultPreventReplayAttack
 import io.github.jevonsnotes.jevokit.api.util.JSecureApiUtil;
 
 /**
- * @Description TODO
- * @Date 2022/5/24 16:17
- * @Version 0.0.1
+ * JSecure API 模块装配类：注册协议全链路组件——请求体解密/响应体加密适配器、访问拦截器、
+ * 终端防重放服务与 {@link JSecureApiUtil} 工具。
+ * 使用方式：引入本 starter 即生效；接入方在 Controller 方法标注 {@code @JSecureApi} 并以
+ * {@code JSecureRequest<T>} 收参、{@code JSecureResponse<T>} 返回即完成协议接入。
+ * <p>关键约束：防重放默认实现 {@link DefaultPreventReplayAttack} 以 @ConditionalOnMissingBean 注册，
+ * 业务侧自定义 {@link IPreventReplayAttack} bean 即可整体替换（如改为 Redis 集中存储）。
  */
 @Configuration
 @Slf4j

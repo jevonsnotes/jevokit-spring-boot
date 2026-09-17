@@ -11,9 +11,8 @@ import io.github.jevonsnotes.jevokit.sample.service.SimpleService;
 import io.github.jevonsnotes.jevokit.sample.vo.TestVo;
 
 /**
- * @Description TODO
- * @Date 2022/7/11 15:37
- * @Version 0.0.1
+ * 审计日志演示端点（/audit-log/test）：展示方法级 @AuditLog 注解审计与返回对象自动脱敏，
+ * E2E 断言审计事件落库与脱敏形态的靶点。
  */
 @RestController
 @RequestMapping("/audit-log")

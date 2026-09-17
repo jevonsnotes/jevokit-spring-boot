@@ -13,9 +13,10 @@ import io.github.jevonsnotes.jevokit.core.dto.SqlBundleDto;
 import io.github.jevonsnotes.jevokit.core.util.SqlUtil;
 
 /**
- * @Description TODO
- * @Date 2023/3/10 16:28
- * @Version 0.0.1
+ * 审计日志 H2 方言实现：提供审计表 DDL、连通性校验 SQL 与 H2 特有的"表不存在"异常匹配模式。
+ * 使用方式：由 JevokitAuditLogConfiguration 依 JDBC URL 自动选择注册（jdbcUrl 含 h2:），
+ * 多见于单测与内嵌场景；历史迁移走接口默认 {@code migrate()}。
+ * <p>关键约束：大字段用 CLOB、主键以 CONSTRAINT 显式声明（H2 不支持内联 primary key 之外的形式差异）。
  */
 @Slf4j
 @RequiredArgsConstructor

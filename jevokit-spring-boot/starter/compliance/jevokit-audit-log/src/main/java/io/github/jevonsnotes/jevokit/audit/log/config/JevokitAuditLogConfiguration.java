@@ -34,9 +34,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @Description TODO
- * @Date 2022/5/24 16:17
- * @Version 0.0.1
+ * 审计日志模块主装配类：注册处理器、URL 匹配过滤器、@AuditLog 切面，并按 JDBC URL
+ * 选择方言 DAO（MySQL/PostgreSQL/H2）与建表、迁移等 DB 组件。
+ * 使用方式：引入本 starter 默认开启（spkit.audit-log.enabled 未配置视为 true），过滤器按
+ * event-types.patterns 把命中 URL 的请求记为审计事件；无 DB（无 JdbcTemplate）时降级为仅日志输出，
+ * DB 相关 bean 整体不装配。
+ * <p>关键约束：仅 SERVLET web 应用生效；不支持的数据库类型在装配期直接抛
+ * {@link UnsupportedOperationException}（fail-fast，避免静默丢审计）；DAO/迁移 Job 均挂
+ * @ConditionalOnBean 守卫与 JdbcTemplate 对齐（见各 bean 注释）。
  */
 @ConditionalOnProperty(
         prefix = AuditLogProperties.CONFIG_PREFIX,

@@ -28,9 +28,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @Description TODO
- * @Date 2022/7/11 15:37
- * @Version 0.0.1
+ * 脱敏演示端点（/desensitization/*）：/test 走 @Desensitization 切面 + LogBuilder 结构化
+ * 日志脱敏；/test2 演示 @DstProperty 属性级声明。请求体同时被 spkit.api.access 的
+ * token 访问控制覆盖（见 application.yml tokens 段）。
  */
 @Slf4j
 @RestController

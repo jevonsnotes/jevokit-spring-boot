@@ -14,9 +14,7 @@ import io.github.jevonsnotes.jevokit.core.util.SecurityUtil;
 import io.github.jevonsnotes.jevokit.security.xss.cleaner.XssCleaner;
 
 /**
- * @Description 返回体处理器
- * @Date 2022/5/23 15:33
- * @Version 0.0.1
+ * 返回体处理器
  */
 @ConditionalOnBean(XssCleaner.class)
 @ControllerAdvice

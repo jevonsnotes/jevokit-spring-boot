@@ -3,9 +3,7 @@ package io.github.jevonsnotes.jevokit.core.annotation;
 import java.lang.annotation.*;
 
 /**
- * @Description 启用审计日志
- * @Date 2022/6/29 10:50
- * @Version 0.0.1
+ * 启用审计日志
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)

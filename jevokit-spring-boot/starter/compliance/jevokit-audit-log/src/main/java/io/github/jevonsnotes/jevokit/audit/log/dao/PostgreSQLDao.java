@@ -9,9 +9,11 @@ import io.github.jevonsnotes.jevokit.configuration.audit.log.AuditLogProperties;
 import io.github.jevonsnotes.jevokit.core.consts.DBConst;
 
 /**
- * @Description TODO
- * @Date 2023/3/10 16:28
- * @Version 0.0.1
+ * 审计日志 PostgreSQL 方言实现：提供审计表 DDL、连通性校验 SQL 与 PG 特有的
+ * "表不存在"异常匹配模式。
+ * 使用方式：由 JevokitAuditLogConfiguration 依 JDBC URL 自动选择注册（jdbcUrl 含 postgresql:）；
+ * 历史迁移走接口默认 {@code migrate()}。
+ * <p>关键约束：大字段用 TEXT、时间列带精度 timestamp(6)、主键以 CONSTRAINT 显式声明。
  */
 @Slf4j
 @RequiredArgsConstructor

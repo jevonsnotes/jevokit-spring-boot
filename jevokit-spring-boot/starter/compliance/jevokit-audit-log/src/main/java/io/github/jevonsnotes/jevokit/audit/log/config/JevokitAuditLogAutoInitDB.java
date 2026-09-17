@@ -12,9 +12,7 @@ import io.github.jevonsnotes.jevokit.configuration.audit.log.AuditLogProperties;
 import io.github.jevonsnotes.jevokit.core.util.ExceptionUtil;
 
 /**
- * @Description 初始化
- * @Date 2023/3/10 16:09
- * @Version 0.0.1
+ * 初始化
  */
 @Slf4j
 @RequiredArgsConstructor

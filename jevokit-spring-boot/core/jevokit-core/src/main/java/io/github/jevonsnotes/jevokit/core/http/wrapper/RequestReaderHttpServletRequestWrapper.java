@@ -23,9 +23,13 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * @Description TODO
- * @Date 2024/12/3
- * @Version 0.0.1
+ * 可重复读的请求包装器：构造时一次性把请求体读入字节数组，此后 getInputStream/getReader 可反复获取；
+ * 并将 query string 与 POST 表单体合并进参数族方法（getParameter/getParameterValues/getParameterMap），
+ * 供过滤器链上多个组件重复消费报文（审计、脱敏、安全清洗等）。
+ * <p>关键约束：构造即吞流，仅适合报文较小且确需重复读的过滤器场景；
+ * jersey 等会反复取流的调用方命中 SINGLETON_INPUT_STREAM_ONLY_OF_CALLER（按调用类名正则）时
+ * 复用同一份缓存流，防止其反复新建流导致内存溢出；bodyBufferingTimeNs 记录吞流耗时供慢请求观测。
+ *
  * @deprecated use RequestContentCachingRequestWrapper instead
  */
 @Deprecated

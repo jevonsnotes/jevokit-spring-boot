@@ -15,9 +15,12 @@ import io.github.jevonsnotes.jevokit.core.util.SecurityUtil;
 import java.util.List;
 
 /**
- * @Description TODO
- * @Date 2022/5/24 16:17
- * @Version 0.0.1
+ * jevokit-core 的 Spring 装配入口：把字符串编辑链、hutool SpringUtil、加解密密钥初始化装进容器。
+ * <p>装配内容：
+ * stringPropertiesEditor——收集容器内全部 {@link StringPropertiesSupportChain} 实现（各安全 starter 提供的清洗链）
+ * 组成 StringPropertiesEditor，作用于 Spring 属性绑定的字符串进出方向；
+ * springUtil——hutool 的静态 Bean 获取器（@ConditionalOnMissingBean 允许应用自备）；
+ * cryptoKeyInitializer——容器就绪后把 spkit.crypto.* 配置灌入 SecurityUtil（详见方法注释）。
  */
 @Slf4j
 @Configuration

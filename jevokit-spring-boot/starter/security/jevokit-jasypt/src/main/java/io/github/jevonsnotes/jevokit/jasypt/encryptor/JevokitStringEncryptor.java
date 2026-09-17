@@ -15,9 +15,18 @@ import java.util.function.Supplier;
 import static com.ulisesbocchio.jasyptspringboot.util.Functional.tap;
 
 /**
- * @Description TODO
- * @Date 2023/7/5 9:41
- * @Version 0.0.1
+ * jevokit 默认字符串加密器：基于 jasypt PooledPBEStringEncryptor 的懒加载单例实现，
+ * 承担配置密文（{@code ENC(...)}）的加解密。
+ * 使用方式：由 {@link io.github.jevonsnotes.jevokit.jasypt.config.JevokitJasyptConfiguration} 以
+ * {@code jevokitStringEncryptor} 为名注册，一般不直接使用；口令与算法参数取 Spring Environment 的
+ * {@code jasypt.encryptor.*} 标准键（支持驼峰/中划线变体）。
+ * <p>关键约束：
+ * <ul>
+ *   <li>懒加载：首次 encrypt/decrypt 才真正初始化底层加密器（Singleton 包装），避免启动期无谓校验；</li>
+ *   <li>fail-fast：口令未配置（含 yml 中 {@code ${JASYPT_KEY:}} 缺省注入的空串）时抛
+ *       {@link IllegalStateException} 终止启动，绝不以空口令静默运行（见 {@code getRequiredPassword}）；</li>
+ *   <li>算法等参数缺失时降级为 jasypt 官方默认值并打印 INFO 日志，保证与官方 starter 行为一致。</li>
+ * </ul>
  */
 @Slf4j
 public class JevokitStringEncryptor implements StringEncryptor {

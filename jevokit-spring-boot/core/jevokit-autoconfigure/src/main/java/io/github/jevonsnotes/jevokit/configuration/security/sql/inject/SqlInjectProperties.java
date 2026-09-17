@@ -8,14 +8,25 @@ import org.springframework.cloud.context.config.annotation.RefreshScope;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * SQL 注入防护配置（spkit.security.sql-inject）：
+ * enabled 总开关；urlPatterns/urlExcludePatterns 以 Ant 风格路径圈定拦截与豁免范围；
+ * mode 处置模式（clear 清除命中片段，默认 / reject 拒绝整条请求）；
+ * additionTaintedPatterns 在默认污染表（{@link SqlTaintedList}，刻意保守仅 4 条）之上追加识别正则，详见字段注释。
+ * 方法级可用 @SIClean 注解覆盖本配置。
+ */
 @Data
 @RefreshScope
 @ConfigurationProperties(SqlInjectProperties.CONFIG_PREFIX)
 public class SqlInjectProperties {
     public static final String CONFIG_PREFIX = "spkit.security.sql-inject";
+    /** 总开关，默认关闭 */
     private boolean enabled;
+    /** 拦截的 URL 范围（Ant 风格），空则不圈定 */
     private List<String> urlPatterns = new ArrayList<>();
+    /** 豁免的 URL 范围（Ant 风格），优先于 urlPatterns */
     private List<String> urlExcludePatterns = new ArrayList<>();
+    /** 处置模式，默认 clear */
     private Mode mode = Mode.clear;
 
     /**
@@ -45,9 +56,17 @@ public class SqlInjectProperties {
          */
         clear,
 
+        /**
+         * 拒绝模式
+         */
         reject;
     }
 
+    /**
+     * 合并默认污染表与附加规则
+     *
+     * @return 去重合并后的正则列表（新副本，修改不影响内部状态）
+     */
     public List<String> getAllTaintedPatterns(){
         List<String> copy = new ArrayList<>();
         CollectionUtil.addAllIfNotContains(copy,SqlTaintedList.TAINTED_PATTERN_LIST);

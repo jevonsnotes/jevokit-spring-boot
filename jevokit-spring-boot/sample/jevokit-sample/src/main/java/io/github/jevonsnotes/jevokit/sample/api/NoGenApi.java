@@ -27,9 +27,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
- * @Description TODO
- * @Date 2023/3/10 15:07
- * @Version 0.0.1
+ * 单号生成演示端点（/nogen/*）：经 BzNoHelper 发号与回收（RECYCLE 模式），
+ * E2E 断言单号递增与回收复用的靶点。
  */
 @Slf4j
 @RestController

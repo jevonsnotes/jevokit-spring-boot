@@ -31,9 +31,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * @Description 脱敏辅助类
- * @Date 2023/2/21 14:01
- * @Version 0.0.1
+ * 脱敏辅助类
  */
 @Slf4j
 @RequiredArgsConstructor

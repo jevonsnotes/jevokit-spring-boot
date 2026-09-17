@@ -11,9 +11,7 @@ import io.github.jevonsnotes.jevokit.nogen.po.BizNo;
 import java.util.List;
 
 /**
- * @Description TODO
- * @Date 2023/3/10 16:28
- * @Version 0.0.1
+ * NoGenDao 的 PostgreSQL 方言实现：建表 SQL 与错误文案探测按 PG 语义提供。
  */
 @RequiredArgsConstructor
 public class PostgreSQLDao implements NoGenDao {

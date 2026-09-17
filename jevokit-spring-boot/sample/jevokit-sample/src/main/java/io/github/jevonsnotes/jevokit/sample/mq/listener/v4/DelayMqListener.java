@@ -9,9 +9,8 @@ import io.github.jevonsnotes.jevokit.sample.consts.MqConst;
 import io.github.jevonsnotes.jevokit.sample.vo.TopicVo;
 
 /**
- * @Description TODO
- * @Date 2024/7/3 15:04
- * @Version 0.0.1
+ * 延迟消息消费示例：RocketMQ 4.x delayLevel 档位消息的消费端形态（裸 TopicVo，
+ * 无锁演示），与 syncSendDelay 配对。
  */
 @Slf4j
 @Component

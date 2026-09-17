@@ -9,9 +9,7 @@ import lombok.experimental.SuperBuilder;
 import io.github.jevonsnotes.jevokit.workflow.annotation.FlowVar;
 
 /**
- * @Description 工作流任务对象
- * @Date 2023/5/9 16:38
- * @Version 0.0.1
+ * 工作流任务对象
  */
 @EqualsAndHashCode(callSuper = true)
 @Data

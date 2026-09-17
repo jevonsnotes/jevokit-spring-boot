@@ -13,7 +13,7 @@ import jakarta.persistence.Table;
 import java.util.Date;
 
 /**
- * @Description 审计日志数据传输类
+ * 审计日志数据传输类
  * <p>PG库建表语句参照
  * <p>create table audit_log (
  *   "id" serial,
@@ -34,8 +34,6 @@ import java.util.Date;
  * 	"cost" int4,
  *   CONSTRAINT "audit_log_key" PRIMARY KEY ("id")
  * )
- * @Date 2022/6/28 9:47
- * @Version 0.0.1
  */
 @Data
 @NoArgsConstructor

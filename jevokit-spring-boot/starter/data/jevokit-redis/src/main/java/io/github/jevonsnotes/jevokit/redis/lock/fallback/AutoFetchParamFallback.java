@@ -8,9 +8,9 @@ import java.util.Collection;
 import java.util.Map;
 
 /**
- * @Description TODO
- * @Date 2022/12/21 15:37
- * @Version 0.0.1
+ * 入参回传降级实现：按方法返回类型在入参中找类型相容的参数原样返回
+ * （含 Collection/Map 泛型实参匹配，找不到返回 null）——语义是"把调用方的请求当作
+ * 幂等结果还给调用方"，仅适用于"入参即出参"形态的接口。
  */
 public class AutoFetchParamFallback implements LockFallback<Object>{
 

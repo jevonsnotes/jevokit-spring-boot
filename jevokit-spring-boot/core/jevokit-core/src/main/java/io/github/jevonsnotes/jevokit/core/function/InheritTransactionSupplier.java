@@ -8,9 +8,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 /**
- * @Description Supplier类支撑 spring 事务继承
- * @Date 2025/9/3
- * @Version 0.0.1
+ * Supplier类支撑 spring 事务继承
  */
 public abstract class InheritTransactionSupplier<T> implements Supplier<T> {
     private final Map<Object, Object> transactionResourceMap = TransactionSynchronizationManager.getResourceMap();

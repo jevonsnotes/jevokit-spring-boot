@@ -14,9 +14,13 @@ import io.github.jevonsnotes.jevokit.core.dto.SqlBundleDto;
 import io.github.jevonsnotes.jevokit.core.util.SqlUtil;
 
 /**
- * @Description TODO
- * @Date 2023/3/10 16:25
- * @Version 0.0.1
+ * 审计日志 DAO 契约：定义版本化审计表（ts_audit_log_v2 与其 HIS 历史表）的通用读写、
+ * 按保留期的历史迁移逻辑，由各方言实现（MySQL/PostgreSQL/H2）提供 DDL 与校验 SQL。
+ * 使用方式：由 JevokitAuditLogConfiguration 依 JDBC URL 选择实现注册为 bean；
+ * 迁移由 {@code AuditLogAutoMigrateJob} 定时触发（INSERT 到 HIS 后 DELETE 主表，见 {@link #migrate()}）。
+ * <p>关键约束：主表 primary key 为 local_key；migrate 以 MIGRATE_FLAG 标记行做并发互斥
+ * （标记行存在即跳过本次迁移）；JdbcTemplate/配置经 static 惰性获取——理由见 {@link #jdbcTemplate()} 注释
+ * （类初始化期 getBean 会形成加载顺序依赖，无 DB 环境直接炸装配）。
  */
 public interface AuditLogDao extends BaseAutoDao{
     String VERSION = "v2";

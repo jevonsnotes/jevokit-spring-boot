@@ -7,9 +7,7 @@ import io.github.jevonsnotes.jevokit.core.lang.LockKey;
 import io.github.jevonsnotes.jevokit.core.util.LockUtil;
 
 /**
- * @Description 防重放校验，默认10分钟内不能重复
- * @Date 2025/4/17
- * @Version 0.0.1
+ * 防重放校验，默认10分钟内不能重复
  */
 
 public class DefaultPreventReplayAttack implements IPreventReplayAttack {

@@ -4,9 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
- * @Description TODO
- * @Date 2023/5/11 9:18
- * @Version 0.0.1
+ * 任务办结状态语义表：code 供引擎与持久化使用，msg 为中文含义。
+ * 办结（taskCompleted）时按此表语义驱动流转：通过/驳回/逐级回退/回起草人/办结/加签。
  */
 @AllArgsConstructor
 public enum FlowState {

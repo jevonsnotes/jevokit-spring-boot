@@ -36,9 +36,20 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @Description TODO
- * @Date 2024/9/2
- * @Version 0.0.1
+ * okhttp 自动装配：构建直连/代理双客户端 + 连接池 + OkHttpUtil 门面 Bean。
+ *
+ * <p>用法：按 spkit.ok.http.* 配置装配；个性化定制注册 CustomOkhttpConfiguration Bean
+ * （缺省提供空实现占位， @ConditionalOnMissingBean 兜底）。
+ *
+ * <p>关键约束与取舍：
+ * <ul>
+ *   <li>两客户端共享同一 createBasicBuilder 基座（超时/连接池/SSL/禁重试），代理客户端额外挂
+ *       ProxySelector——always 模式由此实现"代理不可用自动切换下一个"（connectFailed 时从缓存剔除）；</li>
+ *   <li>代理缓存 PROXY_CACHE / PROXY_CACHE_URI 为 static 可变集合：进程级共享、uri 级隔离
+ *       （CheckLevel），剔除后无恢复逻辑，重启才重建——多实例部署时各进程独立熔断；</li>
+ *   <li>信任所有证书（X509TrustManager 空实现 + hostnameVerifier 恒真）：为兼容自签内网代理的
+ *       有意取舍，等于放弃服务端身份校验，仅宜在受控网络使用。</li>
+ * </ul>
  */
 @Slf4j
 @RequiredArgsConstructor

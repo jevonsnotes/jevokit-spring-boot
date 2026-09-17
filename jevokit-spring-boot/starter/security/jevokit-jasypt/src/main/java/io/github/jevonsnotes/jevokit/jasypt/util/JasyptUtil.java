@@ -13,8 +13,6 @@ import org.jasypt.encryption.StringEncryptor;
  * 偷换在结构上不可能静默发生。单 Spring bean 场景（kit 装配类只注册一个 JasyptUtil）
  * 用法完全不变。
  *
- * @Date 2023/7/5 14:35
- * @Version 0.0.1
  */
 @Slf4j
 public class JasyptUtil {

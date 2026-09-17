@@ -3,9 +3,9 @@ package io.github.jevonsnotes.jevokit.redis.lock.annotation;
 import java.lang.annotation.*;
 
 /**
- * @Description TODO
- * @Date 2022/7/21 16:51
- * @Version 0.0.1
+ * 分布式锁键定位注解（配合 @Lock 使用）：value 直接声明键（优先级最高）；否则按
+ * paramAt 选参数下标，再沿 route 属性路径（a.b.c）取值拼键；print 控制是否把键值
+ * 拼进降级文案 fallbackStr 便于排查撞锁。
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)

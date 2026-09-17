@@ -6,9 +6,8 @@ import lombok.experimental.SuperBuilder;
 import io.github.jevonsnotes.jevokit.workflow.annotation.FlowVar;
 
 /**
- * @Description TODO
- * @Date 2025/2/27
- * @Version 0.0.1
+ * 任务查询过滤条件：流程定义 key / 节点定义 key / 起草人 / 业务主键四维组合，任一可空。
+ * 供 taskQuery 族收敛查询范围（当前任务与历史任务均可）。
  */
 //@EqualsAndHashCode(callSuper = true)
 @Data

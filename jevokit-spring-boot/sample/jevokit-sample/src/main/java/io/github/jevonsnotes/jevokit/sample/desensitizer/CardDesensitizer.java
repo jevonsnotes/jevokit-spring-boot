@@ -9,9 +9,8 @@ import io.github.jevonsnotes.jevokit.sample.vo.TestVo;
 import java.lang.reflect.Field;
 
 /**
- * @Description TODO
- * @Date 2022/8/2 17:58
- * @Version 0.0.1
+ * 自定义字段脱敏器示例：按对象 idType 动态改写脱敏类型（证件类型 1 走身份证规则，
+ * 其余走 DEFAULT）——演示 Desensitizer 扩展点"类型随行"的用法。
  */
 public class CardDesensitizer implements Desensitizer<TestVo> {
     @Override

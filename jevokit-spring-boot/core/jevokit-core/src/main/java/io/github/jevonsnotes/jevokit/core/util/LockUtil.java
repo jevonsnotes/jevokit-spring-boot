@@ -14,9 +14,12 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * @Description TODO
- * @Date 2024/12/13
- * @Version 0.0.1
+ * 进程内字符串锁工具：按 key 复用同一把监视锁对象，让不同调用方对同名资源串行执行。
+ * <p>常用入口：{@link #sync(String, CallbackR)}（带返回值）/ {@link #sync(String, Callback)}（无返回值），
+ * 或经 {@link #getKey(String)} 取出锁对象自行 synchronized。
+ * <p>关键约束：仅进程内互斥，不适用于分布式多实例；锁对象由 WATCH_DOG 每 60 秒清理一次，
+ * 超过 12 小时未活跃的条目会被移除——清理瞬间新旧锁对象并存，极低概率出现一次互斥失效，
+ * 属以内存占用换锁池无限增长的既定取舍。
  */
 @Slf4j
 public class LockUtil {
@@ -59,6 +62,14 @@ public class LockUtil {
         return lockKey;
     }
 
+    /**
+     * 以指定 key 加锁执行回调并返回结果（同 key 的回调串行执行）
+     *
+     * @param key      锁值字符串
+     * @param callback 业务回调
+     * @param <T>      回调返回值类型
+     * @return 回调执行结果
+     */
     public static <T>T sync(final String key, CallbackR<T> callback) {
         LockKey lockObject = getKey(key);
         synchronized (lockObject) {
@@ -66,6 +77,12 @@ public class LockUtil {
         }
     }
 
+    /**
+     * 以指定 key 加锁执行无返回值回调（同 key 的回调串行执行）
+     *
+     * @param key      锁值字符串
+     * @param callback 业务回调
+     */
     public static void sync(final String key, Callback callback) {
         LockKey lockObject = getKey(key);
         synchronized (lockObject) {

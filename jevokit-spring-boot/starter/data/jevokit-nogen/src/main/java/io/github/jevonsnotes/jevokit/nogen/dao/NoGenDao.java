@@ -11,9 +11,8 @@ import io.github.jevonsnotes.jevokit.nogen.po.BizNo;
 import java.util.List;
 
 /**
- * @Description TODO
- * @Date 2023/3/10 16:25
- * @Version 0.0.1
+ * 单号持久化 DAO 契约：建表 SQL / 库种校验 / 表不存在正则三件套由各库种实现，
+ * getBizNo/getTags 等查询以 default 方法提供（经 SpringUtil 取 JdbcTemplate，SQL 通用）。
  */
 public interface NoGenDao {
     String getCreateSqlBizTable();

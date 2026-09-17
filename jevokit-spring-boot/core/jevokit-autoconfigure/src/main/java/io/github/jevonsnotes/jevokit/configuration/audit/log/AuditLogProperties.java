@@ -11,9 +11,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @Description TODO
- * @Date 2022/6/28 14:31
- * @Version 0.0.1
+ * 审计日志总配置（配置前缀 spkit.audit.log）：总开关、MDC/环绕模式、事件类型映射与持久化策略的聚合根。
+ * <p>常用方式：在 application.yml 中按前缀配置；@RefreshScope 支持配置中心运行时热刷新。
+ * 默认整体关闭（enabled=false），需显式开启；ignoreNonUser 打开后 usercode 为空的请求不入审计（过滤探活/内部调用）。
+ * 子项细节见 {@link AuditLogContentLimitProperties}、{@link AuditLogEventTypesProperties}、{@link AuditLogPersistentProperties}。
  */
 @Data
 @RefreshScope

@@ -22,9 +22,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.lang.reflect.Method;
 
 /**
- * @Description 方法返回值脱敏解析器
- * @Date 2022/7/11 15:12
- * @Version 0.0.1
+ * 方法返回值脱敏解析器
  */
 @Aspect
 @Slf4j

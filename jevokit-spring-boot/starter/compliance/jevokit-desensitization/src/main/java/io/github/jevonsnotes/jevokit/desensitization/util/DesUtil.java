@@ -23,9 +23,22 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * @Description TODO
- * @Date 2022/8/3 10:01
- * @Version 0.0.1
+ * 脱敏核心工具：脱敏执行（BASIC 掩码 / SM4 密文 / MIXED 混合）、属性名规则匹配、
+ * 密文解密还原，以及 JSON/XML 报文的正则级脱敏。
+ * 使用方式：注解链路（@DstProperty → DesensitizationAspect）与属性名规则链路
+ * （{@link #desByProperties(String, String)}，规则源 spkit.desensitization.prop-pattern）最终都收敛到
+ * {@link #des(String, DstContext)}；JSON/XML 原文脱敏用 {@link #desensitizeJson(String)} /
+ * {@link #desensitizeXml(String)}；密文还原用 {@link #decrypt(String, boolean)}。
+ * <p>命中与输出语义（关键约束）：
+ * <ul>
+ *   <li>幂等：已带 {@code @DST} 密文前缀的值直接跳过，不二次脱敏；</li>
+ *   <li>算法选择：视图/日志两条链路独立取配置（{@link #desByProcessTypeWrap} 切换 LOG 档），
+ *       未配置时降级 BASIC；SM4 密钥取 spkit.crypto.sm4-key，缺失 fail-fast；</li>
+ *   <li>权限：DECRYPT 档（默认）在 {@link #decrypt(String, boolean)} 按密文内嵌级别校验
+ *       （DesHelper.checkPower），无权限抛异常拒绝还原；ENCRYPT 档在脱敏出口校验，有权限直接放行明文；</li>
+ *   <li>容错：BASIC 掩码对不识别的格式（如非三地手机号）原样返回——宁漏脱敏不阻断业务；
+ *       属性名规则匹配失败仅告警不抛错。</li>
+ * </ul>
  */
 @Slf4j
 public class DesUtil {

@@ -22,12 +22,9 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * @Description 缓存请求内容
+ * 缓存请求内容
  * 1、解决重复读取内容的问题
  * 2、解决上传文件getParts为空的问题
- * @Date 2024/12/3
- * @Version 0.0.1
- *
  */
 
 @Slf4j

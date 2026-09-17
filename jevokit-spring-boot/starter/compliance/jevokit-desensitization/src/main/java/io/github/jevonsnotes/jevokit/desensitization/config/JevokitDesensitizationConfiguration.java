@@ -12,9 +12,13 @@ import io.github.jevonsnotes.jevokit.desensitization.interceptor.SensitizationPo
 import io.github.jevonsnotes.jevokit.desensitization.interceptor.impl.DefaultSensitizationPowerInterceptor;
 
 /**
- * @Description TODO
- * @Date 2022/5/24 16:17
- * @Version 0.0.1
+ * 脱敏模块装配类：注册切面（@Desensitization 入口）、脱敏辅助器、权限拦截器、
+ * 配置属性与解密 API 控制器。
+ * 使用方式：引入本 starter 即生效；切面/DesHelper/权限拦截器均以 @ConditionalOnMissingBean 注册，
+ * 业务侧注册同类型 bean 即可替换默认实现。
+ * <p>关键约束：{@link JevokitDesensitizationProperties} 带 @RefreshScope，规则可经配置中心热更新；
+ * 默认权限拦截器 {@link DefaultSensitizationPowerInterceptor} 恒拒绝（任何人无明文权限），
+ * 需要"有权限角色看明文"能力时必须自行实现 {@link SensitizationPowerInterceptor}。
  */
 
 @Configuration

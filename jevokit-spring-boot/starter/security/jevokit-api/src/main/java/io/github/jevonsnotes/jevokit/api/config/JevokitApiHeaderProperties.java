@@ -4,9 +4,7 @@ import lombok.Data;
 import io.github.jevonsnotes.jevokit.api.consts.ApiHSignAlg;
 
 /**
- * @Description api访问token配置
- * @Date 2023/3/10 14:16
- * @Version 0.0.1
+ * api访问token配置
  */
 @Data
 public class JevokitApiHeaderProperties {

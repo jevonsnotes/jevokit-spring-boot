@@ -6,9 +6,11 @@ import io.github.jevonsnotes.jevokit.configuration.audit.log.AuditLogProperties;
 import io.github.jevonsnotes.jevokit.core.consts.DBConst;
 
 /**
- * @Description TODO
- * @Date 2023/3/10 16:28
- * @Version 0.0.1
+ * 审计日志 MySQL 方言实现：提供审计表 DDL、连通性校验 SQL 与"表不存在"异常匹配模式。
+ * 使用方式：由 JevokitAuditLogConfiguration 依 JDBC URL 自动选择注册（jdbcUrl 含 mysql:），
+ * 业务不直接实例化。
+ * <p>关键约束：大字段用 TEXT、时间列用 timestamp 默认 CURRENT_TIMESTAMP；
+ * {@code migrate()} 覆写为空实现——MySQL 侧不做自动历史迁移（保留接口默认行为给需要的方言）。
  */
 @RequiredArgsConstructor
 public class MySQLDao implements AuditLogDao {

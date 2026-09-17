@@ -9,9 +9,11 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 /**
- * @Description TODO
- * @Date 2025/4/10
- * @Version 0.0.1
+ * JSecure 协议请求报文：安全接口的入参信封，承载交易标识、签名与数据密文。
+ * 使用方式：Controller 方法声明 {@code JSecureRequest<业务DTO>} + {@code @JSecureApi}；线上传输时只带
+ * data（密文），解密适配器完成验签解密后填充 view（明文）与 target（反序列化实体），业务直接读 target。
+ * <p>关键约束：transNo 唯一、data 不可解析/为空时校验失败（@NotNull + @Valid 逐层级联校验）；
+ * {@link #toCiphertextDto()}/{@link #toPlaintextDto()} 用于输出时裁剪对侧字段，防止明密文互泄。
  */
 @Data
 @NoArgsConstructor

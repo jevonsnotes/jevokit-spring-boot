@@ -9,9 +9,11 @@ import io.github.jevonsnotes.jevokit.configuration.security.code.inject.CodeInje
 import io.github.jevonsnotes.jevokit.security.code.inject.util.CodeInjectUtil;
 
 /**
- * @Description TODO
- * @Date 2022/5/25 10:43
- * @Version 0.0.1
+ * 动态代码注入校验的装配类：注册 {@link CodeInjectUtil} bean 并驱动其配置注入。
+ * 使用方式：引入本 starter 即生效（spkit.security.code-inject.enabled 未配置时默认开启，matchIfMissing=true），
+ * 之后业务侧静态调用 CodeInjectUtil.isSafe / errorIfUnsafe 即可。
+ * <p>关键约束：enabled=false 时本配置类整体跳过、CodeInjectUtil 不注册——其静态方法因配置未注入而不可用
+ * （详见 CodeInjectUtil 类注释），需要校验能力时不要关闭该开关。
  */
 @EnableConfigurationProperties(CodeInjectProperties.class)
 @ConditionalOnProperty(

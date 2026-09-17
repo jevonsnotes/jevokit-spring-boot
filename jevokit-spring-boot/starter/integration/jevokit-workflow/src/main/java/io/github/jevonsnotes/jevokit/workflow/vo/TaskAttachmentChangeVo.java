@@ -12,9 +12,8 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * @Description TODO
- * @Date 2025/2/27
- * @Version 0.0.1
+ * 附件同步比对结果三桶（deletes / adds / noChanges）：由 taskAttachment 将目标清单与
+ * 引擎现存附件按 id diff 产出，调用方据此执行增删，未变化集合用于回显确认。
  */
 @Data
 @AllArgsConstructor

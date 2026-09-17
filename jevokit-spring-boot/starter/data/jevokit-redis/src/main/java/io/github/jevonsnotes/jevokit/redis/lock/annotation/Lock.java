@@ -7,9 +7,7 @@ import io.github.jevonsnotes.jevokit.redis.lock.fallback.LockFallback;
 import java.lang.annotation.*;
 
 /**
- * @Description 方法级分布式锁
- * @Date 2022/7/21 16:42
- * @Version 0.0.1
+ * 方法级分布式锁
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)

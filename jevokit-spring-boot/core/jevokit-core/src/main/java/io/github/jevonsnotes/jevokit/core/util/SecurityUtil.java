@@ -26,9 +26,13 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * @Description TODO
- * @Date 2022/5/25 8:33
- * @Version 0.0.1
+ * 加解密与对象字符串过滤工具（AES/SM4/RSA/SM2 + 递归字符串清洗）。
+ * <p>使用方式：启动阶段先经 {@link #init(String, String, String, String)} 注入密钥（通常由装配层读 spkit.crypto.* 配置后调用），
+ * 之后直接使用各无参重载（如 {@link #aesEncrypt(String)}、{@link #sm4cbcDecrypt(String)}、{@link #rsaEncrypt(String)}）；
+ * 显式传密钥的重载免配置，适合多租户等密钥不固定的场景。
+ * <p>关键约束：未注入密钥的算法调用无参重载会抛 IllegalStateException（消息含具体配置键）；
+ * RSA 无参方向为"私钥加密、公钥解密"（保持既有签名语义，非标准方向），显式密钥重载则是标准方向；
+ * {@link #filterStr(Object, CallBackP3R)} 会原地递归修改对象树，遇到不可变集合/Map 时告警跳过该字段而非中断。
  */
 @Slf4j
 public class SecurityUtil {

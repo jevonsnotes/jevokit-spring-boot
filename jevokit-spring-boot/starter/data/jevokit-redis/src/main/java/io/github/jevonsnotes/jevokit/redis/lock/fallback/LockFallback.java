@@ -3,9 +3,8 @@ package io.github.jevonsnotes.jevokit.redis.lock.fallback;
 import org.aspectj.lang.reflect.MethodSignature;
 
 /**
- * @Description TODO
- * @Date 2022/7/21 16:50
- * @Version 0.0.1
+ * 锁占用降级契约：@Lock 命中并发锁时的替代返回逻辑，signature 携带被拦截方法签名
+ * 供反射取返回类型/注解。缺省实现见 DefaultLockFallback（返回 fallbackStr 文案）。
  */
 public interface LockFallback<T> {
     /**

@@ -7,9 +7,8 @@ import lombok.experimental.SuperBuilder;
 import java.util.Date;
 
 /**
- * @Description TODO
- * @Date 2025/2/27
- * @Version 0.0.1
+ * 任务审批意见写入入参：comment 为意见内容，taskId/procInsId 定位目标任务。
+ * 意见进 Camunda Comment 表，随历史时间线（taskHisTimelines）回读。
  */
 //@EqualsAndHashCode(callSuper = true)
 @Data

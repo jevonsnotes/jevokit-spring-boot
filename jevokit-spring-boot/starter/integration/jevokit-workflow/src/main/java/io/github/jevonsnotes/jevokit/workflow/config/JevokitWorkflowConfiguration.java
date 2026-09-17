@@ -7,9 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import io.github.jevonsnotes.jevokit.workflow.service.JevokitWorkflowService;
 
 /**
- * @Description 工作流组件自动化配置
- * @Date 2023/5/9 13:44
- * @Version 0.0.1
+ * 工作流组件自动化配置
  */
 @Configuration
 public class JevokitWorkflowConfiguration {

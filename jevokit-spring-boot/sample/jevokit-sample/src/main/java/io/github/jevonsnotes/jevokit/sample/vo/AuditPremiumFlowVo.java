@@ -9,9 +9,8 @@ import io.github.jevonsnotes.jevokit.workflow.vo.TaskVo;
 import java.math.BigDecimal;
 
 /**
- * @Description TODO
- * @Date 2023/5/11 9:54
- * @Version 0.0.1
+ * 审计 + 工作流联演示例 VO：实现 TaskVo 家族并以 @FlowVar 声明流程变量，
+ * 演示业务对象直接承载流程变量提取。
  */
 //@EqualsAndHashCode(callSuper = true)
 @Data

@@ -11,9 +11,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @Description TODO
- * @Date 2022/6/28 14:31
- * @Version 0.0.1
+ * 审计事件类型配置（spkit.audit.log.event-types.*）：
+ * nameMapper 维护事件代码到展示名的映射（如 QUERY → 查询）；
+ * patterns 按 HTTP 方法分组、以 AntPathMatcher 路径模式识别请求归属的事件类型，
+ * 未命中任何模式的请求不产生审计事件。
  */
 @Data
 public class AuditLogEventTypesProperties {

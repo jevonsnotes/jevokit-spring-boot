@@ -10,9 +10,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 
 /**
- * @Description 批量处理器，用于切割列表分批处理
- * @Date 2022/6/9 14:25
- * @Version 0.0.1
+ * 批量处理器，用于切割列表分批处理
  */
 @Getter
 public class BatchProcessor<B, R> {

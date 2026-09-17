@@ -3,9 +3,7 @@ package io.github.jevonsnotes.jevokit.sample.vo;
 import lombok.Data;
 
 /**
- * @Description TODO
- * @Date 2022/5/23 18:31
- * @Version 0.0.1
+ * 示例统一返回体（code/message/data），sample 各端点的响应包装形态。
  */
 @Data
 public class ApiResponse<T> {

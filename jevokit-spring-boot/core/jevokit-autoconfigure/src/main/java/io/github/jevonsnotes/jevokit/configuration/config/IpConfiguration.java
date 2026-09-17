@@ -9,9 +9,10 @@ import java.net.*;
 import java.util.Enumeration;
 
 /**
- * @Description TODO
- * @Date 2022/6/29 16:54
- * @Version 0.0.1
+ * 本机网络信息采集器：监听 WebServerInitializedEvent，在容器就绪后解析本服务对外的 IP 与端口，
+ * 供审计日志、服务注册等需要上报自身地址的组件读取（getIp()/getPort()）。
+ * <p>选网口规则偏向生产物理/虚拟网卡：仅认已启用、非回环、非点对点、非虚拟、名称以 ens 或 eth 开头的网口上的
+ * 非 loopback IPv4 地址；一个都没有时退回 InetAddress.getLocalHost()，再失败返回 null。
  */
 @Data
 @Slf4j

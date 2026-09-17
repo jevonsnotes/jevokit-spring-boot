@@ -5,9 +5,8 @@ import org.springframework.stereotype.Service;
 import io.github.jevonsnotes.jevokit.core.annotation.AuditLog;
 
 /**
- * @Description TODO
- * @Date 2024/7/1 9:53
- * @Version 0.0.1
+ * 内层方法审计演示服务：@AuditLog 注解在非 Controller 托管 Bean 方法上的事件
+ * 上报形态（eventType/eventName 自定义），补齐"切面不只拦 Controller"的演示面。
  */
 @Service
 @Slf4j

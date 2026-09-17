@@ -19,9 +19,15 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @Description TODO
- * @Date 2024/7/3 14:40
- * @Version 0.0.1
+ * RocketMQ 收发门面：在 RocketMQTemplate 之上封装同步/异步/顺序/延迟四类常用发送形态，
+ * topic 可用 Enum（取 name()）或字符串；异步走内部线程池（容量 10000，CallerRunsPolicy 兜底，
+ * 队列满时退化为发送线程自执行，不丢消息但会阻塞调用方）。
+ *
+ * <p>用法：由 starter 在 RocketMQTemplate Bean 在位时自动装配（@ConditionalOnBean 守卫，
+ * 无 MQ 环境不装配）；消息体 Object 自动包装为 MessageData，headers 随消息透传。
+ *
+ * <p>关键约束：默认发送超时 5s（SEND_TIMEOUT）；延迟消息用 delayLevel（RocketMQ 4.x 的
+ * 18 级延迟档位，非任意时刻）；顺序消息依赖 messageGroup 哈希到同一队列。
  */
 @Slf4j
 @RequiredArgsConstructor

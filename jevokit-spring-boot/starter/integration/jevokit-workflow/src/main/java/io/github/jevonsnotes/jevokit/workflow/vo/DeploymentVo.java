@@ -7,9 +7,8 @@ import lombok.experimental.Accessors;
 import lombok.experimental.SuperBuilder;
 
 /**
- * @Description TODO
- * @Date 2025/3/4
- * @Version 0.0.1
+ * 部署定义基座：name 为流程定义名，是 deploy/getDeployment/deleteDeployment
+ * 定位与命名基准。
  */
 @Data
 @AllArgsConstructor

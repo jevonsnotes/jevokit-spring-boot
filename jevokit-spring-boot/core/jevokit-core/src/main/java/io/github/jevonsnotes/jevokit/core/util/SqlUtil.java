@@ -20,12 +20,25 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * @Description TODO
- * @Date 2023/3/10 17:42
- * @Version 0.0.1
+ * 基于实体注解的预处理 SQL 拼装工具：反射读取字段与 JPA 注解（@Table/@Column），
+ * 生成带 ? 占位符的 insert/update/select 预处理语句，配合 {@link SqlBundleDto}（SQL + 有序参数）直接交给 JdbcTemplate 执行。
+ * <p>常用入口：{@link #generateInsertSelectivePreSql(Object)}、
+ * {@link #generateUpdateSelectivePreSql(Object, String[])}、{@link #generateSelectSelectivePreSql(Object, String[])}。
+ * <p>关键语义：表名取 @Table.name，缺省用类简单名；列名取 @Column.name，缺省驼峰转下划线并统一小写；
+ * 只遍历非 static 的已声明字段。所谓 selective：null/空值字段不参与拼接（select 的查询列除外，查询列总是全量列出）。
+ * update 带防御性断言——whereColumns 为空、无字段可更新或拼不出任何条件时抛 IllegalArgumentException，拒绝全表更新。
  */
 public class SqlUtil {
 
+    /**
+     * 生成选择性更新预处理 SQL：非空字段进 set 子句，whereColumns 指定且非空的字段进 where 子句，其余非空字段进 set 子句。
+     *
+     * @param object       实体对象，字段当前值即绑定参数
+     * @param whereColumns 条件字段名（与实体属性名/列名比对，忽略大小写）
+     * @param <T>          实体类型
+     * @return SQL 与占位参数包（参数顺序：set 子句在前、where 子句在后）
+     * @throws IllegalArgumentException whereColumns 为空、实体无可更新字段或拼不出任何 where 条件（等价全表更新）时抛出
+     */
     public static <T> SqlBundleDto generateUpdateSelectivePreSql(T object, String[] whereColumns){
         List<Object> setArgs = new ArrayList<>();
         List<Object> whereArgs = new ArrayList<>();
@@ -55,6 +68,14 @@ public class SqlUtil {
         return new SqlBundleDto().setSql(setClause.toString()).setArgs(setArgs.toArray());
     }
 
+    /**
+     * 生成选择性插入预处理 SQL：仅非空字段进列清单与 values，null 字段交由数据库默认值兜底。
+     *
+     * @param object 实体对象，字段当前值即绑定参数
+     * @param <T>    实体类型
+     * @return SQL 与占位参数包
+     * @throws IllegalArgumentException 实体所有字段均为空（无数据可新增）时抛出
+     */
     public static <T> SqlBundleDto generateInsertSelectivePreSql(T object){
         List<Object> setArgs = new ArrayList<>();
         String tableName = getTableName(object.getClass());
@@ -77,6 +98,15 @@ public class SqlUtil {
         return new SqlBundleDto().setSql(columnClause.toString()).setArgs(setArgs.toArray());
     }
 
+    /**
+     * 生成选择性查询预处理 SQL：查询列包含全部非 static 字段（含空值字段）；
+     * whereColumns 指定且字段值非空的才拼接等值条件，全部为空时 where 退化为 "1=1"（全表查询）。
+     *
+     * @param object       实体对象，作为查询条件的样例（取字段当前值）
+     * @param whereColumns 条件字段名（与实体属性名/列名比对，忽略大小写）
+     * @param <T>          实体类型
+     * @return SQL 与占位参数包
+     */
     public static <T> SqlBundleDto generateSelectSelectivePreSql(T object, String[] whereColumns){
         List<Object> setArgs = new ArrayList<>();
         List<Object> whereArgs = new ArrayList<>();

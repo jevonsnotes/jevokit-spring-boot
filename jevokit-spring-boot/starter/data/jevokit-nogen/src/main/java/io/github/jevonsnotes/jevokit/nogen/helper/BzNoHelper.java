@@ -29,9 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadPoolExecutor;
 
 /**
- * @Description 单号工具类
- * @Date 2023/3/10 14:45
- * @Version 0.0.1
+ * 单号工具类
  */
 @Slf4j
 @RequiredArgsConstructor

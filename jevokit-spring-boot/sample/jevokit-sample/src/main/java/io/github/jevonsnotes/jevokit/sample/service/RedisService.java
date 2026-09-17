@@ -9,9 +9,8 @@ import io.github.jevonsnotes.jevokit.redis.cache.generator.extend.GlobalKeyGener
 import io.github.jevonsnotes.jevokit.redis.cache.generator.extend.UserKeyGenerator;
 
 /**
- * @Description TODO
- * @Date 2022/7/25 11:16
- * @Version 0.0.1
+ * redis 缓存演示服务：@Cacheable 三形态——随机 TTL（UserKeyGenerator + unless 空
+ * 值不缓存）、固定 TTL（value 名后缀 #expire=秒）、全局/用户两套键空间与逐出。
  */
 @Service
 public class RedisService {

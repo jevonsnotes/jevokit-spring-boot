@@ -1,4 +1,4 @@
-# 发布 Maven Central 操作手册（spring-boot-kit）
+# 发布 Maven Central 操作手册（jevokit-spring-boot）
 
 > 面向 `io.github.jevonsnotes` 命名空间首发（版本 `3.5.0.0`）。发布主体：jevokit-parent 下 18 个库模块 + sample（不发布）+ 独立 BOM（jevokit-dependencies）。sample 应用不发布（`maven.deploy.skip=true`）。
 
@@ -18,11 +18,11 @@
 
 ```bash
 # 第一步：BOM（独立 reactor，先 install 到本地再发布）
-cd jevokit-dependencies
+cd jevokit-spring-boot-dependencies
 mvn -Prelease clean install            # 干跑校验：pom 签名产出即可
 mvn -Prelease clean deploy             # 真发布（发布到 Central 门户，需在 portal 手动或自动 publish）
 
-# 第二步：parent + 全部库模块（在 spring-boot-kit 聚合根）
+# 第二步：parent + 全部库模块（在 jevokit-spring-boot 聚合根）
 cd ../jevokit-spring-boot
 mvn -Prelease clean deploy
 ```
@@ -36,7 +36,7 @@ mvn -Prelease clean deploy
 
 ```bash
 # 1. SNAPSHOT → 正式版（两个 reactor 都要翻）
-mvn versions:set -DnewVersion=3.5.0.0 -DgenerateBackupPoms=false    # 在 spring-boot-kit/ 与 jevokit-dependencies/ 各执行一次
+mvn versions:set -DnewVersion=3.5.0.0 -DgenerateBackupPoms=false    # 在 jevokit-spring-boot/ 与 jevokit-spring-boot-dependencies/ 各执行一次
 # 2. 走上面"两步发布序"完成 deploy
 # 3. 发完立即翻回下一轮开发版（避免主干长期停正式版号）
 mvn versions:set -DnewVersion=3.5.0.1-SNAPSHOT -DgenerateBackupPoms=false   # 同样两处
@@ -49,7 +49,7 @@ mvn versions:set -DnewVersion=3.5.0.1-SNAPSHOT -DgenerateBackupPoms=false   # �
 git tag -a v3.5.0.0 -m "Release 3.5.0.0"
 git push origin v3.5.0.0
 ```
-2. **README 坐标徽章**：在 `spring-boot-kit/README.md` 顶部加（示例）：
+2. **README 坐标徽章**：在 `jevokit-spring-boot/README.md` 顶部加（示例）：
 ```markdown
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.jevonsnotes/jevokit-core.svg)](https://central.sonatype.com/artifact/io.github.jevonsnotes/jevokit-core)
 ```

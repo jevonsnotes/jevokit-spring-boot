@@ -21,11 +21,10 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * @Description TODO
- * @Date 2022/5/25 18:07
- * @Version 0.0.1
- * <p>
- * combine huTool.randomUtil and Random to meet our daily needs
+ * 安全随机工具：整合 hutool RandomUtil 与 JDK Random 的常用能力，底层统一走 {@link SecureRandom}（密钥、令牌等安全场景）。
+ * <p>常用入口：{@link #randomString(int)} / {@link #randomString(String, int)} 造随机串，
+ * {@link #randomInt(int, int)}、{@link #randomLong(long, long)} 取范围随机数，{@link #randomEles(List, int)} 抽样集合元素。
+ * <p>注意：范围方法均为"含 min 不含 max"；非安全场景可自行改用 {@link #getRandom(boolean)} 传入 false 换取 ThreadLocalRandom 的吞吐。
  */
 public class SecureRandomUtil {
     static final String BadBound = "limit must be positive";

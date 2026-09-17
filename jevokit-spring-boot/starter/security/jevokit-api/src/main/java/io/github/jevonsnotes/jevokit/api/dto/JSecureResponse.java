@@ -8,9 +8,11 @@ import lombok.NoArgsConstructor;
 import io.github.jevonsnotes.jevokit.api.consts.ApiError;
 
 /**
- * @Description TODO
- * @Date 2025/4/10
- * @Version 0.0.1
+ * JSecure 协议响应报文：安全接口的出参信封，与 {@code JSecureRequest} 对称，承载状态码与数据密文。
+ * 使用方式：Controller 返回 {@code JSecureResponse<T>}，用 {@link #ok(Object)}/{@link #fail(String)} 工厂构造；
+ * target 业务实体序列化为 data 密文（由加密适配器完成），前端只收 data。
+ * <p>关键约束：view（明文）与 target（实体）均标注不序列化，绝不出网；code 取 {@link ApiError} 协议码；
+ * {@link #toCiphertextDto()}/{@link #toPlaintextDto()} 用于输出时裁剪对侧字段，防止明密文互泄。
  */
 @Data
 @NoArgsConstructor

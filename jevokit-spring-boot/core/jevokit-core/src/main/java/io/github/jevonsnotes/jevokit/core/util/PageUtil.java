@@ -15,9 +15,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
- * @Description 分页处理工具
- * @Date 2022/6/10 9:34
- * @Version 0.0.1
+ * 分页处理工具
  */
 public class PageUtil extends cn.hutool.core.util.PageUtil {
     private static final int availableProcessors = Runtime.getRuntime().availableProcessors();

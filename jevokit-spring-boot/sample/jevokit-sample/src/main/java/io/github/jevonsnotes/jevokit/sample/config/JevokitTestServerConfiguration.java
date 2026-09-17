@@ -12,9 +12,8 @@ import io.github.jevonsnotes.jevokit.okhttp.interceptor.CustomOkhttpConfiguratio
 import java.io.IOException;
 
 /**
- * @Description TODO
- * @Date 2024/9/2
- * @Version 0.0.1
+ * 测试服务个性化配置：向 okhttp 注册 CustomOkhttpConfiguration（含模拟上游
+ * MockWebServer 拦截器），E2E 网络类用例的桩服务基座。
  */
 @Slf4j
 @Configuration

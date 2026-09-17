@@ -12,9 +12,8 @@ import io.github.jevonsnotes.jevokit.sample.consts.MqConst;
 import io.github.jevonsnotes.jevokit.sample.vo.TopicVo;
 
 /**
- * @Description TODO
- * @Date 2024/7/3 15:04
- * @Version 0.0.1
+ * 顺序消息消费示例：FIFO topic 消费端，@Lock(route=messageId) 演示顺序消费的
+ * 兜底并发防护（同一 messageId 不允许并发处理）。
  */
 @Slf4j
 @Component

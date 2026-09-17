@@ -1,9 +1,8 @@
 package io.github.jevonsnotes.jevokit.core.exception;
 
 /**
- * @Description TODO
- * @Date 2022/7/6 15:48
- * @Version 0.0.1
+ * Excel 处理异常：Excel 导入/导出、注解解析（{@code @Excel}）等场景失败时抛出的运行时异常。
+ * <p>各构造器语义与 RuntimeException 标准构造器一致（下方方法注释为 JDK 契约原文，保留作参照）。
  */
 public class ExcelException extends RuntimeException{
     /**

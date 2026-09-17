@@ -8,9 +8,12 @@ import io.github.jevonsnotes.jevokit.desensitization.desensitizer.Desensitizer;
 import java.lang.annotation.*;
 
 /**
- * @Description TODO
- * @Date 2022/7/11 15:19
- * @Version 0.0.1
+ * 字段级脱敏标注：声明被标注字段/方法返回值/参数按指定类型与权限级别脱敏。
+ * 使用方式：实体字段加 {@code @DstProperty(type = DstType.MOBILE, level = DstLevel.LV3)}，
+ * 由 {@code DesensitizationAspect}（@Desensitization 触发）在返回值序列化前依注解逐字段脱敏。
+ * <p>关键约束：type=CUSTOM 时须给出自定义 {@link Desensitizer} 实现（无参可构造，反射实例化并缓存）；
+ * ignore=true 直接跳过；level 是"查看该明文所需的最低权限档"，与 SensitizationPowerInterceptor 配合
+ * 实现有权限角色看明文（见 DstLevel）。
  */
 @Target({ElementType.FIELD,ElementType.METHOD,ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)

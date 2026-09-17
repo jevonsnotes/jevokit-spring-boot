@@ -1,5 +1,11 @@
 package io.github.jevonsnotes.jevokit.core.exception;
 
+/**
+ * 安全检查异常：安全过滤器（XSS/SQL 注入/路径穿越等清洗组件）判定请求不合规时抛出的运行时异常。
+ * <p>关键约束：与 {@code java.lang.SecurityException} 同名，java.lang 包自动导入会形成遮蔽——
+ * 使用方必须显式 import 本类（或用全限定名），勿与 JDK 安全管理器异常混淆。
+ * 各构造器语义与 RuntimeException 标准构造器一致（下方方法注释为 JDK 契约原文，保留作参照）。
+ */
 public class SecurityException extends RuntimeException{
     /**
      * Constructs a new runtime exception with {@code null} as its

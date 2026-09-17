@@ -36,9 +36,7 @@ import java.lang.reflect.ParameterizedType;
 import java.util.Optional;
 
 /**
- * @Description 返回体加密适配器
- * @Date 2025/4/10
- * @Version 0.0.1
+ * 返回体加密适配器
  */
 @ControllerAdvice
 @RequiredArgsConstructor

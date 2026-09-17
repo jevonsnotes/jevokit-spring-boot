@@ -14,9 +14,8 @@ import io.github.jevonsnotes.jevokit.core.util.SecureRandomUtil;
 import java.util.concurrent.CountDownLatch;
 
 /**
- * @Description TODO
- * @Date 2023/3/16 14:17
- * @Version 0.0.1
+ * 定时任务示例占位：原定时压测逻辑已注释保留，现仅作为 @Scheduled 装配形态的
+ * 演示载体（默认不启用任何调度）。
  */
 @Slf4j
 @Component

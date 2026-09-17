@@ -5,10 +5,7 @@ import ch.qos.logback.core.rolling.RollingFileAppender;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * @Description
  * @deprecated use DesensitizedLogFilter instead
- * @Date 2024/11/15
- * @Version 0.0.1
  */
 @Deprecated
 @Slf4j

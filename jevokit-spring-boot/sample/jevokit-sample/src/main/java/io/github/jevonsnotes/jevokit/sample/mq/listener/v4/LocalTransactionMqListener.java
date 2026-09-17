@@ -9,9 +9,7 @@ import org.springframework.messaging.Message;
 import org.springframework.stereotype.Component;
 
 /**
- * @Description 事务回查时间设置参考 https://rocketmq.apache.org/zh/docs/introduction/03limits
- * @Date 2024/7/3 15:04
- * @Version 0.0.1
+ * 事务回查时间设置参考 https://rocketmq.apache.org/zh/docs/introduction/03limits
  */
 @Slf4j
 @Component

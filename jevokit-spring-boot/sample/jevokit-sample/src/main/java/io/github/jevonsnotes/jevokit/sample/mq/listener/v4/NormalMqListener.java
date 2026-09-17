@@ -18,9 +18,8 @@ import io.github.jevonsnotes.jevokit.sample.consts.MqConst;
 import io.github.jevonsnotes.jevokit.sample.vo.TopicVo;
 
 /**
- * @Description TODO
- * @Date 2024/7/3 15:04
- * @Version 0.0.1
+ * 普通消息消费示例：消费 MessageData&lt;TopicVo&gt;，方法级 @Lock(route=data.id) 演示
+ * "同业务键禁止并发消费"——锁冲突时按 fallbackWithException 抛出转重试。
  */
 @Slf4j
 @Component

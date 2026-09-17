@@ -6,6 +6,13 @@ import lombok.Setter;
 import java.io.Serializable;
 import java.util.Optional;
 
+/**
+ * 统一 REST 响应信封：status（0 成功，负数异常态）+ statusText/message + data + timestamp。
+ * <p>常用入口：静态工厂 {@link #ok()} / {@link #ok(Object)} / {@link #fail(String)} / {@link #warn(String)}。
+ * <p>关键语义：{@link #ApiResponse(Object)} 单参构造自带智能分支——入参为 Exception 时自动转失败态
+ * （status=FAIL，message 取异常本地化消息），入参为 Optional 时自动拆包（空 Optional 得到 data 为 null 的成功态）；
+ * setStatus 会按约定状态码同步 statusText（0→Success、-100→Busy、其余置空），message/statusText 始终联动同值。
+ */
 public class ApiResponse<T> implements Serializable {
     private static final long serialVersionUID = 1L;
     public static final int SUCCESS = 0;
@@ -37,6 +44,11 @@ public class ApiResponse<T> implements Serializable {
         this.message = this.statusText;
     }
 
+    /**
+     * 按数据类型智能构造：Exception 转失败态，Optional 自动拆包（空 Optional 视为成功但 data 为 null），其余成功态
+     *
+     * @param data 业务数据，可为 Exception/Optional
+     */
     public ApiResponse(T data) {
         if (data instanceof Exception) {
             this.status = -1L;
@@ -61,6 +73,11 @@ public class ApiResponse<T> implements Serializable {
         return this.status;
     }
 
+    /**
+     * 设置状态码并联动 statusText（0→Success、-100→Busy、其余置空串）
+     *
+     * @param status 状态码，约定常量见 {@link #SUCCESS}/{@link #FAIL}/{@link #WARN}/{@link #BUSY}
+     */
     public void setStatus(long status) {
         this.status = status;
         if (status == 0L) {

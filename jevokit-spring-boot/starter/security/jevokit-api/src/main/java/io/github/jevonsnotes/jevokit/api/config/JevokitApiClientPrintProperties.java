@@ -3,9 +3,7 @@ package io.github.jevonsnotes.jevokit.api.config;
 import lombok.Data;
 
 /**
- * @Description api访问token配置
- * @Date 2023/3/10 14:16
- * @Version 0.0.1
+ * api访问token配置
  */
 @Data
 public class JevokitApiClientPrintProperties {

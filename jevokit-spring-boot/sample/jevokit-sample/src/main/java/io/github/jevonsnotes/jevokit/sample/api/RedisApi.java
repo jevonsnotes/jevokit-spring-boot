@@ -21,9 +21,8 @@ import io.github.jevonsnotes.jevokit.sample.vo.TestVo;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @Description TODO
- * @Date 2022/7/21 17:35
- * @Version 0.0.1
+ * redis 能力演示端点（/redis/*）：/testLock 演示 @Lock 并发锁 + DefaultLockFallback
+ * 降级文案；/testCache 演示随机 TTL 缓存——E2E token 往返与撞锁降级的靶点。
  */
 @RestController
 @RequestMapping("/redis")

@@ -32,9 +32,23 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @Description TODO
- * @Date 2024/8/28
- * @Version 0.0.1
+ * OkHttp 调用门面：GET / POST / JSON / XML / 表单 / multipart 分片 / 下载等常用请求形态的一站式封装，
+ * 由 jevokit-okhttp-spring-boot-starter 装配为单例 Bean 直接注入；个性化定制走 CustomOkhttpConfiguration
+ * Bean 改写底层 Builder，或经 ofProxy(...) 克隆出携带自定义客户端的独立副本（CloneSupport 深拷贝）。
+ *
+ * <p>三类行为由 spkit.ok.http.* 配置驱动，语义边界务必区分：
+ * <ul>
+ *   <li><b>proxy-mode</b>：always 一律走代理客户端；manual 默认直连，需代理时调用 {@link #ofProxy()}
+ *       或 {@link #ofProxy(CustomOkhttpProxyConfiguration)} 显式切换；</li>
+ *   <li><b>error-mode</b>（IO 异常与非 2xx 的统一处置）：quiet / log_simple / log_detail 模式
+ *       <b>吞掉异常并返回空串或错误体，不向调用方抛错</b>——调用方必须以返回值判成败；
+ *       仅 throwout（默认）抛 OkHttpRuntimeException / OkHttpStatusRuntimeException；</li>
+ *   <li><b>http-status-sensitive</b>：开启后非 2xx 一律视为错误抛 OkHttpStatusRuntimeException，
+ *       判定先于 error-mode——与 throwout 组合即"任何异常状态必抛"，与日志模式组合则同样被吞。</li>
+ * </ul>
+ *
+ * <p>关键约束：底层客户端 retryOnConnectionFailure=false（禁用自动重试，避免超时场景的重复请求）；
+ * downloadAsStream 系列返回的流所有权移交调用方，必须自行关闭。
  */
 
 @Slf4j
@@ -310,11 +324,13 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
     /**
      * 请求, 请求数据为 xml 的字符串
      *
-     * @param url
-     * @param xml
-     * @param headers
-     * @param charset
-     * @return
+     * @param url     请求地址
+     * @param xml     xml 报文体
+     * @param headers 请求头，可空
+     * @param charset 一体两用：既写进 Content-Type 作请求体编码，也作为响应体解码字符集
+     *                （经 execute 透传）——目标站响应编码与请求不一致时必须显式指定，
+     *                null 则请求默认 utf-8、响应按 OkHttp 自动探测
+     * @return 响应体文本；非 2xx 行为受 error-mode/http-status-sensitive 配置支配（见类注释）
      */
     public String postXml(String url, String xml, Map<String, String> headers, Charset charset) {
         RequestBody requestBody = RequestBody.create(xml, charset != null ? MediaType.parse("application/xml; charset=" + charset.name()) : XML);

@@ -6,9 +6,10 @@ import io.github.jevonsnotes.jevokit.configuration.security.sql.inject.SqlInject
 import io.github.jevonsnotes.jevokit.configuration.security.xss.XssMeta;
 
 /**
- * @Description TODO
- * @Date 2022/5/24 14:22
- * @Version 0.0.1
+ * 安全清洗请求级上下文：以 ThreadLocal 承载三类安全组件（路径穿越/XSS/SQL 注入）在单次请求内的元数据，
+ * 供切面把 @PtClean/@XssClean/@SIClean 注解信息传递给清洗过滤器。
+ * <p>get*Meta 取值时懒初始化，当前线程没有元数据会新建并绑定；remove* 必须在请求结束时调用，
+ * 否则线程池复用线程会读到上一请求的残留配置（脏上下文）。
  */
 public class ConfigHolder {
     /**

@@ -4,9 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
- * @Description TODO
- * @Date 2023/3/10 16:31
- * @Version 0.0.1
+ * 支持的数据库方言枚举：配合 {@link DBConst} 的异常特征正则，供自动建表等组件识别当前数据库类型。
+ * jdbcName 为 JDBC URL 中的方言标识（如 jdbc:postgresql://... 的 "postgresql"）。
  */
 @Getter
 @AllArgsConstructor

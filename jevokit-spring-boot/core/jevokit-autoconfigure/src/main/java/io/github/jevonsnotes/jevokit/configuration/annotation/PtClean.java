@@ -5,9 +5,9 @@ import io.github.jevonsnotes.jevokit.configuration.security.pathtraversal.PathTr
 import java.lang.annotation.*;
 
 /**
- * @Description TODO
- * @Date 2022/5/24 14:29
- * @Version 0.0.1
+ * 路径穿越清洗开关注解：标注在 Controller 类/方法上，对目标范围内的请求启用或关闭路径穿越（../ 等）识别清洗，
+ * 并可覆盖全局清洗模式；未标注时走 jevokit.pt.* 全局配置。方法级注解优先于类级。
+ * <p>与 SIClean（SQL 注入）、XssClean（XSS）构成安全三件套注解，语义同构。
  */
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)

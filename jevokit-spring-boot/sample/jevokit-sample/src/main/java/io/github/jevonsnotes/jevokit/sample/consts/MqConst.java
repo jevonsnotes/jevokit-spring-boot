@@ -1,9 +1,8 @@
 package io.github.jevonsnotes.jevokit.sample.consts;
 
 /**
- * @Description TODO
- * @Date 2024/7/3 14:58
- * @Version 0.0.1
+ * MQ 演示用 topic/group 常量表：TOPIC_NORMAL/FIFO/DELAY/TRANSACTION 四类
+ * 与两组消费者 group 的组合命名（值无品牌语义，与 broker 侧预先建好的 topic 对应）。
  */
 public class MqConst {
     public static final String CONSUMER_GROUP_01 = "_CONSUMER_GROUP_01";

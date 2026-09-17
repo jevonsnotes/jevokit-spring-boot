@@ -16,9 +16,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @Description 自定义RedisCache 重写 put putIfAbsent 逻辑，实现配置ttl或者动态ttl
- * @Date 2025/6/26
- * @Version 0.0.1
+ * 自定义RedisCache 重写 put putIfAbsent 逻辑，实现配置ttl或者动态ttl
  */
 public class JevokitRedisCache extends RedisCache {
     private static final int MAX_EXPIRE_TIME = 600;//最大失效时间（秒）

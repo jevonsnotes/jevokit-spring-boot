@@ -9,9 +9,7 @@ import io.github.jevonsnotes.jevokit.sample.consts.MqConst;
 import io.github.jevonsnotes.jevokit.sample.vo.TopicVo;
 
 /**
- * @Description 在业务场景中常用于另一个服务中监听事务消息
- * @Date 2024/7/3 15:04
- * @Version 0.0.1
+ * 在业务场景中常用于另一个服务中监听事务消息
  */
 @Slf4j
 @Component

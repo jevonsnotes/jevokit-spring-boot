@@ -10,9 +10,9 @@ import io.github.jevonsnotes.jevokit.excel.resolver.ExcelResolver;
 import java.util.List;
 
 /**
- * @Description TODO
- * @Date 2022/5/24 16:17
- * @Version 0.0.1
+ * excel 导入自动装配：注册 ExcelResolver 为 HandlerMethodArgumentResolver，
+ * 使 Controller 方法可直接声明 @Excel List&lt;T&gt; 入参（multipart 文件或 JSON 数组
+ * 统一解析绑定）。仅 SERVLET web 环境生效。
  */
 
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)

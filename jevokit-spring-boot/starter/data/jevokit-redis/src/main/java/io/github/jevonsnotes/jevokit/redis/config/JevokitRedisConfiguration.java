@@ -37,9 +37,12 @@ import io.github.jevonsnotes.jevokit.redis.token.strategy.DefaultTokenStrategy;
 import io.github.jevonsnotes.jevokit.redis.util.RedisLock;
 
 /**
- * @Description TODO
- * @Date 2022/7/21 17:31
- * @Version 0.0.1
+ * redis 增强自动装配：分布式锁（RedisLock + @Lock 切面）、缓存体系（CacheManager 支持
+ * "name#expire=秒"过期语法与随机 TTL 防雪崩、全局/用户双 Key 生成器）、token 策略 Bean。
+ *
+ * <p>关键约束：@AutoConfigureBefore(RedissonAutoConfigurationV2)——必须在 Redisson 官方
+ * 装配前注册 redissonAutoConfigurationCustomizer（改 JsonJacksonCodec、关从节点同步检查）
+ * 才能生效，次序由注解显式锚定，不依赖字母序。
  */
 @Configuration
 @AutoConfigureBefore({RedissonAutoConfigurationV2.class})

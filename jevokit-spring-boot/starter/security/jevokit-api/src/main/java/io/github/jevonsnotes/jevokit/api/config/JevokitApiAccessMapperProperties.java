@@ -9,9 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @Description api访问token配置
- * @Date 2023/3/10 14:16
- * @Version 0.0.1
+ * api访问token配置
  */
 @Data
 public class JevokitApiAccessMapperProperties {

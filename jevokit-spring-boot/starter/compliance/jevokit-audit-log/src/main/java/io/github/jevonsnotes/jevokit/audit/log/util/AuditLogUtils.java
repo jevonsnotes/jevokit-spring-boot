@@ -26,9 +26,19 @@ import java.lang.reflect.Method;
 import java.util.Optional;
 
 /**
- * @Description TODO
- * @Date 2024/6/28 9:16
- * @Version 0.0.1
+ * 审计日志核心工具：维护线程级审计事件链（ThreadLocal 栈），组装审计 DTO
+ * （来源 IP、报文体截断、耗时等）并提交处理器落库/落日志。
+ * 使用方式：过滤器（AuditLogFilter）与切面（AuditLogAspect）在前后环节分别调
+ * {@link #preHandle(Callback, AuditLogProperties)} / {@link #afterHandle(Callback, AuditLogProperties)}
+ * 驱动事件入栈与落盘；{@link #save(String, String, HttpServletRequest, HttpServletResponse, IpConfiguration, AuditLogProcessor, AuditLogProperties, Method)} 负责组装。
+ * <p>关键约束（防御性语义）：
+ * <ul>
+ *   <li>嵌套关联：同一 globalKey 下逐层生成 parent/local 键，clear() 按 parent 回退，支持 forward 嵌套；</li>
+ *   <li>来源 IP 取 x-forwarded-for → Proxy-Client-IP → WL-Proxy-Client-IP → remoteAddr 逐级回退
+ *       （代理链常见形态，unknown 视为无效继续回退）；</li>
+ *   <li>报文体按 content-limit 截断（limit=0 或 ABORT 策略直接丢弃该字段），防止大报文拖垮审计表；</li>
+ *   <li>组装/落盘全程 try-catch 静默（仅 debug 日志）——审计失败绝不阻断业务请求。</li>
+ * </ul>
  */
 @Slf4j(topic = "AUDIT_LOG")
 public class AuditLogUtils {

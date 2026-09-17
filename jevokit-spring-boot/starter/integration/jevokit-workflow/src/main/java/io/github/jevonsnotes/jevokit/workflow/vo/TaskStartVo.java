@@ -8,9 +8,8 @@ import io.github.jevonsnotes.jevokit.workflow.annotation.FlowVar;
 import java.util.Map;
 
 /**
- * @Description TODO
- * @Date 2025/2/27
- * @Version 0.0.1
+ * 发起流程入参：processDefinitionKey 必须与 BPMN 的 process id 一致；
+ * @FlowVar 标注字段（起草人/业务主键）经 FlowUtil 提取为 GLOBAL 流程变量随实例启动写入。
  */
 //@EqualsAndHashCode(callSuper = true)
 @Data

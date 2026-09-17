@@ -8,9 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @Description TODO
- * @Date 2025/3/4
- * @Version 0.0.1
+ * 部署流程入参：在基座 name 之上携带 BPMN 资源清单（DeploymentResource 列表），
+ * 供 deploy 以非缺省资源集部署。
  */
 @EqualsAndHashCode(callSuper = true)
 @Data

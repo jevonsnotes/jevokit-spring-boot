@@ -1,9 +1,12 @@
 package io.github.jevonsnotes.jevokit.desensitization.builder.log;
 
 /**
- * @Description TODO
- * @Date 2024/11/22
- * @Version 0.0.1
+ * 结构化日志构建器：以"标题 + 键值元数据"组织日志内容，build() 时对全部元数据值
+ * 走日志链路脱敏（DesHelper.desensitizeLog，算法取 spkit.desensitization.algorithm.log）。
+ * 使用方式：{@code LogBuilder.create().title("下单").meta("手机号",mobile).metaJson("订单",order).build()}
+ * ——脱敏只发生在 build()，构建阶段可安全持有明文；metaJson 自动序列化对象后参与脱敏。
+ * <p>关键约束：build() 只脱敏一次（重复调用直接复用首次结果）；脱敏异常仅记 ERROR 不上抛，
+ * 保证日志语句永不因脱敏失败阻断业务。
  */
 
 import cn.hutool.core.text.StrBuilder;
@@ -21,11 +24,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
-/**
- * @Description
- * @Date 2024/1/30 14:12
- * @Version 0.0.1
- */
 @Slf4j
 public class LogBuilder {
     public static LogBuilder create(){

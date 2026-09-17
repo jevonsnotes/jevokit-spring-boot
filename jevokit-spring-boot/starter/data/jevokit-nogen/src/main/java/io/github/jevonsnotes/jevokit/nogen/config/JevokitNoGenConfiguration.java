@@ -17,9 +17,12 @@ import io.github.jevonsnotes.jevokit.nogen.helper.BzNoHelper;
 import java.sql.Connection;
 
 /**
- * @Description TODO
- * @Date 2022/5/24 16:17
- * @Version 0.0.1
+ * nogen 自动装配核心：按 jdbc url 自动路由库种 DAO（H2/MySQL/PG），装配 BzNoHelper 发号
+ * 门面、自动建表器、API 与访问拦截器。
+ *
+ * <p>关键约束：Bean 方法参数直接依赖 JdbcTemplate/RedissonClient（无 @ConditionalOnBean
+ * 守卫）——引入本 starter 即要求数据源与 Redisson 在位，缺任一将启动失败（有意为之：
+ * 发号组件缺存储无从降级）。
  */
 @Configuration
 @Slf4j

@@ -14,9 +14,11 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
- * @Description TODO
- * @Date 2024/7/12 14:22
- * @Version 0.0.1
+ * 业务消息包装器：data 为业务负载，headers 链式累积后经 buildMsg 转为 Spring Messaging
+ * Message 交 RocketMQTemplate 发送。ID/TIMESTAMP 两个只读头透传时跳过（引擎自管，见
+ * isReadOnly——校验逻辑 copy 自 MessageHeaderAccessor.setHeader，行为须与上游保持一致）。
+ *
+ * <p>用法：MessageData.withData(obj).header(k, v)...buildMsg()。
  */
 @Data
 @NoArgsConstructor

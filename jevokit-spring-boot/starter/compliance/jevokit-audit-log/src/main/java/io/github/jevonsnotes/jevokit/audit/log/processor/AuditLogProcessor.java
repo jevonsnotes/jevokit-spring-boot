@@ -7,9 +7,7 @@ import io.github.jevonsnotes.jevokit.audit.log.dto.AuditLogDto;
 import java.lang.reflect.Field;
 
 /**
- * @Description 默认审计日志处理器
- * @Date 2022/6/28 9:37
- * @Version 0.0.1
+ * 默认审计日志处理器
  */
 public interface AuditLogProcessor {
 

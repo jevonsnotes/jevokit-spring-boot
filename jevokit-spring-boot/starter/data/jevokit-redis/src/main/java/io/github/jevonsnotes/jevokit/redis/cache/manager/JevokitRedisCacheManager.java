@@ -8,9 +8,7 @@ import org.springframework.data.redis.cache.RedisCacheWriter;
 import java.util.Map;
 
 /**
- * @Description 自定义RedisCacheManager，重写createRedisCache逻辑
- * @Date 2025/6/26
- * @Version 0.0.1
+ * 自定义RedisCacheManager，重写createRedisCache逻辑
  */
 public class JevokitRedisCacheManager extends RedisCacheManager {
     private final RedisCacheWriter cacheWriter;

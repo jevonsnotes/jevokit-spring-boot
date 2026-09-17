@@ -9,9 +9,9 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * @Description TODO
- * @Date 2024/6/7 11:21
- * @Version 0.0.1
+ * 脱敏权限拦截器示例：实现 SensitizationPowerInterceptor，按敏感级 + 权限键决定
+ * 当前调用是否可见明文。演示实现刻意用计数器取模（每 3 次放行 1 次）模拟动态权限，
+ * 便于人工观察"权限变化→可见性变化"的效果，无对应自动化用例。
  */
 @Slf4j
 @Component

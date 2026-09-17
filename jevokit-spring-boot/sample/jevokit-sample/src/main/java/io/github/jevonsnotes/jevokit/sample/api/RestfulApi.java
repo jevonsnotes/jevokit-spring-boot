@@ -6,9 +6,8 @@ import io.github.jevonsnotes.jevokit.core.lang.ApiResponse;
 import java.util.List;
 
 /**
- * @Description TODO
- * @Date 2022/6/29 18:10
- * @Version 0.0.1
+ * RESTful CRUD 演示端点（/restful/*）：标准增删改查形态，审计日志事件规则
+ * （GET=QUERY/POST=CREATE/PUT=UPDATE/DELETE=DELETE）的验证靶点。
  */
 @RestController
 @RequestMapping("/restful")

@@ -20,9 +20,19 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * @Description TODO
- * @Date 2025/4/14
- * @Version 0.0.1
+ * JSecure API 服务端/客户端共用的静态工具：终端配置查找、请求头拼名与请求头签名计算。
+ * 使用方式：由 {@code JevokitApiConfiguration} 注册并注入 {@link JevokitApiProperties} 后静态调用；
+ * {@link #getExecutor(String, String, Object, Class)} 是客户端发起安全请求的入口（见 {@link JSRequestExecutor}）。
+ * <p>判定与返回语义：
+ * <ul>
+ *   <li>{@link #getClient(String)}：按 id 精确匹配终端配置，找不到抛 RuntimeException（fail-fast，不返回 null）；</li>
+ *   <li>{@link #getCurrentClient()}：遍历当前请求头，命中任一已登记终端的识别码头即返回该终端，
+ *       无请求上下文或未命中返回 null（交由调用方决定放行或拒绝）；</li>
+ *   <li>{@link #headerSignature(ApiHSignAlg, String, String, String)}：按 timestamp + secretKey + nonce 拼串后
+ *       以指定算法（MD5/SHA256/SM3）摘要；{@link #checkHeaderSignature(String, ApiHSignAlg, String, String, String)}
+ *       为恒等比对验签，失败记 ERROR 日志（含期望值与实际值，便于对端排查）。</li>
+ * </ul>
+ * 约束：静态方法依赖容器完成构造注入（见 {@code JevokitApiConfiguration}），脱离 Spring 环境不可用。
  */
 @Slf4j
 public class JSecureApiUtil {

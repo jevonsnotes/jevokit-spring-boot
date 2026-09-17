@@ -10,9 +10,8 @@ import lombok.experimental.SuperBuilder;
 import java.util.List;
 
 /**
- * @Description TODO
- * @Date 2025/3/4
- * @Version 0.0.1
+ * 部署回滚入参：deploymentId 定位目标部署，resourceIds 指定回滚涉及的资源子集，
+ * 供 deployRollback 执行版本回退。
  */
 @EqualsAndHashCode(callSuper = true)
 @Data

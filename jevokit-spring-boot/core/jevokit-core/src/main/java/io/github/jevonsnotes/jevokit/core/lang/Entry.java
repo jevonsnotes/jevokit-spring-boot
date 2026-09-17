@@ -2,6 +2,15 @@ package io.github.jevonsnotes.jevokit.core.lang;
 
 import java.util.Map;
 
+/**
+ * 可独立使用的键值对：实现 {@link Map.Entry} 以便与 Map API 互操作，但自身不挂靠任何 backing map——
+ * {@link #setValue(Object)} 仅修改本对象字段，不会写穿到某个 Map，各方法也不会抛出 JDK 注释中描述的
+ * IllegalStateException/UnsupportedOperationException（上述方法注释为接口契约原文，保留作参照）。
+ * <p>典型用途：配合 {@code CollectionUtil.extractToMap} 作为提取函数的返回载体。
+ *
+ * @param <K> 键类型
+ * @param <V> 值类型
+ */
 public class Entry<K,V> implements Map.Entry<K,V> {
     private K key;
     private V val;

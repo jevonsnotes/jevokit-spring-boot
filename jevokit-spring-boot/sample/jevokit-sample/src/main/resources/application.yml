@@ -24,7 +24,7 @@ spkit:
       tokens:
         - path: "/desensitization/**"
           token: "demo-api-token"
-      header: SPRING_BOOT_KIT_API_ACCESS_TOKEN
+      header: JEVOKIT_API_ACCESS_TOKEN
     client:
       - id: client-demo-1
         secret-key: demo-sm4-secret
@@ -148,7 +148,7 @@ spkit:
         - /**
       url-exclude-patterns: # 排除请求路径
         - /test/xss/form/exclude
-        - /spring-boot-kit/**
+        - /jevokit/**
         - /workflow/**
       addition-tainted-patterns:
         - ((?i)javascript:)
@@ -236,11 +236,11 @@ camunda.bpm:
 rocketmq:
   name-server: localhost:9876
   consumer:
-    customized-trace-topic: TOPIC_TRACE_SPRING_BOOT_KIT
+    customized-trace-topic: TOPIC_TRACE_JEVOKIT
     access-key: ${rocketmq.producer.access-key}
     secret-key: ${rocketmq.producer.secret-key}
   producer:
-    group: SPRING_BOOT_KIT_PRODUCER_GROUP
+    group: JEVOKIT_PRODUCER_GROUP
     send-message-timeout: 3000
     access-key: demo-access-key
     secret-key: demo-secret-key

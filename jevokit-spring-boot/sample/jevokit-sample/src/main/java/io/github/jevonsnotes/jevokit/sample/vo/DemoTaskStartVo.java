@@ -7,9 +7,8 @@ import io.github.jevonsnotes.jevokit.workflow.annotation.FlowVar;
 import io.github.jevonsnotes.jevokit.workflow.vo.TaskStartVo;
 
 /**
- * @Description TODO
- * @Date 2025/2/27
- * @Version 0.0.1
+ * 工作流发起示例 VO：扩展 TaskStartVo 增加示例业务字段，演示流程定义 key +
+ * 起草人 + 业务主键的最小发起点。
  */
 @EqualsAndHashCode(callSuper = true)
 @Data

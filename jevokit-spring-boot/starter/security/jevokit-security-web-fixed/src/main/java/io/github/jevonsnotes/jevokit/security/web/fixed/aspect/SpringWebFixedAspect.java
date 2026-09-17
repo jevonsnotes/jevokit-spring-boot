@@ -8,9 +8,7 @@ import org.aspectj.lang.annotation.Pointcut;
 
 
 /**
- * @Description fixed security problem CVE-2016-1000027
- * @Date 2024/8/9
- * @Version 0.0.1
+ * fixed security problem CVE-2016-1000027
  */
 @Aspect
 @Slf4j

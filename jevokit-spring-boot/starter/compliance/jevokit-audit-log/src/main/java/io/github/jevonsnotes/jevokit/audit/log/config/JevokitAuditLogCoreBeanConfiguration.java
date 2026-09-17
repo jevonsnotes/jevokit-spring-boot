@@ -31,9 +31,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @Description TODO
- * @Date 2022/5/24 16:17
- * @Version 0.0.1
+ * 审计日志核心 bean 装配类：无条件注册 {@link AuditLogProperties}（@RefreshScope）。
+ * 使用方式：随 starter 自动装配；主装配类 JevokitAuditLogConfiguration 受 enabled 开关控制，
+ * 本类独立存在保证配置 bean 在模块关闭时仍可解析（供管理端读取/热刷新当前审计配置）。
+ * <p>关键约束：@RefreshScope 支持配置中心热更新（event-types 规则、内容截断策略等即时生效，
+ * 无需重启）。
  */
 @Configuration
 @Slf4j

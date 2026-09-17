@@ -10,9 +10,12 @@ import org.springframework.context.annotation.Configuration;
 import io.github.jevonsnotes.jevokit.rocketmq.helper.RocketMqHelper;
 
 /**
- * @Description TODO
- * @Date 2022/5/24 16:17
- * @Version 0.0.1
+ * rocketmq 自动装配：官方 RocketMQTemplate 在位时装配 RocketMqHelper 门面 Bean。
+ *
+ * <p>关键约束：@ConditionalOnBean(RocketMQTemplate.class) + @AutoConfigureAfter
+ * （RocketMQAutoConfiguration）双重守卫——次序锚定防 FQCN 字母序漂移导致条件先于模板
+ * 注册而静默不装配（教训 bug-package-rename-fqcn-sort-flip-20260917）；无 MQ 环境
+ * （如本地 local profile 排除官方装配）本配置整体不生效。
  */
 
 @Configuration

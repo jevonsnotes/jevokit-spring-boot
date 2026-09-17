@@ -40,9 +40,20 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * @Description TODO
- * @Date 2023/5/11 9:56
- * @Version 0.0.1
+ * Camunda 7 工作流门面服务：以 VO 约定封装流程的发起 / 查询 / 签收 / 办结 / 回退 / 意见 /
+ * 附件 / 部署 / 回滚全生命周期，业务侧注入本 Bean 即可，无需直接触碰 Camunda 引擎 API。
+ *
+ * <p>用法：taskStart 发起（@FlowVar 字段经 FlowUtil 自动提为流程变量）；taskQuery 族按
+ * 节点/任务/实例维度查询；taskClaim/taskUndoClaim/taskCompleted/taskFallback* 处理办理动作；
+ * deploy/deployRollback/deleteDeployment 管理流程定义。
+ *
+ * <p>关键约束：
+ * <ul>
+ *   <li>多系统共库隔离靠 tenantId（默认取 spring.application.name）——同库多系统必须保证
+ *       应用名唯一，否则流程定义与实例互相可见；</li>
+ *   <li>taskStart 以起草人身份 setAuthentication 后启动，操作者身份进 Camunda 历史表；
+ *       写类方法（办结/回退族）带 @Transactional(rollbackFor=Exception.class)，与业务事务同生共死。</li>
+ * </ul>
  */
 @Data
 @Slf4j

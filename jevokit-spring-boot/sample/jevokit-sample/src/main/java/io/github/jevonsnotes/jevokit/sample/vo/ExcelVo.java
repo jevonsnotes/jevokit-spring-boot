@@ -8,9 +8,8 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * @Description TODO
- * @Date 2022/7/6 10:51
- * @Version 0.0.1
+ * excel 导入示例行对象：@BeanField(order) 声明列序，@NotNull 演示导入校验，
+ * 与 ExcelApi 的 @Excel 绑定配套。
  */
 @Data
 public class ExcelVo implements Serializable {

@@ -4,12 +4,19 @@ import cn.hutool.core.exceptions.ExceptionUtil;
 import cn.hutool.core.util.StrUtil;
 
 /**
- * @Description TODO
- * @Date 2024/9/5
- * @Version 0.0.1
+ * HTTP 客户端执行异常：OkHttp 调用链抛出的受检异常统一包装为该运行时异常，免除调用方样板 catch。
+ * <p>常用入口：静态 {@link #ofThrow(Throwable)} / {@link #ofThrow(String)} 直接抛出；
+ * 构造器支持 hutool 风格模板串（messageTemplate 中的 {} 占位符由 {@code StrUtil.format} 填充）；
+ * {@link #causeInstanceOf(Class)} 可判断因链根因类型，用于重试等分支决策。
+ * 子类：{@link IORuntimeException}（传输层 IO 失败）、{@link OkHttpStatusRuntimeException}（响应状态异常）。
  */
 public class OkHttpRuntimeException extends RuntimeException {
 
+    /**
+     * 以原异常消息与原因构造
+     *
+     * @param e 原异常
+     */
     public OkHttpRuntimeException(Throwable e) {
         super(ExceptionUtil.getMessage(e), e);
     }
@@ -18,6 +25,12 @@ public class OkHttpRuntimeException extends RuntimeException {
         super(message);
     }
 
+    /**
+     * 以模板串构造消息
+     *
+     * @param messageTemplate 消息模板，{} 占位符按参数顺序填充
+     * @param params          填充参数
+     */
     public OkHttpRuntimeException(String messageTemplate, Object... params) {
         super(StrUtil.format(messageTemplate, params));
     }
@@ -40,10 +53,20 @@ public class OkHttpRuntimeException extends RuntimeException {
         final Throwable cause = this.getCause();
         return null != clazz && clazz.isInstance(cause);
     }
+    /**
+     * 直接抛出该异常（抛出型工厂，省去 throw 样板）
+     *
+     * @param e 原异常
+     */
     public static void ofThrow(Throwable e){
         throw new OkHttpRuntimeException(ExceptionUtil.getMessage(e), e);
     }
 
+    /**
+     * 直接抛出该异常（抛出型工厂，省去 throw 样板）
+     *
+     * @param message 异常消息
+     */
     public static void ofThrow(String message){
         throw new OkHttpRuntimeException(message);
     }

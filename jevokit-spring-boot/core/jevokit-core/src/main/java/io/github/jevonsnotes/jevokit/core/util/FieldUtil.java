@@ -12,17 +12,18 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * @Description TODO
- * @Date 2022/7/6 9:25
- * @Version 0.0.1
+ * 反射字段工具：按 {@link BeanField#order()} 整理实体字段顺序，供 Excel 导入导出等依赖字段次序的组件使用。
+ * <p>常用入口：{@link #getOrderDeclaredField(Class)}。
+ * <p>排序规则：任一字段带 @BeanField 即视为"启用排序"，按 order 升序、无注解字段排最末（Integer.MAX_VALUE）；
+ * 全部字段都未标注时保持 JVM 反射返回的原始声明顺序。静态与 final 字段一律剔除。
  */
 public class FieldUtil {
     /**
-     * 结合BeanField进行排序
-     * 自动剔除静态字段、final字段
-     * @param clazz
-     * @param <T>
-     * @return
+     * 获取排序后的已声明字段列表
+     *
+     * @param clazz 目标类
+     * @param <T>   目标类型
+     * @return 已剔除静态/final 字段的字段列表；类中存在任一 @BeanField 注解时按其 order 升序排列，否则保持声明顺序
      */
     public static <T> List<Field> getOrderDeclaredField(Class<T> clazz){
         List<Field> fields = new ArrayList<>();

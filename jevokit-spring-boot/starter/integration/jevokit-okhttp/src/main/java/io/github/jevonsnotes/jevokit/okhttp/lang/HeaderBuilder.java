@@ -4,9 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @Description TODO
- * @Date 2024/9/5
- * @Version 0.0.1
+ * 请求头链式构造器：add 逐条累积、build 产出一次性的 Map。
+ * 与 OkHttpUtil 各 *WithHeaders 方法配套使用，仅为免手写 Map 的语法糖。
  */
 public class HeaderBuilder {
     private final Map<String, String> headers = new HashMap<>();

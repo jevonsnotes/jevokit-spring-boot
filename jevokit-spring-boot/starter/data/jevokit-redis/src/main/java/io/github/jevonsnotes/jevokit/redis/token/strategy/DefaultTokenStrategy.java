@@ -7,9 +7,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @Description 默认获取token案例
- * @Date 2022/7/27 14:01
- * @Version 0.0.1
+ * 默认获取token案例
  */
 @RequiredArgsConstructor
 public class DefaultTokenStrategy implements TokenStrategy{

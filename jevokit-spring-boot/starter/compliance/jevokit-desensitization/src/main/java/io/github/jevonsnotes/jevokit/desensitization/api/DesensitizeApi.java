@@ -16,13 +16,16 @@ import io.github.jevonsnotes.jevokit.desensitization.dto.DstContext;
 import io.github.jevonsnotes.jevokit.desensitization.util.DesUtil;
 
 /**
- * @Description TODO
- * @Date 2024/11/22
- * @Version 0.0.1
+ * 脱敏服务内置端点（/jevokit/desensitization/decrypt）：提交含 {@code @DST(...)} 密文的文本，
+ * 按当前用户权限还原明文（{@link DesUtil#decrypt(String, boolean)}，ignorePower=false）。
+ * 使用方式：POST JSON {@code {"data":"含密文文本"}}，响应 data 为还原结果；
+ * 无权限（密文级别超出用户权限）时 fail 并回显原文（密文不丢）。
+ * <p>关键约束：该端点可直接还原敏感密文，默认无独立鉴权（配套 token 拦截器未启用，
+ * 见 DesensitizationApiProperties 注释）——对外暴露前必须由网关/全局鉴权兜住。
  */
 @Slf4j
 @RestController
-@RequestMapping("/spring-boot-kit/desensitization")
+@RequestMapping("/jevokit/desensitization")
 @RequiredArgsConstructor
 public class DesensitizeApi {
 

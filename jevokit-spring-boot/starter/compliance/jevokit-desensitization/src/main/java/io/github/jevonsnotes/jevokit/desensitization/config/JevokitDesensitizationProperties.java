@@ -17,9 +17,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @Description TODO
- * @Date 2024/11/20
- * @Version 0.0.1
+ * 脱敏模块总配置（前缀 spkit.desensitization）：算法分链路选择、属性名识别规则、
+ * 级别-权限映射与忽略名单。
+ * 使用方式：algorithm.view/log 分别选视图与日志链路的脱敏算法；prop-pattern 按属性名正则匹配出
+ * {级别, 类型}（用于无注解场景，如 JSON/XML 原文脱敏）；level-power-key 定义每个级别对应的权限代码集，
+ * 交由 SensitizationPowerInterceptor 判定当前用户可否查看明文。
+ * <p>关键约束：prop-pattern 遍历顺序按 DstLevel 自然序（低编号优先命中）；
+ * ignore-pattern 命中的属性名完全跳过脱敏（优先级最高）；规则写错只告警不阻断（见 DesUtil）。
  */
 @Data
 @ConfigurationProperties(prefix = JevokitDesensitizationProperties.CONFIG_PREFIX)
