@@ -14,7 +14,7 @@
 
 ## 认可场景
 
-2026-09-10，SecurityUtil 加解密密钥（`springbootkit.crypto.*`，同日改名 `spkit.crypto.*`）配置来源讨论中，用户原话："可以在application.yml给默认值，不然人家拿过来也不知道怎么用，注释生产要改就行"。
+2026-09-10，SecurityUtil 加解密密钥（旧前缀形态，同日改名 `spkit.crypto.*`）配置来源讨论中，用户原话："可以在application.yml给默认值，不然人家拿过来也不知道怎么用，注释生产要改就行"。
 
 ## 反例（什么算违背）
 

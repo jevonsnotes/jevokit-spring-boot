@@ -564,7 +564,7 @@ public class RedisService {
         </dependency>
 ```
 
-可以利用`BzNoHelper.getNo()`生成单号，也可以通过`API（springbootkit.nogen.api.SpringBootKitNoGenApi）`的形式生成。
+可以利用`BzNoHelper.getNo()`生成单号，也可以通过`API（io.github.jevonsnotes.jevokit.nogen.api.JevokitNoGenApi）`的形式生成。
 
 ##### API
 - /nogen/view/tags 获取配置信息
@@ -572,7 +572,7 @@ public class RedisService {
 - /nogen/getNos?bizTag=test&size=3000 批量获取单号
 - /nogen/recycle?bizTag=test&bizNo=192235 回收单号（回收模式下可用）
 
-更多参考：springbootkit.nogen.api.SpringBootKitNoGenApi
+更多参考：io.github.jevonsnotes.jevokit.nogen.api.JevokitNoGenApi
 
 ##### 数据源配置
 配置数据库数据源，在启动服务时会自动初始化配置表`biz_no`，无需手动创建。
@@ -620,7 +620,7 @@ spring:
 jasypt:
   encryptor:
     property:
-      resolver-bean: springBootKitEncryptPropertyResolver
+      resolver-bean: jevokitEncryptPropertyResolver
 ```
 
 也可以指定盐值，支持属性名识别
@@ -629,7 +629,7 @@ jasypt:
   encryptor:
     property:
       jep: xxxxxxx # 同jasypt.encryptor.password
-      resolver-bean: springBootKitEncryptPropertyResolver
+      resolver-bean: jevokitEncryptPropertyResolver
 ```
 
 配置识别优先级

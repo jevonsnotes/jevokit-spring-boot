@@ -1,1 +1,1 @@
-springbootkit.redis.config.SpringBootKitRedisConfiguration
+io.github.jevonsnotes.jevokit.redis.config.JevokitRedisConfiguration

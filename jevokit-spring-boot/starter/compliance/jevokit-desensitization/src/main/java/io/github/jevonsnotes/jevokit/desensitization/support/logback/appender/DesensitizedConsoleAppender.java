@@ -1,0 +1,27 @@
+package io.github.jevonsnotes.jevokit.desensitization.support.logback.appender;
+
+import ch.qos.logback.classic.spi.LoggingEvent;
+import ch.qos.logback.core.ConsoleAppender;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * @Description
+ * @deprecated use DesensitizedLogFilter instead
+ * @Date 2024/11/15
+ * @Version 0.0.1
+ */
+@Deprecated
+@Slf4j
+public class DesensitizedConsoleAppender<E> extends ConsoleAppender<E> implements IDesensitizedAppender{
+    @Override
+    protected void subAppend(E event) {
+        try {
+            iterateArgs((LoggingEvent) event);
+        } catch (Exception e) {
+            log.debug("日志脱敏失败：{}",e.getMessage(),e);
+        } finally {
+            super.subAppend(event);
+        }
+    }
+
+}

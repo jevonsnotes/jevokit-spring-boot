@@ -1,1 +1,1 @@
-springbootkit.security.sql.inject.config.SqlInjectConfiguration
+io.github.jevonsnotes.jevokit.security.sql.inject.config.SqlInjectConfiguration

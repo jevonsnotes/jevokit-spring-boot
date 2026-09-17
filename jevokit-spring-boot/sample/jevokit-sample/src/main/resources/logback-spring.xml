@@ -11,7 +11,7 @@
 <!--            <charset>UTF-8</charset>-->
 <!--        </encoder>-->
 <!--    </appender>-->
-    <appender name="consoleLog" class="springbootkit.desensitization.support.logback.appender.DesensitizedConsoleAppender">
+    <appender name="consoleLog" class="io.github.jevonsnotes.jevokit.desensitization.support.logback.appender.DesensitizedConsoleAppender">
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <pattern>${commonEncoderPattern}</pattern>
             <charset>UTF-8</charset>
@@ -19,7 +19,7 @@
     </appender>
 
     <appender name="DST_LOG"
-              class="springbootkit.desensitization.support.logback.appender.DesensitizedRollingFileAppender">
+              class="io.github.jevonsnotes.jevokit.desensitization.support.logback.appender.DesensitizedRollingFileAppender">
         <File>${LOG_HOME}/desensitized.log</File>
         <rollingPolicy
                 class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">

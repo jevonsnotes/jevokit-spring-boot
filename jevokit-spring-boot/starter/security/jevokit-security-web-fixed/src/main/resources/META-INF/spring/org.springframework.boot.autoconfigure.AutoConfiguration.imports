@@ -1,1 +1,1 @@
-springbootkit.security.web.fixed.config.SpringWebFixedConfiguration
+io.github.jevonsnotes.jevokit.security.web.fixed.config.SpringWebFixedConfiguration

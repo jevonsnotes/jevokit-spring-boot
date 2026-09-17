@@ -3,7 +3,7 @@
 jasypt:
   encryptor:
     property:
-      resolver-bean: springBootKitEncryptPropertyResolver
+      resolver-bean: jevokitEncryptPropertyResolver
 ```
 
 也可以指定盐值，支持属性名识别
@@ -12,7 +12,7 @@ jasypt:
   encryptor:
     property:
       jep: xxxxxxx # 同jasypt.encryptor.password
-      resolver-bean: springBootKitEncryptPropertyResolver
+      resolver-bean: jevokitEncryptPropertyResolver
 ```
 
 配置识别优先级

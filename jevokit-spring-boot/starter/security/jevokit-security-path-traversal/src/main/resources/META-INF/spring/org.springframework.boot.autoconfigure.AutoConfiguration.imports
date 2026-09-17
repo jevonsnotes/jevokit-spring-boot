@@ -1,1 +1,1 @@
-springbootkit.security.pt.config.PathTraversalConfiguration
+io.github.jevonsnotes.jevokit.security.pt.config.PathTraversalConfiguration

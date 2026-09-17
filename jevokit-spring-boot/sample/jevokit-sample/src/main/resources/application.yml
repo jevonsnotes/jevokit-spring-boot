@@ -7,7 +7,7 @@ jasypt:
   key: ${JASYPT_KEY:DemoJasyptKey123456} # 演示默认密钥（16+ 字符任意字符串；生产必须替换）
   encryptor:
     iv-generator-classname: org.jasypt.iv.NoIvGenerator
-    bean: springBootKitStringEncryptor
+    bean: jevokitStringEncryptor
     password: ${jasypt.key}
 spkit:
   # 加解密演示默认密钥（demo 应用开箱即用，非 starter 库内置密钥）

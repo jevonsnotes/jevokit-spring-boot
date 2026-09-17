@@ -1,2 +1,2 @@
-springbootkit.audit.log.config.SpringBootKitAuditLogCoreBeanConfiguration
-springbootkit.audit.log.config.SpringBootKitAuditLogConfiguration
+io.github.jevonsnotes.jevokit.audit.log.config.JevokitAuditLogCoreBeanConfiguration
+io.github.jevonsnotes.jevokit.audit.log.config.JevokitAuditLogConfiguration
