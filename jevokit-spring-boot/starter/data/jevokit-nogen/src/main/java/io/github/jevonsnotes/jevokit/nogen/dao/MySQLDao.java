@@ -19,6 +19,10 @@ public class MySQLDao implements NoGenDao {
 
 
     @Override
+/**
+    * MySQL 方言建表 SQL。
+    * @return biz_no 表 DDL
+    */
     public String getCreateSqlBizTable() {
 
         return "CREATE TABLE biz_no (" +
@@ -34,17 +38,29 @@ public class MySQLDao implements NoGenDao {
     }
 
     @Override
+/**
+    * MySQL 环境校验语句。
+    * @return 校验 SQL
+    */
     public String validation() {
         return  "SELECT 1 FROM biz_no limit 1;";
     }
 
     @Override
+/**
+    * MySQL"表不存在"报错匹配正则。
+    * @return 正则串（对应 NGConsts.PATTERN_TABLE_NOT_EXISTS）
+    */
     public String getPattenNotExists() {
         return NGConsts.PATTERN_TABLE_NOT_EXISTS;
     }
 
 
     @Override
+/**
+    * 查全部单号配置（MySQL 方言）。
+    * @return 配置行列表
+    */
     public List<BizNo> getTags() {
 
         SqlBundleDto sqlBundleDto = SqlUtil.generateSelectSelectivePreSql(new BizNo(), new String[]{});
@@ -52,6 +68,11 @@ public class MySQLDao implements NoGenDao {
     }
 
     @Override
+/**
+    * 按主键选择性更新配置（MySQL 方言）。
+    * @param bizNo 待更新字段载体
+    * @return 影响行数
+    */
     public int updateSelectiveByPrimaryKey(BizNo bizNo) {
         SqlBundleDto sqlBundleDto = SqlUtil.generateUpdateSelectivePreSql(bizNo, new String[]{"biz_tag"});
         return jdbcTemplate.update(sqlBundleDto.getSql(),sqlBundleDto.getArgs());

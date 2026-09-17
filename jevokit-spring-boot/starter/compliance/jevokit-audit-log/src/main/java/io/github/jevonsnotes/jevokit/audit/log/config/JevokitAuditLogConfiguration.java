@@ -66,12 +66,14 @@ public class JevokitAuditLogConfiguration {
      * 可通过继承AuditLogProcessor实现
      * @return
      */
+    /** 注册默认处理器（业务实现 AuditLogProcessor 即可覆盖）。 */
     @Bean
     @ConditionalOnMissingBean
     public AuditLogProcessor auditLogProcessor(){
         return new DefaultAuditLogProcessor();
     }
 
+    /** 注册审计过滤器（/* 全路径、order=200，URL 规则命中才落审计）。 */
     @Bean
     @ConditionalOnMissingBean({AuditLogFilter.class})
     public FilterRegistrationBean<AuditLogFilter> auditLogFilterFilterRegistrationBean(AuditLogProcessor processor,AuditLogProperties properties,IpConfiguration ipConfiguration) {
@@ -101,23 +103,31 @@ public class JevokitAuditLogConfiguration {
 //            log.info("Audit Log is ready!");
 //        }
 //    }
+    /** 注册本机 IP/端口配置（审计记录的 localIp/port 来源）。 */
     @Bean
     @ConditionalOnMissingBean
     public IpConfiguration ipConfiguration(){
         return new IpConfiguration();
     }
 
+    /** 注册 @AuditLog 切面。 */
     @Bean
     @ConditionalOnMissingBean
     public AuditLogAspect auditLogAspect(AuditLogProcessor auditLogProcessor,IpConfiguration ipConfiguration){
         return new AuditLogAspect(auditLogProcessor,properties,ipConfiguration);
     }
+    /**
+     * 按 JDBC URL 选择方言 DAO 注册（MySQL/PostgreSQL/H2）。
+     *
+     * @throws UnsupportedOperationException 数据库类型不在支持列表时抛出（fail-fast，防静默丢审计）
+     */
     @ConditionalOnBean(JdbcTemplate.class)
     @Bean
     public AuditLogDao auditLogDao(JdbcTemplate jdbcTemplate){
         return convert(getJdbcUrl(jdbcTemplate),jdbcTemplate);
     }
 
+    /** 注册启动建表组件（依赖 DAO 存在，守卫理由见下方迁移 Job 注释）。 */
     @ConditionalOnBean(AuditLogDao.class)
     @Bean
     public JevokitAuditLogAutoInitDB jevokitAuditLogAutoInitDB(JdbcTemplate jdbcTemplate,AuditLogDao dao,AuditLogProperties properties){
@@ -151,6 +161,7 @@ public class JevokitAuditLogConfiguration {
      * 自动迁移 job 依赖 AuditLogDao（无 DB 环境不存在），须与 dao 的
      * {@code @ConditionalOnBean(JdbcTemplate.class)} 守卫对齐，否则无 DB 应用整个模块装配失败
      */
+    /** 注册每日迁移 Job（依赖 DAO，守卫对齐见上方注释）。 */
     @ConditionalOnBean(AuditLogDao.class)
     @Bean
     public AuditLogAutoMigrateJob auditLogAutoMigrateJob(AuditLogDao dao){

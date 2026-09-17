@@ -37,6 +37,11 @@ public class RequestContentCachingRequestWrapper extends ContentCachingRequestWr
      */
     private final Map<String, ServletInputStream> SINGLETON_INPUT_STREAM = new ConcurrentHashMap<>();
 
+    /**
+     * 构造并预读请求体进缓存（multipart 表单除外——预读会导致 getParts 为空）
+     *
+     * @param request 原始请求
+     */
     public RequestContentCachingRequestWrapper(HttpServletRequest request) {
         super(request);
         if(!isMultiPartFormPost()){
@@ -44,6 +49,12 @@ public class RequestContentCachingRequestWrapper extends ContentCachingRequestWr
         }
     }
 
+    /**
+     * 构造并预读请求体进缓存（限定缓存上限）
+     *
+     * @param request           原始请求
+     * @param contentCacheLimit 缓存最大字节数（超出的请求体不进缓存，参照 Spring 同名参数语义）
+     */
     public RequestContentCachingRequestWrapper(HttpServletRequest request, int contentCacheLimit) {
         super(request, contentCacheLimit);
         if(!isMultiPartFormPost()){
@@ -77,6 +88,11 @@ public class RequestContentCachingRequestWrapper extends ContentCachingRequestWr
     }
 
 
+    /**
+     * 基于缓存内容新建可重复读的输入流（每次调用新实例，读互不干扰）
+     *
+     * @return 包装缓存快照的 ServletInputStream（isFinished/isReady 恒为 false）
+     */
     public ServletInputStream getCacheInputStream() {
         ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(getContentAsByteArray());
         return new ServletInputStream() {
@@ -97,6 +113,12 @@ public class RequestContentCachingRequestWrapper extends ContentCachingRequestWr
         };
     }
 
+    /**
+     * 取参数（multipart 走容器原生，其余走 query + 表单体缓存的合并解析）
+     *
+     * @param name 参数名
+     * @return 首个匹配值；无匹配返回 null
+     */
     @Override
     public String getParameter(String name) {
         String[] param = getParameterMap().get(name);
@@ -132,12 +154,23 @@ public class RequestContentCachingRequestWrapper extends ContentCachingRequestWr
         };
     }
 
+    /**
+     * 取参数值数组（返回内部数组的 clone，修改不影响后续读取）
+     *
+     * @param name 参数名
+     * @return 全部匹配值；无匹配返回 null
+     */
     @Override
     public String[] getParameterValues(String name) {
         String[] param = getParameterMap().get(name);
         return param == null ? null : param.clone();
     }
 
+    /**
+     * 判断是否为 multipart 文件上传请求（此类型不缓存、参数走容器原生解析）
+     *
+     * @return Content-Type 含 multipart/form-data 且方法为 POST 时 true
+     */
     public boolean isMultiPartFormPost() {
         String contentType = this.getContentType();
         return contentType != null && contentType.contains("multipart/form-data") && HttpMethod.POST.matches(this.getMethod());

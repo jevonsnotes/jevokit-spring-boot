@@ -21,10 +21,17 @@ public class JevokitEncryptPropertyResolver implements EncryptablePropertyResolv
     private StringEncryptor encryptor;
     private EncryptablePropertyDetector detector;
 
+    /** 使用默认探测器（ENC() 前后缀）构造。 */
     public JevokitEncryptPropertyResolver(StringEncryptor encryptor) {
         this(encryptor, new DefaultPropertyDetector());
     }
 
+    /**
+     * 全参构造。
+     *
+     * @param encryptor 解密用的加密器（不可为 null）
+     * @param detector  密文探测器（判定属性值是否为密文，不可为 null）
+     */
     public JevokitEncryptPropertyResolver(StringEncryptor encryptor, EncryptablePropertyDetector detector) {
         Assert.notNull(encryptor, "String encryptor can't be null");
         Assert.notNull(detector, "Encryptable Property detector can't be null");
@@ -32,6 +39,12 @@ public class JevokitEncryptPropertyResolver implements EncryptablePropertyResolv
         this.detector = detector;
     }
 
+    /**
+     * 解析单个属性值（判定与返回语义见类注释：非密文直通、密文解密、失败抛 {@link DecryptionException}）。
+     *
+     * @param value 原始属性值
+     * @return 密文解密后的明文；非密文原样返回
+     */
     @Override
     public String resolvePropertyValue(String value) {
         String actualValue = value;

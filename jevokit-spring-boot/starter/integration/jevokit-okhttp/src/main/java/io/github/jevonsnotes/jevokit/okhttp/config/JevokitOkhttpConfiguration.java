@@ -63,17 +63,33 @@ public class JevokitOkhttpConfiguration {
     private OkhttpProperties properties;
 
     @Bean
+/**
+    * 门面 Bean：直连 + 代理双客户端一次装配。
+    * @param properties 行为配置
+    * @param customOkhttpConfiguration 使用方个性化定制（缺省空实现占位）
+    * @param pool 共享连接池
+    * @return OkHttpUtil 门面单例
+    */
     public OkHttpUtil okhttpUtil(OkhttpProperties properties, CustomOkhttpConfiguration customOkhttpConfiguration,ConnectionPool pool){
         return  new OkHttpUtil(properties,okHttpClient(customOkhttpConfiguration,pool),okHttpProxyClient(customOkhttpConfiguration,pool));
     }
     @RefreshScope
     @Bean
+/**
+    * 配置 Bean（@RefreshScope 支持热更新）。
+    * @return spkit.ok.http.* 绑定实例
+    */
     public OkhttpProperties okhttpProperties(){
         return new OkhttpProperties();
     }
 
     @ConditionalOnMissingBean
     @Bean
+/**
+    * 个性化定制缺省占位：空实现，@ConditionalOnMissingBean 兜底——使用方注册自己的
+    * CustomOkhttpConfiguration Bean 即覆盖。
+    * @return 空实现实例
+    */
     public CustomOkhttpConfiguration customOkhttpInterceptor(){
         return new CustomOkhttpConfiguration() {
             @Override
@@ -89,6 +105,12 @@ public class JevokitOkhttpConfiguration {
     }
     @Primary
     @Bean
+/**
+    * 直连客户端 Bean（@Primary）：基础 Builder + 个性化定制，不带代理。
+    * @param customOkhttpConfiguration 个性化定制回调
+    * @param pool 共享连接池
+    * @return 直连 OkHttpClient
+    */
     public OkHttpClient okHttpClient(CustomOkhttpConfiguration customOkhttpConfiguration,ConnectionPool pool) {
 
         // 获取基础配置
@@ -99,6 +121,13 @@ public class JevokitOkhttpConfiguration {
         return builder.build();
     }
     @Bean(name = "OKHTTP_PROXY_CLIENT")
+/**
+    * 代理客户端 Bean：基础 Builder + initProxy（ProxySelector 多代理切换 + 可选代理认证）
+    * + 个性化定制。
+    * @param customOkhttpConfiguration 个性化定制回调（作用于代理客户端）
+    * @param pool 共享连接池
+    * @return 代理 OkHttpClient（Bean 名 OKHTTP_PROXY_CLIENT）
+    */
     public OkHttpClient okHttpProxyClient(CustomOkhttpConfiguration customOkhttpConfiguration,ConnectionPool pool) {
         // 获取基础配置
         OkHttpClient.Builder builder = createBasicBuilder(pool);
@@ -183,6 +212,10 @@ public class JevokitOkhttpConfiguration {
         }
     }
     @Bean
+/**
+    * 信任所有证书的 TrustManager（兼容自签内网代理的有意取舍，见类注释）。
+    * @return 空校验实现
+    */
     public X509TrustManager x509TrustManager() {
         return new X509TrustManager() {
             @Override
@@ -198,6 +231,10 @@ public class JevokitOkhttpConfiguration {
         };
     }
     @Bean
+/**
+    * 随信任策略构建的 SSLSocketFactory；构建失败记日志并返回 null（OkHttp 回落默认工厂）。
+    * @return TLS SSLSocketFactory，失败时 null
+    */
     public SSLSocketFactory sslSocketFactory() {
         try {
             // 信任任何链接
@@ -210,6 +247,11 @@ public class JevokitOkhttpConfiguration {
         return null;
     }
     @Bean
+/**
+    * 两客户端共享的连接池：容量与保活时长取自配置（maxIdleConnections/keepAliveDuration）。
+    * @param properties 连接池参数来源
+    * @return 共享连接池
+    */
     public ConnectionPool pool(OkhttpProperties properties) {
         return new ConnectionPool(properties.getMaxIdleConnections(), properties.getKeepAliveDuration(), TimeUnit.SECONDS);
     }

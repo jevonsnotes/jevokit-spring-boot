@@ -22,6 +22,11 @@ import jakarta.jws.WebService;
 public class ProducerServiceImpl implements ProducerService {
 
     @Override
+/**
+    * SOAP 服务实现：按名构造账户回显（演示用途）。
+    * @param name 姓名
+    * @return 账户对象
+    */
     public Account getAccount(String name) {
         log.info("{} 获取账户",name);
         Account account = new Account();

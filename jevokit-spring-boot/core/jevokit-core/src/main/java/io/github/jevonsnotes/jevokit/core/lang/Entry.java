@@ -14,8 +14,17 @@ import java.util.Map;
 public class Entry<K,V> implements Map.Entry<K,V> {
     private K key;
     private V val;
+    /**
+     * 构造空键值对（key/val 均为 null）
+     */
     public Entry() {
     }
+    /**
+     * 以键值构造
+     *
+     * @param key 键
+     * @param val 值
+     */
     public Entry(K key, V val) {
         this.key = key;
         this.val = val;

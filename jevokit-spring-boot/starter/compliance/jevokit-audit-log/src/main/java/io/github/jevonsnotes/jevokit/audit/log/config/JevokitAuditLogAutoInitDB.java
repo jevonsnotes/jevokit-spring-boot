@@ -26,6 +26,12 @@ public class JevokitAuditLogAutoInitDB implements ApplicationRunner {
      * @param args incoming application arguments
      * @throws Exception on error
      */
+    /**
+     * 启动即建表：探测主表/历史表，"表不存在"异常时按方言 DDL 创建（幂等，已存在则跳过）。
+     *
+     * @param args 启动参数（未使用）
+     * @throws Exception 建表 SQL 失败时抛出（fail-fast，审计存储不可用应阻断启动）
+     */
     @Override
     public void run(ApplicationArguments args) throws Exception {
         log.info("****** 审计日志组件初始化开始 ******");

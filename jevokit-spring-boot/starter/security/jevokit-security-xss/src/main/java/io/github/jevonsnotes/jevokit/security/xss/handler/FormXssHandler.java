@@ -16,6 +16,11 @@ import io.github.jevonsnotes.jevokit.security.xss.cleaner.XssCleaner;
 public class FormXssHandler {
 
     private final StringPropertiesEditor editor;
+    /**
+     * 为全部 String 属性注册清洗编辑器（表单参数 → Bean 绑定时的 XSS 清洗入口）。
+     *
+     * @param binder 当前请求的数据绑定器
+     */
     @InitBinder
     public void initBinder(WebDataBinder binder) {
         binder.registerCustomEditor(String.class, editor);

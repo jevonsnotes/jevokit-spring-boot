@@ -33,6 +33,10 @@ public class NormalMqListener implements RocketMQListener<MessageData<TopicVo>> 
 
     @Lock(namespace = "TOPIC_CONCURRENT_LOCK", key = @Key(route = "data.id"),fallbackWithException = RuntimeException.class, fallbackStr = "禁止并发消费")
     @Override
+/**
+    * 普通消息消费：@Lock(route=data.id) 同业务键禁止并发消费，冲突抛 RuntimeException 转重试。
+    * @param message 消息包装
+    */
     public void onMessage(MessageData<TopicVo> message) {
 
         log.info("接收到消息：{}，开始sleep = {}ms",JSON.toJSONString(message),message.getData().getSleepTime());
@@ -45,6 +49,11 @@ public class NormalMqListener implements RocketMQListener<MessageData<TopicVo>> 
     }
 
     @Cacheable(cacheNames = "consume_result_cache#expire=1800",unless = "!#result")
+/**
+    * 被 @Lock 降级保护的业务方法：消费失败返回 false 由上层处理。
+    * @param message 消息体
+    * @return true=消费成功
+    */
     public boolean doLocalBusiness(TopicVo message){
         return !message.isTransactionRollback();
     }

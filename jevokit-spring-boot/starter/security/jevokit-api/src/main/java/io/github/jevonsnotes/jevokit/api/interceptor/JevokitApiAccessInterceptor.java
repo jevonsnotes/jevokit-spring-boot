@@ -19,6 +19,11 @@ public class JevokitApiAccessInterceptor implements AsyncHandlerInterceptor {
     private AntPathMatcher antPathMatcher = new AntPathMatcher();
     private final JevokitApiProperties properties;
 
+    /**
+     * 简单 token 准入：路径命中 access.tokens 配置时校验请求头令牌，不匹配返回 403。
+     *
+     * @return true 放行；false 已写出 403 拒绝（未配置 tokens 的路径恒放行）
+     */
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         // 非控制层跳过
@@ -40,10 +45,12 @@ public class JevokitApiAccessInterceptor implements AsyncHandlerInterceptor {
         return true;
     }
 
+    /** 无需清理（本拦截器不持有请求级状态）。 */
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
     }
 
+    /** 无需清理（同 afterCompletion）。 */
     @Override
     public void afterConcurrentHandlingStarted(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
     }

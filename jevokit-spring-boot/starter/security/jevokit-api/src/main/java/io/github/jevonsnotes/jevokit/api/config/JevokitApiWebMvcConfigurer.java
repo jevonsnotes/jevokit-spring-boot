@@ -19,6 +19,9 @@ import io.github.jevonsnotes.jevokit.api.interceptor.JevokitApiAccessInterceptor
 @RequiredArgsConstructor
 public class JevokitApiWebMvcConfigurer implements WebMvcConfigurer {
     private final JevokitApiProperties properties;
+    /**
+     * 注册简单 token 准入拦截器（LOWEST_PRECEDENCE 挂载 /**，校验失败 403）。
+     */
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
 

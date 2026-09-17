@@ -26,6 +26,11 @@ public class XmlXssHandler implements RequestBodyAdvice {
     private final XssCleaner xssCleaner;
 
 
+    /**
+     * 仅对 JAXB（XML 报文）转换且当前请求防护开启时启用本处理器。
+     *
+     * @return true 表示 XML 请求体走本处理器的清洗逻辑
+     */
     @Override
     public boolean supports(MethodParameter methodParameter, Type targetType, Class<? extends HttpMessageConverter<?>> converterType) {
         return Jaxb2RootElementHttpMessageConverter.class.isAssignableFrom(converterType) && ConfigHolder.getXssMeta().isEnabled();
@@ -47,6 +52,11 @@ public class XmlXssHandler implements RequestBodyAdvice {
     }
 
 
+    /**
+     * XML body 反序列化为对象后，递归遍历对象的全部 String 字段/元素执行清洗。
+     *
+     * @return 清洗后的对象；body 为空时原样返回
+     */
     @Override
     public Object afterBodyRead(Object body, HttpInputMessage inputMessage, MethodParameter parameter, Type targetType, Class<? extends HttpMessageConverter<?>> converterType) {
         if (!ObjectUtils.isEmpty(body)) {
@@ -55,6 +65,7 @@ public class XmlXssHandler implements RequestBodyAdvice {
         return body;
     }
 
+    /** 空 body 直通（无内容可清洗）。 */
     @Override
     public Object handleEmptyBody(Object body, HttpInputMessage inputMessage, MethodParameter parameter, Type targetType, Class<? extends HttpMessageConverter<?>> converterType) {
         return body;

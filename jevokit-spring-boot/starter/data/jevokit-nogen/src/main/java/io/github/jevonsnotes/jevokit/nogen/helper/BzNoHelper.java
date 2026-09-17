@@ -103,6 +103,11 @@ public class BzNoHelper {
         return bizNo;
     }
 
+/**
+    * 取单号：RECYCLE 模式先从回收池取，取不到/DEFAULT 模式走 Redis 自增发号（异步落 DB）。
+    * @param bizTag 业务标签
+    * @return 单号（回收池命中为历史号，否则为新自增号）
+    */
     public String getNo(String bizTag) {
         String no = getByMode(bizTag);
         return StrUtil.isEmpty(no) ? String.valueOf(noGen(bizTag)) : no;
@@ -151,6 +156,12 @@ public class BzNoHelper {
         return no;
     }
 
+/**
+    * 回收单号入池（Redis 阻塞队列 offer）。
+    * @param bizTag 业务标签
+    * @param bizNo 单号
+    * @return true=入池成功；false=入队失败（容量/状态异常，号段丢失需人工核）
+    */
     public boolean recycle(String bizTag, String bizNo){
         return client.getBlockingQueue(getRecycleKey(bizTag)).offer(bizNo);
 //        return client.getSet(getRecycleKey(bizTag)).add(bizNo);
@@ -201,9 +212,17 @@ public class BzNoHelper {
         return CACHE_INIT_STATUS.computeIfAbsent(bizTag, s -> false);
     }
 
+/**
+    * 查全部单号配置。
+    * @return 配置行列表
+    */
     public List<BizNo> getTags(){
         return dao.getTags();
     }
+/**
+    * 查全部配置并转视图对象。
+    * @return 配置视图列表
+    */
     public List<BizNoVo> getTagsVo(){
         List<BizNo> tags = getTags();
         return CollectionUtil.extract(tags, new Func1<BizNo, BizNoVo>() {
@@ -214,6 +233,11 @@ public class BzNoHelper {
             }
         });
     }
+/**
+    * 取当前最大号（本地缓存 → Redis → DB 三级，双检防击穿）。
+    * @param bizTag 业务标签
+    * @return 当前最大号
+    */
     public long getMaxId(String bizTag) {
         Long maxId = CACHE_MAX_ID.get(bizTag);
         if(maxId == null ){

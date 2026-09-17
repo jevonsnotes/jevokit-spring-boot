@@ -44,6 +44,11 @@ import java.util.Optional;
 public class EncryptResponseAdviceAdapter implements ResponseBodyAdvice<Object>, Ordered {
     private final JevokitApiProperties properties;
 
+    /**
+     * 仅处理 JSecureResponse 返回类型（协议出口识别）。
+     *
+     * @return true 表示该响应走加密签名链路
+     */
     @Override
     public boolean supports(MethodParameter returnType, Class<? extends HttpMessageConverter<?>> converterType) {
         return returnType.hasMethodAnnotation(JSecureApi.class)
@@ -51,6 +56,11 @@ public class EncryptResponseAdviceAdapter implements ResponseBodyAdvice<Object>,
                 && ClassUtil.isClassAssignable(JSecureResponse.class,((ParameterizedType)returnType.getGenericParameterType()).getRawType());
     }
 
+    /**
+     * 序列化前的协议处理：业务实体转密文 data（终端开启 encrypt 时）、SM2 签名，剥离 view/target 明文字段。
+     *
+     * @return 协议化的响应对象；body 非 JSecureResponse 时原样返回
+     */
     @Override
     public Object beforeBodyWrite(Object body, MethodParameter returnType, MediaType selectedContentType, Class<? extends HttpMessageConverter<?>> selectedConverterType, ServerHttpRequest request, ServerHttpResponse response) {
         try {
@@ -93,6 +103,12 @@ public class EncryptResponseAdviceAdapter implements ResponseBodyAdvice<Object>,
      */
     @ResponseBody
     @ExceptionHandler({JSecureApiException.class, MethodArgumentNotValidException.class, Exception.class})
+    /**
+     * 异常兜底转协议响应（配合 ControllerAdvice 场景使用）。
+     *
+     * @param e 业务或协议异常
+     * @return FAIL 状态的协议响应
+     */
     public JSecureResponse<?> handler(Exception e) throws Exception {
         try {
             JSecureRequest<?> jsr = JSecureContext.getRequest();
@@ -165,6 +181,7 @@ public class EncryptResponseAdviceAdapter implements ResponseBodyAdvice<Object>,
      *
      * @return 顺序值
      */
+    /** 本适配器在响应链中的执行序（先于常规 JSON 处理）。 */
     @Override
     public int getOrder() {
         return 100;

@@ -14,6 +14,7 @@ import java.lang.reflect.Field;
 public class DefaultDesensitizer implements Desensitizer{
 
 
+    /** 直接委托 {@link DesUtil#des(String, DstContext)} 按通用规则脱敏（见类注释）。 */
     @Override
     public String des(Object object, Field currentField, String currentVal, DstContext context) {
         return DesUtil.des(currentVal,context);

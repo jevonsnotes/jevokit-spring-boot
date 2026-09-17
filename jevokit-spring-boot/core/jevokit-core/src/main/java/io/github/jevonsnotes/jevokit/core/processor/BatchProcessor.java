@@ -37,10 +37,11 @@ public class BatchProcessor<B, R> {
     }
 
     /**
-     * 创建实例
-     * @param <B>
-     * @param <R>
-     * @return
+     * 创建实例（默认单线程、每批 1000 条、多线程错误不中断）
+     *
+     * @param <B> 批数据元素类型
+     * @param <R> 处理结果元素类型
+     * @return 新处理器实例
      */
     public static <B,R> BatchProcessor<B,R> create(){
         return new BatchProcessor<>();
@@ -55,6 +56,9 @@ public class BatchProcessor<B, R> {
         }
     }
 
+    /**
+     * 清空上一轮处理的结果与错误收集（实例复用时调用）
+     */
     public void reset(){
         results = null;
         errors.clear();
@@ -64,8 +68,13 @@ public class BatchProcessor<B, R> {
     /**
      * 分批处理列表
      *
-     * @param batchList
-     * @return 汇总子列表处理结果
+     * @param batchList 待处理全量数据，按 batchLimit 切片
+     * @param callback  单批处理函数，入参为子列表，返回本批结果集合（null 视为无产出）
+     * @param <B2>      批数据元素类型（跟随本次调用）
+     * @param <R2>      处理结果元素类型
+     * @return 本处理器（链式取结果）
+     * @throws RuntimeException 多线程关闭（或 ignoreMultiThreadError=false）时处理异常直接上抛；
+     *                           多线程且忽略错误时异常转入 {@link #getErrors()}，不中断其余批次
      */
     public <B, R> BatchProcessor<B, R> process(List<B> batchList, CallbackPR<List<B>,Collection<R>> callback) {
         initContainer();
@@ -129,9 +138,20 @@ public class BatchProcessor<B, R> {
         }
     }
 
+    /**
+     * 取全部批次的汇总结果
+     *
+     * @return 汇总结果集合（多线程时为无序 ConcurrentLinkedQueue，单线程为 ArrayList）；未执行 process 时为 null
+     */
     public Collection<R> getResults() {
         return results;
     }
+    /**
+     * 取汇总结果并可选复位处理器
+     *
+     * @param reset true 时取值后清空结果与错误收集（实例复用）
+     * @return 汇总结果集合
+     */
     public Collection<R> getResults(boolean reset) {
         Collection<R> results = getResults();
         if(reset){
@@ -142,7 +162,8 @@ public class BatchProcessor<B, R> {
 
     /**
      * collection转list类型
-     * @return
+     *
+     * @return 汇总结果的 List 视图（内部本就是 List 时原样返回，否则新建 ArrayList 拷贝）
      */
     public List<R> getResAsList() {
         return (List<R>) (results instanceof List ? results : CollectionUtil.addAll(new ArrayList<>(), results));
@@ -150,7 +171,8 @@ public class BatchProcessor<B, R> {
 
     /**
      * 针对返回int类型的结果进行总计
-     * @return
+     *
+     * @return 结果中 Integer 元素的合计（非 Integer 元素跳过；判定方式较为宽松，混合类型时慎用）
      */
     public int getIntSum() {
         int res = 0;
@@ -164,16 +186,34 @@ public class BatchProcessor<B, R> {
 
 
 
+    /**
+     * 设置每批处理数据量
+     *
+     * @param batchLimit 每批条数，需大于 0
+     * @return 本处理器（链式）
+     */
     public BatchProcessor<B, R> setBatchLimit(int batchLimit) {
         this.batchLimit = batchLimit;
         return (BatchProcessor<B, R>)this;
     }
 
+    /**
+     * 设置是否启用多线程分批
+     *
+     * @param multiThread true 时各批次提交公共线程池并发执行，false 同步逐批
+     * @return 本处理器（链式）
+     */
     public <B,R> BatchProcessor<B, R> setMultiThread(boolean multiThread) {
         this.multiThread = multiThread;
         return (BatchProcessor<B, R>) this;
     }
 
+    /**
+     * 设置多线程模式下批次异常的处理方式
+     *
+     * @param ignoreMultiThreadError true（默认）异常收集进 errors 不中断其余批次；false 异常上抛
+     * @return 本处理器（链式）
+     */
     public <B,R> BatchProcessor<B, R> setIgnoreMultiThreadError(boolean ignoreMultiThreadError) {
         this.ignoreMultiThreadError = ignoreMultiThreadError;
         return (BatchProcessor<B, R>) this;

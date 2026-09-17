@@ -37,11 +37,26 @@ public class ExcelResolver implements HandlerMethodArgumentResolver {
     private static final String CHARSET = "utf-8";
 
     @Override
+/**
+    * 支持性判定：参数带 @Excel 注解即接管。
+    * @param parameter 目标参数
+    * @return true=带 @Excel 注解
+    */
     public boolean supportsParameter(MethodParameter parameter) {
         return parameter.hasParameterAnnotation(Excel.class) && List.class.isAssignableFrom(parameter.getParameter().getType());
     }
 
     @Override
+/**
+    * 解析绑定：multipart 文件按 @BeanField 列序展开为 List&lt;T&gt;，JSON 数组请求体同样绑定；
+    * @NotNull 等校验随绑定生效。
+    * @param parameter 目标参数
+    * @param modelAndViewContainer 视图容器（未参与）
+    * @param webRequest 当前请求
+    * @param webDataBinderFactory 绑定工厂（校验挂载）
+    * @return 绑定完成的参数值（List 形态）
+    * @throws Exception 解析/绑定失败
+    */
     public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer modelAndViewContainer, NativeWebRequest webRequest, WebDataBinderFactory webDataBinderFactory) throws Exception {
         String msgTemplate = "ExcelResolver Servlet Path : {} ";
         Excel excel = parameter.getParameterAnnotation(Excel.class);

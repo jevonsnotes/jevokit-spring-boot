@@ -18,6 +18,10 @@ public class TransactionMqListener implements RocketMQListener<TopicVo> {
 
 
     @Override
+/**
+    * 事务消息消费端演示。
+    * @param message 消息体
+    */
     public void onMessage(TopicVo message) {
         log.info("接收到事务消息：{}", JSON.toJSONString(message));
     }

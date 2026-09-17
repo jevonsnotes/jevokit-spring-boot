@@ -24,6 +24,11 @@ public class JasyptApi {
 
     private final EncryptablePropertyDetector detector;
     @RequestMapping("/test")
+/**
+    * 解密演示：对传入 ENC 密文用容器加密器解密（E2E 验证 datasource 密文可用性）。
+    * @param encryptVal ENC(...) 形态密文
+    * @return 解密明文
+    */
     public String test(@RequestParam("encryptVal") String encryptVal){
         if(detector.isEncrypted(encryptVal)){
             encryptVal = detector.unwrapEncryptedValue(encryptVal);

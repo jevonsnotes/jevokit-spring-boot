@@ -50,10 +50,18 @@ public class JSecureApiUtil {
         return JSRequestExecutor.create(clientId,url,data,responseDataClass);
     }
 
+    /** 容器构造（注入配置启用静态方法，脱离 Spring 环境静态方法不可用）。 */
     public JSecureApiUtil(final JevokitApiProperties properties) {
         JSecureApiUtil.properties = properties;
     }
 
+    /**
+     * 按终端识别码精确匹配终端配置。
+     *
+     * @param clientId 终端识别码（spkit.api.client[].id，区分大小写全等比较）
+     * @return 对应终端配置
+     * @throws RuntimeException 无此终端时抛出（fail-fast，密钥配置缺失属部署错误）
+     */
     public static JevokitApiClientProperties getClient(String clientId) {
         return properties.getClient()
                 .stream()
@@ -62,6 +70,11 @@ public class JSecureApiUtil {
                 .orElseThrow(() -> new RuntimeException("No client found with id " + clientId));
     }
 
+    /**
+     * 从当前请求头解析终端：任一已登记终端的识别码头命中即返回该终端。
+     *
+     * @return 命中的终端配置；无请求上下文或未命中返回 null（由调用方决定放行/拒绝）
+     */
     public static JevokitApiClientProperties getCurrentClient() {
         ServletRequestAttributes attr = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         if (attr != null) {
@@ -88,6 +101,11 @@ public class JSecureApiUtil {
 
 
 
+    /**
+     * 获取当前请求（Servlet 线程内有效）。
+     *
+     * @return 请求对象；非 Web 线程/无上下文返回 empty
+     */
     public static Optional<HttpServletRequest> getCurrentRequest(){
         if(RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes){
             ServletRequestAttributes attr = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
@@ -98,10 +116,27 @@ public class JSecureApiUtil {
         return Optional.empty();
     }
 
+    /**
+     * 拼接协议头名：prefix 已以 - 结尾直接拼接，否则补 -（两种前缀写法产出一致头名）。
+     *
+     * @param key    头名主体（如 ClientId）
+     * @param prefix 终端配置的头前缀（如 X-JS 或 X-JS-）
+     * @return 实际头名（如 X-JS-ClientId）
+     */
     public static String rebuildHeader(String key, String prefix) {
         return prefix.endsWith("-") ? prefix + key : prefix + "-" + key;
     }
 
+    /**
+     * 请求头验签：按同配方重算摘要与传入值恒等比对。
+     *
+     * @param signature 对端传入的签名值
+     * @param alg       签名算法（MD5/SHA256/SM3）
+     * @param timestamp 秒级时间戳（参与摘要原文）
+     * @param nonce     随机码（参与摘要原文）
+     * @param secretKey 终端密钥
+     * @return true 验签通过；false 不匹配（记 ERROR 日志含期望/实际值，供对端排查）
+     */
     public static boolean checkHeaderSignature(String signature, ApiHSignAlg alg, String timestamp, String nonce, String secretKey) {
         String headerSignActual = headerSignature(alg, timestamp, nonce, secretKey);
         boolean result = headerSignActual.equals(signature);
@@ -111,6 +146,15 @@ public class JSecureApiUtil {
         return result;
     }
 
+    /**
+     * 计算请求头签名：digest(timestamp + secretKey + nonce)。
+     *
+     * @param alg       签名算法（MD5/SHA256/SM3）
+     * @param timestamp 秒级时间戳字符串
+     * @param nonce     随机码
+     * @param secretKey 终端密钥
+     * @return 十六进制摘要；alg 为 null 或不识别时返回空串（调用方以恒等比对判失败）
+     */
     public static String headerSignature(ApiHSignAlg alg, String timestamp, String nonce, String secretKey) {
         String headerSignActual = StrUtil.EMPTY;
         String plaintext = timestamp + secretKey + nonce;

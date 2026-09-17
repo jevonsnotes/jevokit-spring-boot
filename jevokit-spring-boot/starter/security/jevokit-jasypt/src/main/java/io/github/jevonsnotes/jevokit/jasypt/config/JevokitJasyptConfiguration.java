@@ -28,15 +28,18 @@ import io.github.jevonsnotes.jevokit.jasypt.util.JasyptUtil;
 @Slf4j
 public class JevokitJasyptConfiguration {
 
+    /** 注册命名加密器（bean 名 jevokitStringEncryptor，解析器与工具均按此名引用）。 */
     @Bean(name = JasyptConst.ENCRYPTOR_NAME)
     public StringEncryptor jevokitStringEncryptor(Environment e) {
         return new JevokitStringEncryptor(e);
     }
+    /** 注册属性解密解析器（替代 jasypt-spring-boot 默认实现）。 */
     @Bean
     public EncryptablePropertyResolver jevokitEncryptPropertyResolver(@Qualifier(JasyptConst.ENCRYPTOR_NAME) StringEncryptor encryptor, EncryptablePropertyDetector detector) {
         return new JevokitEncryptPropertyResolver(encryptor,detector);
     }
 
+    /** 注册静态加解密工具门面（构造即锁定单实例，见 JasyptUtil 类注释）。 */
     @Bean
     public JasyptUtil jasyptUtil(@Qualifier(JasyptConst.ENCRYPTOR_NAME) StringEncryptor encryptor, EncryptablePropertyDetector detector) {
         return new JasyptUtil(encryptor,detector);

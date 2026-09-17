@@ -35,10 +35,22 @@ public class JasyptUtil {
         log.info("JasyptUtil initialized and locked as the singleton facade instance");
     }
 
+    /**
+     * 加密明文（静态门面，实例由容器构造锁定）。
+     *
+     * @param val 明文
+     * @return jasypt 密文（base64 形态，与 ENC() 包装格式配套）
+     */
     public static String encrypt(String val){
         return instance.encryptor.encrypt(val);
     }
 
+    /**
+     * 解密密文。
+     *
+     * @param val 密文；若已带 ENC() 包装则先去包装再解密（与属性解密口径一致）
+     * @return 明文
+     */
     public static String decrypt(String val){
         if(instance.detector.isEncrypted(val)){
             val =  instance.detector.unwrapEncryptedValue(val);

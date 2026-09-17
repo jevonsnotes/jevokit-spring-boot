@@ -62,6 +62,13 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
     private OkHttpClient customOkhttpClient;
 
 
+/**
+     * 构造门面实例（由 JevokitOkhttpConfiguration 装配调用，业务侧注入使用而非自建）
+     * @param properties 行为配置（error-mode/状态敏感开关/代理模式）
+     * @param okHttpClient 直连客户端
+     * @param okHttpProxyClient 代理客户端（多代理自动切换）
+     * @return 无（构造器）
+     */
     public OkHttpUtil(OkhttpProperties properties, OkHttpClient okHttpClient, OkHttpClient okHttpProxyClient) {
         this.okHttpClient = okHttpClient;
         this.okHttpProxyClient = okHttpProxyClient;
@@ -78,6 +85,12 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         return get(url, null, null);
     }
 
+/**
+     * GET 取字节（二进制下载）。语义同 {@link #getByte(String, Map, Map)} 便捷形态
+     * @param url 请求地址
+     * @return 返回响应体字节；throwout 模式异常同上抛出；quiet/log 吞错时异常返回 <b>null</b>
+     *          （注意与文本方法的"空串"差异，判空须用引用比较）
+     */
     public byte[] getByte(String url) {
         return getByte(url, null, null);
     }
@@ -116,6 +129,14 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         return executeBody(prepareGetRequest(url, params, headers));
     }
 
+/**
+     * GET 取字节全参形态（二进制内容，响应不按文本解码）
+     * @param url 请求地址
+     * @param params 查询参数，拼入 URL，可空
+     * @param headers 请求头，可空
+     * @return 返回响应体字节；throwout 模式异常同上抛出；quiet/log 吞错时异常返回 <b>null</b>
+     *          （注意与文本方法的"空串"差异，判空须用引用比较）
+     */
     public byte[] getByte(String url, Map<String, String> params, Map<String, String> headers) {
         return executeByte(prepareGetRequest(url, params, headers));
     }
@@ -125,22 +146,66 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
     }
 
 
+/**
+     * 空体 POST（无参数无请求头），UTF-8。语义同 {@link #post(String, Map, Map, Charset)} 便捷形态
+     * @param url 请求地址
+     * @return 返回语义由 error-mode 支配（见类注释）：throwout 抛 OkHttpStatusRuntimeException（非 2xx）
+     *         或 OkHttpRuntimeException/IORuntimeException（IO 异常）；quiet/log 模式吞错——异常时返回空串、
+     *         非 2xx 时返回错误体文本，<b>永不返回 null</b>，调用方须以返回值判成败
+     */
     public String post(String url) {
         return post(url, null, StandardCharsets.UTF_8);
     }
 
+/**
+     * 空体 POST，指定字符集。语义同 {@link #post(String, Map, Map, Charset)} 便捷形态
+     * @param url 请求地址
+     * @param charset 表单参数编码 + 响应解码字符集，null 走 UTF-8/自动探测
+     * @return 返回语义由 error-mode 支配（见类注释）：throwout 抛 OkHttpStatusRuntimeException（非 2xx）
+     *         或 OkHttpRuntimeException/IORuntimeException（IO 异常）；quiet/log 模式吞错——异常时返回空串、
+     *         非 2xx 时返回错误体文本，<b>永不返回 null</b>，调用方须以返回值判成败
+     */
     public String post(String url, Charset charset) {
         return post(url, null, charset);
     }
 
+/**
+     * 表单 POST（参数以 application/x-www-form-urlencoded 提交），UTF-8。语义同全参形态便捷版本
+     * @param url 请求地址
+     * @param params 表单参数，null/空则发空体
+     * @return 返回语义由 error-mode 支配（见类注释）：throwout 抛 OkHttpStatusRuntimeException（非 2xx）
+     *         或 OkHttpRuntimeException/IORuntimeException（IO 异常）；quiet/log 模式吞错——异常时返回空串、
+     *         非 2xx 时返回错误体文本，<b>永不返回 null</b>，调用方须以返回值判成败
+     */
     public String post(String url, Map<String, String> params) {
         return post(url, params, StandardCharsets.UTF_8);
     }
 
+/**
+     * 原始报文体 POST：contentType 缺省按 text/html + charset 补齐，已含 charset 则原样使用
+     * @param url 请求地址
+     * @param body 原始报文体
+     * @param contentType Content-Type 值，空串补 text/html; charset=…
+     * @param charset 报文体与响应解码字符集，null 走 UTF-8
+     * @return 返回语义由 error-mode 支配（见类注释）：throwout 抛 OkHttpStatusRuntimeException（非 2xx）
+     *         或 OkHttpRuntimeException/IORuntimeException（IO 异常）；quiet/log 模式吞错——异常时返回空串、
+     *         非 2xx 时返回错误体文本，<b>永不返回 null</b>，调用方须以返回值判成败
+     */
     public String postBody(String url, String body, String contentType, Charset charset) {
         return postBody(url, body, null, contentType, charset);
     }
 
+/**
+     * 原始报文体 POST 全参形态（带请求头）
+     * @param url 请求地址
+     * @param body 原始报文体
+     * @param headers 请求头，可空
+     * @param contentType Content-Type 值，空串补 text/html; charset=…（charset 参数参与拼接）
+     * @param charset 报文体与响应解码字符集，null 走 UTF-8
+     * @return 返回语义由 error-mode 支配（见类注释）：throwout 抛 OkHttpStatusRuntimeException（非 2xx）
+     *         或 OkHttpRuntimeException/IORuntimeException（IO 异常）；quiet/log 模式吞错——异常时返回空串、
+     *         非 2xx 时返回错误体文本，<b>永不返回 null</b>，调用方须以返回值判成败
+     */
     public String postBody(String url, String body, Map<String, String> headers, String contentType, Charset charset) {
         charset = ObjectUtil.defaultIfNull(charset, StandardCharsets.UTF_8);
         MediaType mediaType = StrUtil.isBlank(contentType) ? MediaType.parse("text/html; charset=" + charset.name()) : contentType.toUpperCase().contains("CHARSET") ? MediaType.parse(contentType) : MediaType.parse(String.format("%s; charset=%s", contentType, charset.name()));
@@ -160,26 +225,83 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         return post(url, params, null, null);
     }
 
+/**
+     * multipart 文件分片上传（无附加表单字段）。语义同 {@link #postFormDataPart(String, Map, Map, List, String)} 便捷形态
+     * @param url 请求地址
+     * @param parts 文件分片清单，file 与 mediaType 必填（缺省断言失败）
+     * @return 返回语义由 error-mode 支配（见类注释）：throwout 抛 OkHttpStatusRuntimeException（非 2xx）
+     *         或 OkHttpRuntimeException/IORuntimeException（IO 异常）；quiet/log 模式吞错——异常时返回空串、
+     *         非 2xx 时返回错误体文本，<b>永不返回 null</b>，调用方须以返回值判成败
+     */
     public String postFormDataPart(String url, List<FormDataPart> parts) {
         return postFormDataPart(url, null, null, parts, null);
     }
 
+/**
+     * multipart 上传（表单字段 + 文件分片）。语义同全参形态便捷版本
+     * @param url 请求地址
+     * @param params 普通表单字段，可空
+     * @param parts 文件分片清单
+     * @return 返回语义由 error-mode 支配（见类注释）：throwout 抛 OkHttpStatusRuntimeException（非 2xx）
+     *         或 OkHttpRuntimeException/IORuntimeException（IO 异常）；quiet/log 模式吞错——异常时返回空串、
+     *         非 2xx 时返回错误体文本，<b>永不返回 null</b>，调用方须以返回值判成败
+     */
     public String postFormDataPart(String url, Map<String, String> params, List<FormDataPart> parts) {
         return postFormDataPart(url, params, null, parts, null);
     }
 
+/**
+     * multipart 上传（表单字段 + 单个文件分片）。语义同全参形态便捷版本
+     * @param url 请求地址
+     * @param params 普通表单字段，可空
+     * @param part 单个文件分片
+     * @return 返回语义由 error-mode 支配（见类注释）：throwout 抛 OkHttpStatusRuntimeException（非 2xx）
+     *         或 OkHttpRuntimeException/IORuntimeException（IO 异常）；quiet/log 模式吞错——异常时返回空串、
+     *         非 2xx 时返回错误体文本，<b>永不返回 null</b>，调用方须以返回值判成败
+     */
     public String postFormDataPart(String url, Map<String, String> params, FormDataPart part) {
         return postFormDataPart(url, params, null, CollectionUtil.toList(part), null);
     }
 
+/**
+     * multipart 上传（单分片 + 自定义边界）。语义同全参形态便捷版本
+     * @param url 请求地址
+     * @param params 普通表单字段，可空
+     * @param part 单个文件分片
+     * @param boundary multipart 边界，空则由 OkHttp 随机生成（对端有固定边界要求时指定）
+     * @return 返回语义由 error-mode 支配（见类注释）：throwout 抛 OkHttpStatusRuntimeException（非 2xx）
+     *         或 OkHttpRuntimeException/IORuntimeException（IO 异常）；quiet/log 模式吞错——异常时返回空串、
+     *         非 2xx 时返回错误体文本，<b>永不返回 null</b>，调用方须以返回值判成败
+     */
     public String postFormDataPart(String url, Map<String, String> params, FormDataPart part, String boundary) {
         return postFormDataPart(url, params, null, CollectionUtil.toList(part), boundary);
     }
 
+/**
+     * multipart 上传（多分片 + 自定义边界）。语义同全参形态便捷版本
+     * @param url 请求地址
+     * @param params 普通表单字段，可空
+     * @param parts 文件分片清单
+     * @param boundary multipart 边界，空则自动生成
+     * @return 返回语义由 error-mode 支配（见类注释）：throwout 抛 OkHttpStatusRuntimeException（非 2xx）
+     *         或 OkHttpRuntimeException/IORuntimeException（IO 异常）；quiet/log 模式吞错——异常时返回空串、
+     *         非 2xx 时返回错误体文本，<b>永不返回 null</b>，调用方须以返回值判成败
+     */
     public String postFormDataPart(String url, Map<String, String> params, List<FormDataPart> parts, String boundary) {
         return postFormDataPart(url, params, null, parts, boundary);
     }
 
+    /**
+     * multipart 上传全参形态：表单字段 + 文件分片 + 请求头 + 自定义边界一次收齐。
+     *
+     * @param url      请求地址
+     * @param params   普通表单字段，可空
+     * @param headers  请求头，可空
+     * @param parts    文件分片清单，可空
+     * @param boundary multipart 边界，空则自动生成
+     * @return 返回语义由 error-mode 支配（见类注释），吞错模式永不返回 null
+     * @throws RuntimeException 任一分片的 file 为 null 或 mediaType 为空白时断言失败（前置校验，发起请求前抛出）
+     */
     public String postFormDataPart(String url, Map<String, String> params, Map<String, String> headers, List<FormDataPart> parts, String boundary) {
         MultipartBody.Builder builder = StrUtil.isBlank(boundary) ? new MultipartBody.Builder() : new MultipartBody.Builder(boundary);
         if (CollectionUtil.isNotEmpty(params)) {
@@ -348,43 +470,115 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         return builder;
     }
 
+/**
+     * GET 下载为字节数组。语义同 {@link #download(String, Map, Map)} 便捷形态
+     * @param url 下载地址
+     * @return 返回响应体字节；throwout 模式异常同上抛出；quiet/log 吞错时异常返回 <b>null</b>
+     *          （注意与文本方法的"空串"差异，判空须用引用比较）
+     */
     public byte[] download(String url) {
         return download(url, null, null);
     }
 
+/**
+     * 带请求头 GET 下载。语义同 {@link #download(String, Map, Map)} 便捷形态
+     * @param url 下载地址
+     * @param headers 请求头，可空（鉴权类下载必带）
+     * @return 返回响应体字节；throwout 模式异常同上抛出；quiet/log 吞错时异常返回 <b>null</b>
+     *          （注意与文本方法的"空串"差异，判空须用引用比较）
+     */
     public byte[] downloadWithHeaders(String url, Map<String, String> headers) {
         return download(url, null, headers);
     }
 
+/**
+     * 带查询参数 GET 下载。语义同 {@link #download(String, Map, Map)} 便捷形态
+     * @param url 下载地址
+     * @param params 查询参数，拼入 URL
+     * @return 返回响应体字节；throwout 模式异常同上抛出；quiet/log 吞错时异常返回 <b>null</b>
+     *          （注意与文本方法的"空串"差异，判空须用引用比较）
+     */
     public byte[] downloadWithParams(String url, Map<String, String> params) {
         return download(url, params, null);
     }
 
+/**
+     * GET 下载全参形态（大文件建议改用 downloadAsStream 避免整包进内存）
+     * @param url 下载地址
+     * @param params 查询参数，可空
+     * @param headers 请求头，可空
+     * @return 返回响应体字节；throwout 模式异常同上抛出；quiet/log 吞错时异常返回 <b>null</b>
+     *          （注意与文本方法的"空串"差异，判空须用引用比较）
+     */
     public byte[] download(String url, Map<String, String> params, Map<String, String> headers) {
         return executeByte(prepareGetRequest(url, params, headers));
     }
 
+/**
+     * GET 下载为流。语义同 {@link #downloadAsStream(String, Map, Map)} 便捷形态
+     * @param url 下载地址
+     * @return 返回响应体流，<b>所有权移交调用方</b>——必须自行 close（连带归还连接池连接）；
+     *         quiet/log 吞错时异常返回 null
+     */
     public InputStream downloadAsStream(String url) {
         return downloadAsStream(url, null, null);
     }
 
+/**
+     * 带请求头 GET 下载为流。语义同 {@link #downloadAsStream(String, Map, Map)} 便捷形态
+     * @param url 下载地址
+     * @param headers 请求头，可空
+     * @return 返回响应体流，<b>所有权移交调用方</b>——必须自行 close（连带归还连接池连接）；
+     *         quiet/log 吞错时异常返回 null
+     */
     public InputStream downloadWithHeadersAsStream(String url, Map<String, String> headers) {
         return downloadAsStream(url, null, headers);
     }
 
+/**
+     * 带查询参数 GET 下载为流。语义同 {@link #downloadAsStream(String, Map, Map)} 便捷形态
+     * @param url 下载地址
+     * @param params 查询参数
+     * @return 返回响应体流，<b>所有权移交调用方</b>——必须自行 close（连带归还连接池连接）；
+     *         quiet/log 吞错时异常返回 null
+     */
     public InputStream downloadWithParamsAsStream(String url, Map<String, String> params) {
         return downloadAsStream(url, params, null);
     }
 
+/**
+     * GET 下载为流全参形态：Response 由内部包装持有，调用方 close 流时连带释放
+     * @param url 下载地址
+     * @param params 查询参数，可空
+     * @param headers 请求头，可空
+     * @return 返回响应体流，<b>所有权移交调用方</b>——必须自行 close（连带归还连接池连接）；
+     *         quiet/log 吞错时异常返回 null
+     */
     public InputStream downloadAsStream(String url, Map<String, String> params, Map<String, String> headers) {
         return executeStream(prepareGetRequest(url, params, headers));
     }
 
+/**
+     * POST（表单）取字节：以表单参数发起 POST 并按二进制收取响应
+     * @param url 请求地址
+     * @param params 表单参数
+     * @param headers 请求头，可空
+     * @return 返回响应体字节；throwout 模式异常同上抛出；quiet/log 吞错时异常返回 <b>null</b>
+     *          （注意与文本方法的"空串"差异，判空须用引用比较）
+     */
     public byte[] postDownloadAsByte(String url, Map<String, String> params, Map<String, String> headers) {
         Request request = buildHeaders(headers).url(url).post(buildFormBody(params, null)).build();
         return executeByte(request);
     }
 
+/**
+     * POST（表单）下载为流：所有权语义同 GET 流形态
+     * @param url 请求地址
+     * @param params 表单参数
+     * @param headers 请求头，可空
+     * @return 返回响应体流，<b>所有权移交调用方</b>——必须自行 close（连带归还连接池连接）；
+     *         quiet/log 吞错时异常返回 null
+     */
     public InputStream postDownloadAsStream(String url, Map<String, String> params, Map<String, String> headers) {
         Request request = buildHeaders(headers).url(url).post(buildFormBody(params, null)).build();
         return executeStream(request);
@@ -469,6 +663,10 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         }
 
         @Override
+/**
+        * 关闭流并 finally 连带关闭持有的 Response（流所有权移交的实现点，见外层类注释）。
+        * @throws java.io.IOException 底层流关闭异常
+        */
         public void close() throws java.io.IOException {
             try {
                 super.close();
@@ -515,6 +713,11 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         }
     }
 
+/**
+     * 取重定向目标地址：探测目标 URL，3xx 且携带非空 Location 头时返回该地址
+     * @param url 探测地址
+     * @return 重定向目标（Location 头）；<b>非重定向、Location 缺失或吞错模式下异常时原样返回入参 url</b>（不返回 null）；throwout 模式异常照抛
+     */
     public String getRedirectUrl(String url) {
         Request request = new Request.Builder().url(url).build();
         try (Response response = getClient().newCall(request).execute()) {
@@ -557,6 +760,11 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
 //        return getClient(null);
 //    }
 
+    /**
+     * 取当前生效客户端：customOkhttpClient（ofProxy 定制）优先，其次按 proxy-mode 选代理/直连客户端
+     *
+     * @return 当前生效的 OkHttpClient 实例（装配期保证非 null）
+     */
     public OkHttpClient getClient() {
         if (this.customOkhttpClient != null) {
             return this.customOkhttpClient;
@@ -588,11 +796,9 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
 //        return isIgnore;
 //    }
 
-    /**
-     * 使用默认客户端
-     * 默认客户端有两种，一种是含代理服务器配置的客户端，一种是普通客户端，依据配置自动选择使用
-     *
-     * @return
+/**
+     * 取容器装配的门面单例（默认客户端，proxy-mode 决定直连还是代理）
+     * @return 容器中的 OkHttpUtil 单例
      */
     public static OkHttpUtil of() {
         return SpringUtil.getBean(OkHttpUtil.class);
@@ -634,11 +840,10 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         return bean;
     }
 
-    /**
-     * 依据配置文件自动初始化基础配置（含代理）并提供自定义配置渠道
-     *
-     * @param config
-     * @return
+/**
+     * 克隆门面并定制代理客户端：以基础 Builder + 代理初始化后经 config 二次改写，得到独立副本（不影响单例）
+     * @param config 代理客户端定制回调（超时/拦截器等）
+     * @return 携带 customOkhttpClient 的新门面副本，后续调用全部走该定制客户端
      */
     public static OkHttpUtil ofProxy(CustomOkhttpProxyConfiguration config) {
         OkHttpUtil bean = SpringUtil.getBean(OkHttpUtil.class).clone();
@@ -651,10 +856,9 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         return bean;
     }
 
-    /**
-     * 使用代理客户端
-     *
-     * @return
+/**
+     * 克隆门面并强制切到代理客户端（manual 模式下的显式走代理入口，不影响单例）
+     * @return 强制使用代理客户端的新门面副本
      */
     public static OkHttpUtil ofProxy() {
         OkHttpUtil bean = SpringUtil.getBean(OkHttpUtil.class).clone();
@@ -752,10 +956,10 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
     }
 
     /**
-     * 获取请求主机IP地址,如果通过代理进来，则透过防火墙获取真实IP地址
+     * 取真实客户端 IP（含多级代理场景），委托 HttpUtil 实现。
      *
-     * @param request
-     * @return
+     * @param request 当前请求
+     * @return 直连或经代理时的真实客户端 IP（取值优先级见 HttpUtil）
      * @deprecated use HttpUtil.getRemoteIp instead
      */
     @Deprecated
@@ -763,6 +967,12 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
         return HttpUtil.getRemoteIp(request);
     }
 
+    /**
+     * 请求头构造入口：headerBuilder().add(k, v)...build() 链式产出 Map，
+     * 供本类各 *WithHeaders / headers 形态使用。
+     *
+     * @return 新的 HeaderBuilder 实例（无共享状态）
+     */
     public static HeaderBuilder headerBuilder() {
         return new HeaderBuilder();
     }

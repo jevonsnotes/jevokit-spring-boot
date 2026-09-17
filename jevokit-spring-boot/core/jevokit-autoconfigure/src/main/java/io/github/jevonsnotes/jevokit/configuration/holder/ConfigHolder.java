@@ -25,16 +25,30 @@ public class ConfigHolder {
      */
     private static final ThreadLocal<SqlInjectMeta> TL_SQL_INJECT = new ThreadLocal<>();
 
+    /**
+     * 清除当前线程的路径穿越元数据（请求结束必调，防线程池脏上下文）
+     */
     public static void removePt() {
         TL_PT.remove();
     }
+    /**
+     * 清除当前线程的 XSS 元数据（请求结束必调，防线程池脏上下文）
+     */
     public static void removeXss() {
         TL_XSS.remove();
     }
+    /**
+     * 清除当前线程的 SQL 注入元数据（请求结束必调，防线程池脏上下文）
+     */
     public static void removeSI() {
         TL_SQL_INJECT.remove();
     }
 
+    /**
+     * 取当前线程的路径穿越元数据
+     *
+     * @return 当前线程已有元数据；没有则新建空元数据并绑定后返回
+     */
     public static PathTraversalMeta getPtMeta(){
         PathTraversalMeta meta = TL_PT.get();
         if(meta == null){
@@ -43,6 +57,11 @@ public class ConfigHolder {
         return meta;
     }
 
+    /**
+     * 取当前线程的 XSS 元数据
+     *
+     * @return 当前线程已有元数据；没有则新建空元数据并绑定后返回
+     */
     public static XssMeta getXssMeta(){
         XssMeta meta = TL_XSS.get();
         if(meta == null){
@@ -50,6 +69,11 @@ public class ConfigHolder {
         }
         return meta;
     }
+    /**
+     * 取当前线程的 SQL 注入元数据
+     *
+     * @return 当前线程已有元数据；没有则新建空元数据并绑定后返回
+     */
     public static SqlInjectMeta getSIMeta(){
         SqlInjectMeta meta = TL_SQL_INJECT.get();
         if(meta == null){

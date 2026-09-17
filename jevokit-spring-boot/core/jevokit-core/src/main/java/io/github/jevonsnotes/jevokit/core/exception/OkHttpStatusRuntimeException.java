@@ -34,6 +34,14 @@ public class OkHttpStatusRuntimeException extends OkHttpRuntimeException {
         this.body = StrUtil.EMPTY;
     }
 
+    /**
+     * 直接抛出该异常（抛出型工厂，省去 throw 样板）
+     *
+     * @param code    HTTP 响应码
+     * @param message 状态消息
+     * @param url     请求地址
+     * @param body    响应体
+     */
     public static void ofThrow(Integer code, String message,String url,String body) {
         throw new OkHttpStatusRuntimeException(code, message,url,body);
     }

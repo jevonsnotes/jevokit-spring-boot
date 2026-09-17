@@ -19,11 +19,22 @@ import java.util.List;
  * 不要当通用 DAO 用。
  */
 public interface BaseAutoDao {
+    /** 创建主表（方言 DDL）。 */
     void createTableAuditLog();
+    /** 主表连通性校验 SQL（用于建表探测：抛表不存在异常时触发建表）。 */
     String validation();
+    /** 历史表连通性校验 SQL（用途同 {@link #validation()}）。 */
     String validationHis();
+    /** "表不存在"异常消息匹配模式（方言各自的 SQLState/错误码形态）。 */
     String getPattenNotExists();
 
+    /**
+     * 按指定列等值查询单条审计记录（内部窄接口，条件字段名须为白名单列）。
+     *
+     * @param columnName 查询列名
+     * @param localKey   列值
+     * @return 审计记录；无命中返回 null
+     */
     default AuditLogDto getById(String columnName,String localKey){
         JdbcTemplate jdbcTemplate = SpringUtil.getBean(JdbcTemplate.class);
         SqlBundleDto sqlBundleDto = SqlUtil.generateSelectSelectivePreSql(AuditLogDto.builder().localKey(localKey).build(), new String[]{columnName});

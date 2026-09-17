@@ -40,6 +40,12 @@ public class NoGenApi {
     ExecutorService executor = ThreadUtil.newExecutor(200, 200, Integer.MAX_VALUE);
 
     @RequestMapping("/test")
+/**
+    * 发号压测端点：loop 次并发取号计时（E2E 发号递增断言靶点）。
+    * @param bizNo 业务标签
+    * @param loop 循环次数
+    * @return 计时结果文本
+    */
     public String test(@RequestParam("bizNo") String bizNo,@RequestParam("loop") int loop) {
 //        jdbcTemplate.update("""
 //                INSERT INTO biz_no (biz_tag, max_id, step, mode, threhold, description) VALUES ('%s', 0, 1000, 1, '70.00', '单号获取测试demo');
@@ -64,6 +70,12 @@ public class NoGenApi {
         return "success";
     }
     @RequestMapping("/testRecycle")
+/**
+    * 回收模式压测端点：发号后回收再复用。
+    * @param bizNo 业务标签
+    * @param loop 循环次数
+    * @return 计时结果文本
+    */
     public String testRecycle(@RequestParam("bizNo") String bizNo,@RequestParam("loop") int loop) {
 //        jdbcTemplate.update("""
 //                INSERT INTO biz_no (biz_tag, max_id, step, mode, threhold, description) VALUES ('%s', 0, 1000, 1, '70.00', '单号获取测试demo');

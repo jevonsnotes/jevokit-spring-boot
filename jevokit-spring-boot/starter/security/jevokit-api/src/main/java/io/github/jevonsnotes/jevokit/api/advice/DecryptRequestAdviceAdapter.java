@@ -54,6 +54,11 @@ public class DecryptRequestAdviceAdapter extends RequestBodyAdviceAdapter {
     private final IPreventReplayAttack iPreventReplayAttack;
     private final AntPathMatcher antPathMatcher = new AntPathMatcher();
 
+    /**
+     * 仅处理标注 @JSecureApi 且参数为 JSecureRequest 泛型的方法（协议入口识别）。
+     *
+     * @return true 表示该请求体走解密验签链路
+     */
     @Override
     public boolean supports(MethodParameter methodParameter, Type targetType, Class<? extends HttpMessageConverter<?>> converterType) {
         return methodParameter.hasMethodAnnotation(JSecureApi.class)
@@ -61,6 +66,12 @@ public class DecryptRequestAdviceAdapter extends RequestBodyAdviceAdapter {
                 && ClassUtil.isClassAssignable(JSecureRequest.class,((ParameterizedType) targetType).getRawType());
     }
 
+    /**
+     * 读体前的协议处理：解析报文 → 终端准入（存在/路径/IP）→ 防重放 → 请求头验签 → 数据解密验签 →
+     * 明文反序列化为 target，以新 HttpInputMessage 交还 Spring 继续绑定。
+     *
+     * @return 替换后的输入消息（内容为填充了 view/target 的协议报文）；校验不通过抛 JSecureApiException
+     */
     @Override
     public HttpInputMessage beforeBodyRead(HttpInputMessage inputMessage, MethodParameter parameter, Type targetType, Class<? extends HttpMessageConverter<?>> converterType) throws IOException {
         long startTime = System.currentTimeMillis();

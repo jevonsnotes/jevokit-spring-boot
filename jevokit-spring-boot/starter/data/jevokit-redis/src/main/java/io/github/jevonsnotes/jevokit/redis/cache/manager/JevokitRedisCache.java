@@ -33,6 +33,12 @@ public class JevokitRedisCache extends RedisCache {
     }
 
     @Override
+/**
+    * 写缓存：按键名后缀 #expire=秒 提取 TTL（无后缀走配置默认），null 值且未允许时抛异常。
+    * @param key 缓存键（支持 TTL 后缀语法）
+    * @param value 缓存值（null 受 isAllowNullValues 约束）
+    * @throws IllegalArgumentException 不允许 null 值而存入 null
+    */
     public void put(Object key, Object value) {
 
         Object cacheValue = preProcessCacheValue(value);
@@ -50,6 +56,12 @@ public class JevokitRedisCache extends RedisCache {
     }
 
     @Override
+/**
+    * 缺席写入：键已存在时不覆盖，返回现存值。
+    * @param key 缓存键
+    * @param value 候选值
+    * @return 键已存在时返回旧值包装；本次写入成功返回 null（Spring Cache 契约语义）
+    */
     public ValueWrapper putIfAbsent(Object key, Object value) {
 
         Object cacheValue = preProcessCacheValue(value);

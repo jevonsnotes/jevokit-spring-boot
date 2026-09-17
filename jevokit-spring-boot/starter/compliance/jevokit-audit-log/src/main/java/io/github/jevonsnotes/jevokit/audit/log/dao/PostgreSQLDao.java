@@ -21,6 +21,7 @@ public class PostgreSQLDao implements AuditLogDao {
     private final JdbcTemplate jdbcTemplate;
     private final AuditLogProperties properties;
 
+    /** 建主表（PG 方言 DDL，TEXT + 显式主键约束）。 */
     @Override
     public void createTableAuditLog() {
         String sql = "CREATE TABLE "+ TABLE_NAME +" (" +
@@ -52,16 +53,19 @@ public class PostgreSQLDao implements AuditLogDao {
         jdbcTemplate.execute(sql);
     }
 
+    /** 主表校验 SQL（PG 方言）。 */
     @Override
     public String validation() {
         return "SELECT 1 FROM "+ TABLE_NAME +" limit 1;";
     }
 
+    /** 历史表校验 SQL（PG 方言）。 */
     @Override
     public String validationHis() {
         return "SELECT 1 FROM "+ TABLE_NAME_HIS +" limit 1;";
     }
 
+    /** PG "表不存在"异常匹配模式。 */
     @Override
     public String getPattenNotExists() {
         return DBConst.PATTERN_TABLE_NOT_EXISTS_PG;

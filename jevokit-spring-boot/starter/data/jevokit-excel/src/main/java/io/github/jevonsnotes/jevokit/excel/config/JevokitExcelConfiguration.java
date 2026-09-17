@@ -20,6 +20,10 @@ import java.util.List;
 @Slf4j
 public class JevokitExcelConfiguration implements WebMvcConfigurer {
     @Override
+/**
+    * 注册 ExcelResolver 到解析器链（@Excel 入参绑定的装配点）。
+    * @param resolvers 解析器注册表
+    */
     public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
         resolvers.add(new ExcelResolver());
     }

@@ -15,6 +15,11 @@ import io.github.jevonsnotes.jevokit.desensitization.helper.DesHelper;
  * （如 xxl-job 反射代理）跳过——这类对象的"脱敏"实为深遍历改写，会破坏其内部状态。
  */
 public interface IDesensitizedLogback {
+    /**
+     * 就地脱敏日志事件的参数数组并重置已格式化消息缓存（置 null 触发按新参数重建）。
+     *
+     * @param event 日志事件（参数数组被直接改写——调用方须保证此时消息尚未输出）
+     */
     default void iterateArgs(ILoggingEvent event) {
         Object[] argumentArray = event.getArgumentArray();
         if(argumentArray != null) {
@@ -29,10 +34,22 @@ public interface IDesensitizedLogback {
         }
     }
 
+    /**
+     * 脱敏单个日志参数（深克隆后递归处理，入参不被修改）。
+     *
+     * @param obj 日志参数
+     * @return 脱敏后的新对象
+     */
     default Object desensitize(Object obj) {
         return DesHelper.desensitizeLog(obj);
     }
 
+    /**
+     * 是否跳过该类型（DstConst 忽略名单命中，如 xxl-job 反射代理类——脱敏会破坏其内部状态）。
+     *
+     * @param clazz 参数类型
+     * @return true 跳过不脱敏
+     */
     default boolean ignore(Class<?> clazz) {
         return DstConst.DESENSITIZATION_IGNORE_CLASS.contains(clazz.getName());
     }

@@ -29,6 +29,12 @@ import io.github.jevonsnotes.jevokit.desensitization.util.DesUtil;
 @RequiredArgsConstructor
 public class DesensitizeApi {
 
+    /**
+     * 解密端点：还原文本中的 @DST 密文（按当前用户权限校验）。
+     *
+     * @param vo 请求体（data 字段为含密文文本）
+     * @return ok 携带还原后文本；无权限/解密失败时 fail 并回显原文（密文不丢）
+     */
     @RequestMapping("/decrypt")
     @ResponseBody
     public ApiResponse<String> decrypt(@RequestBody SimpleData<String> vo){

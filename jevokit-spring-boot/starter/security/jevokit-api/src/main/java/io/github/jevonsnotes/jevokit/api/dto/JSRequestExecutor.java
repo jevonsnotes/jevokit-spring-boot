@@ -82,17 +82,36 @@ public class JSRequestExecutor<T,R> {
     }
 
 
+    /**
+     * 设置交易号（不设则报文内为空，由服务端自行判定唯一性约束）。
+     *
+     * @param transNo 交易号
+     * @return 本执行器（链式）
+     */
     public JSRequestExecutor<T,R> transNo(String transNo) {
         request.setTransNo(transNo);
         return this;
     }
 
+    /**
+     * 设置交易类型（服务端 @JSecureApi 声明了 transType 限定时必填，否则校验不过）。
+     *
+     * @param transType 交易类型
+     * @return 本执行器（链式）
+     */
     public JSRequestExecutor<T,R> transType(String transType) {
         request.setTransType(transType);
         return this;
     }
 
 
+    /**
+     * 组装协议要素：按 clientId 取终端配置，生成时间戳/nonce/请求头签名，
+     * 数据 SM2 签名并按终端开关 SM4 加密。
+     *
+     * @return 本执行器（prepare 标记置真）
+     * @throws JSecureApiException clientId 为空或终端未登记时抛出
+     */
     public JSRequestExecutor<T,R> prepare(){
         Assert.notBlank(clientId,()-> new JSecureApiException(ApiError.FAIL.code(),"终端识别码不能为空"));
         client = JSecureApiUtil.getClient(clientId);
@@ -120,6 +139,14 @@ public class JSRequestExecutor<T,R> {
         return this;
     }
 
+    /**
+     * 发起请求并处理响应：未 prepare 自动补做；经 {@link IRequest} 发送报文，
+     * 响应解密（view）、反序列化（target）并按终端开关验签。
+     *
+     * @param callback 传输载体回调（任意 HTTP 客户端实现，headers 须原样透传）
+     * @return 已解密验签的协议响应
+     * @throws JSecureApiException 响应验签失败时抛出（不返回未验签数据）
+     */
     public JSecureResponse<R> execute(IRequest callback) {
 
         if(!isPrepare()){

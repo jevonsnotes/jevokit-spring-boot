@@ -17,6 +17,10 @@ public class FIFO3MqListener implements RocketMQListener<TopicVo> {
 
 
     @Override
+/**
+    * 顺序消息第三消费组演示。
+    * @param message 消息体
+    */
     public void onMessage(TopicVo message) {
         log.info("接收到【{}】消息={}", "03-顺序", JSON.toJSONString(message));
     }

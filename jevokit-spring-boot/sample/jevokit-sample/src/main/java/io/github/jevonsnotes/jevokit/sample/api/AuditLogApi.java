@@ -24,6 +24,11 @@ public class AuditLogApi {
     @AuditLog(eventType = "testType",eventName = "测试事件")
     @RequestMapping("/test")
     @ResponseBody
+/**
+    * 方法级 @AuditLog 演示：事件按注解 eventType/eventName 上报，返回对象走脱敏。
+    * @param testVo 请求体
+    * @return 回显（脱敏后）
+    */
     public TestVo test(@RequestBody TestVo testVo){
         return simpleService.testInnerFunc(testVo);
     }

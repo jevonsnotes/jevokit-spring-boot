@@ -42,39 +42,89 @@ public class BigDecimalHolder {
     private BigDecimalHolder(int scale, RoundingMode roundingMode){
         this(null,scale,roundingMode);
     }
+    /**
+     * 创建默认精度的计算器（保留 8 位小数、四舍五入）
+     *
+     * @return 新计算器实例
+     */
     public static BigDecimalHolder getHolder(){
         return new BigDecimalHolder();
     }
+    /**
+     * 创建指定最终保留精度的计算器
+     *
+     * @param scale 最终保留小数位数（运算精度自动取 max(scale*2, 16) 防除不尽报错）
+     * @return 新计算器实例
+     */
     public static BigDecimalHolder getHolder(int scale){
         return new BigDecimalHolder(scale);
     }
+    /**
+     * 创建指定精度与舍入模式的计算器
+     *
+     * @param scale         最终保留小数位数
+     * @param roundingMode  舍入模式（运算与最终保留均生效）
+     * @return 新计算器实例
+     */
     public static BigDecimalHolder getHolder(int scale, RoundingMode roundingMode){
         return new BigDecimalHolder(scale,roundingMode);
     }
+    /**
+     * 除法：当前值 ÷ v1，按运算精度执行
+     *
+     * @param v1 除数，支持 Number/String/char 数组等（见 {@link #convert(Object)}）
+     * @return 本计算器（链式）
+     */
     public BigDecimalHolder divide(Object v1){
         current = current.divide(convert(v1), calcScale, roundingMode);
         return this;
     }
+    /**
+     * 加法：当前值 + v1
+     *
+     * @param v1 加数，支持类型见 {@link #convert(Object)}
+     * @return 本计算器（链式）
+     */
     public BigDecimalHolder add(Object v1){
         current = current.add(convert(v1));
         return this;
     }
+    /**
+     * 减法：当前值 - v1
+     *
+     * @param v1 减数，支持类型见 {@link #convert(Object)}
+     * @return 本计算器（链式）
+     */
     public BigDecimalHolder subtract(Object v1){
         current = current.subtract(convert(v1));
         return this;
     }
+    /**
+     * 乘法：当前值 × v1
+     *
+     * @param v1 乘数，支持类型见 {@link #convert(Object)}
+     * @return 本计算器（链式）
+     */
     public BigDecimalHolder multiply(Object v1){
         current = current.multiply(convert(v1));
         return this;
     }
+    /**
+     * 乘方：当前值的 v1 次方
+     *
+     * @param v1 指数（非负）
+     * @return 本计算器（链式）
+     */
     public BigDecimalHolder pow(int v1){
         current = current.pow(v1);
         return this;
     }
     /**
-     * 类型转换器
-     * @param o
-     * @return
+     * 类型转换器：把 Number/String/char 数组等统一转为 BigDecimal
+     *
+     * @param o 原值，支持 Integer/Double/Long/BigInteger/BigDecimal/String/Character 数组/char 数组
+     * @return 转换结果
+     * @throws RuntimeException 无匹配转换器时抛出
      */
     private static BigDecimal convert( Object o){
         BigDecimal b = null;
@@ -111,41 +161,60 @@ public class BigDecimalHolder {
 
     /**
      * 结束计算并进行精度统筹
-     * @return
+     *
+     * @return 按最终保留精度与舍入模式收敛后的结果
      */
     public BigDecimal done(){
         return current.setScale(scale, roundingMode);
     }
 
     /**
-     * 结束计算并进行精度统筹
-     * @return
+     * 结束计算并输出纯数字字符串（不走科学计数法）
+     *
+     * @return 收敛结果的 toPlainString 形式
      */
     public String doneToPlanStr(){
         return done().toPlainString();
     }
 
     /**
-     * 创建一个带有初始值的holder
-     * @param current
-     * @return
+     * 创建一个带有初始值的holder（继承本计算器的精度配置）
+     *
+     * @param current 初始值，支持类型见 {@link #convert(Object)}
+     * @return 新的计算器实例
      */
     public BigDecimalHolder create(Object current) {
         return getHolder(convert(current),this);
     }
 
     /**
-     * 创建一个带有初始值的holder
-     * @return
+     * 创建一个带有初始值的holder（继承本计算器的精度配置，取对方当前值）
+     *
+     * @param holder 另一计算器，其当前值作为初始值
+     * @return 新的计算器实例
+     * @throws cn.hutool.core.lang.AssertException 对方当前值为 null 时抛出
      */
     public BigDecimalHolder create(BigDecimalHolder holder) {
         Assert.notNull(holder.getCurrent(),"holder value can not be null!");
         return getHolder(convert(holder.getCurrent()),this);
     }
 
+    /**
+     * 以显式初始值与既有计算器的精度配置创建新计算器
+     *
+     * @param current 初始值
+     * @param holder  精度配置来源
+     * @return 新计算器实例
+     */
     public static BigDecimalHolder getHolder(BigDecimal current, BigDecimalHolder holder){
         return new BigDecimalHolder(current,holder.scale, holder.roundingMode);
     }
+
+    /**
+     * 用法演示（可运行示例，非单元测试）
+     *
+     * @param args 未使用
+     */
     public static void main(String[] args) {
         //example 1
         BigDecimalHolder holder = BigDecimalHolder.getHolder(4);

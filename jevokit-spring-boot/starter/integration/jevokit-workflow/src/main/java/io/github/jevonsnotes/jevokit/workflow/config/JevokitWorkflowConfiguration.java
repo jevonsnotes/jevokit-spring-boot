@@ -14,6 +14,10 @@ public class JevokitWorkflowConfiguration {
 
     @ConditionalOnMissingBean(JevokitWorkflowService.class)
     @Bean
+/**
+    * 工作流门面 Bean：注入 Camunda 五大引擎服务。
+    * @return 门面服务
+    */
     public JevokitWorkflowService jevokitWorkflowService(
             RuntimeService runtimeService,
             TaskService taskService,

@@ -43,6 +43,11 @@ public class JevokitRocketMqConfiguration {
      */
     @ConditionalOnBean(RocketMQTemplate.class)
     @Bean
+/**
+    * 装配 RocketMqHelper 门面。
+    * @param rocketMQTemplate 官方模板（@ConditionalOnBean 守卫的前提 Bean）
+    * @return 发送门面单例
+    */
     public RocketMqHelper rocketMqHelper(RocketMQTemplate rocketMQTemplate) {
         return new RocketMqHelper(rocketMQTemplate);
     }

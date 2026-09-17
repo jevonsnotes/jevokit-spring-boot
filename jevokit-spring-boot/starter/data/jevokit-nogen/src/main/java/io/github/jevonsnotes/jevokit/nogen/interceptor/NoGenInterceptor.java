@@ -17,6 +17,14 @@ public class NoGenInterceptor implements AsyncHandlerInterceptor {
     private final JevokitNoGenProperties properties;
 
     @Override
+/**
+    * accessToken 校验：请求头 accessToken 与配置不符即 401。
+    * @param request 请求
+    * @param response 响应（401 写回）
+    * @param handler 目标处理器
+    * @return true=放行；false=拒绝
+    * @throws Exception IO 异常
+    */
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         // 非控制层跳过
         if (!(handler instanceof HandlerMethod)) {
@@ -33,10 +41,25 @@ public class NoGenInterceptor implements AsyncHandlerInterceptor {
     }
 
     @Override
+/**
+    * 空实现（仅实现契约）。
+    * @param request 请求
+    * @param response 响应
+    * @param handler 处理器
+    * @param ex 异常（可空）
+    * @throws Exception 契约允许的异常
+    */
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
     }
 
     @Override
+/**
+    * 空实现（仅实现契约）。
+    * @param request 请求
+    * @param response 响应
+    * @param handler 处理器
+    * @throws Exception 契约允许的异常
+    */
     public void afterConcurrentHandlingStarted(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
     }
 }

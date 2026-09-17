@@ -38,6 +38,12 @@ public class DesensitizationAspect {
     }
 
 
+    /**
+     * 环绕启用脱敏的方法：先执行业务，再对返回值脱敏（方法级 @DstProperty 作为无字段标注时的兜底规则）。
+     *
+     * @param jp 切点（@Desensitization 标注的方法）
+     * @return 业务原值经脱敏处理后的结果
+     */
     @Around("desensitizationPointCut()")
     public Object doAround(ProceedingJoinPoint jp) throws Throwable {
         Object res = jp.proceed();
@@ -47,6 +53,12 @@ public class DesensitizationAspect {
     }
 
 
+    /**
+     * 取方法级 @DstProperty 标注（作为返回值统一兜底规则）。
+     *
+     * @param jp 切点
+     * @return 方法标注；非方法切点或无标注返回 null
+     */
     public DstProperty getMethodDes(JoinPoint jp) {
         Signature signature = jp.getSignature();
         if (signature instanceof MethodSignature) {
@@ -54,6 +66,12 @@ public class DesensitizationAspect {
         }
         return null;
     }
+    /**
+     * 取方法级 @Desensitization 标注。
+     *
+     * @param jp 切点
+     * @return 方法标注；非方法切点或无标注返回 null
+     */
     public Desensitization getMethodEnableDes(JoinPoint jp) {
         Signature signature = jp.getSignature();
         if (signature instanceof MethodSignature) {

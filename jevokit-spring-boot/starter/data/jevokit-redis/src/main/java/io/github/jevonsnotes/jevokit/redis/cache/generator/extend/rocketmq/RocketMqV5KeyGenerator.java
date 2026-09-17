@@ -27,6 +27,13 @@ public class RocketMqV5KeyGenerator extends AbstractKeyGenerator {
 
 
 	@Override
+/**
+ * MQ 消费场景键：以消息 messageId 为身份段（消费幂等键形态）。
+ * @param target 目标对象
+ * @param method 目标方法
+ * @param params 入参
+ * @return 消费幂等缓存键
+ */
 	public String generate(Object target, Method method, Object... params) {
 		Assert.isTrue(ArrayUtil.isNotEmpty(params),"入参不能为空!");
 		Object value = ReflectUtil.getFieldValue(params[0], "messageId");
@@ -45,10 +52,18 @@ public class RocketMqV5KeyGenerator extends AbstractKeyGenerator {
 	}
 
 	@Override
+/**
+ * MQ 键前缀。
+ * @return 前缀串
+ */
 	public String getPrefix() {
 		return PREFIX;
 	}
 
+/**
+ * MQ 键格式化前缀。
+ * @return 前缀串
+ */
 	public String getFormatPrefix() {
 		return PREFIX_PATTERN;
 	}

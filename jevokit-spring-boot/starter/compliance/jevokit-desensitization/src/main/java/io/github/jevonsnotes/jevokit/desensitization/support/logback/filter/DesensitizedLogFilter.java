@@ -12,6 +12,12 @@ import io.github.jevonsnotes.jevokit.desensitization.support.logback.IDesensitiz
  */
 @Slf4j
 public class DesensitizedLogFilter extends Filter<ILoggingEvent> implements IDesensitizedLogback {
+    /**
+     * 日志输出前脱敏参数数组（异常仅 debug 记录——脱敏失败绝不阻断日志输出）。
+     *
+     * @param event 日志事件
+     * @return 恒 NEUTRAL（本过滤器只改写参数，不做过滤决策）
+     */
     @Override
     public FilterReply decide(ILoggingEvent event) {
         try {

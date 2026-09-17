@@ -26,6 +26,11 @@ public class JevokitNoGenAutoInitDB implements ApplicationRunner {
      * @throws Exception on error
      */
     @Override
+/**
+    * 启动期自动建表/校验（ApplicationRunner）：探测 biz_no 表不存在则按库种方言建表。
+    * @param args 启动参数
+    * @throws Exception 建表 SQL 执行失败
+    */
     public void run(ApplicationArguments args) throws Exception {
         log.info("****** 单号服务初始化开始 ******");
         checkAccessToken();

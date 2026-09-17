@@ -21,9 +21,17 @@ public enum FlowState {
     private final String code;
     private final String msg;
 
+/**
+    * 取状态码。
+    * @return 状态码字符串
+    */
     public String code(){
         return this.code;
     }
+/**
+    * 取中文含义。
+    * @return 含义文本
+    */
     public String msg(){
         return this.msg;
     }

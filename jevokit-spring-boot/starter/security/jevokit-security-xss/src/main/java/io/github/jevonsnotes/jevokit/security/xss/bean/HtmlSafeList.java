@@ -6,9 +6,19 @@ import org.jsoup.nodes.Element;
 import org.jsoup.safety.Safelist;
 import org.springframework.util.StringUtils;
 
+/**
+ * XSS 净化白名单：基于 jsoup Safelist 扩展的标签/属性/协议放行清单，
+ * clear 模式下不在清单内的标签与属性一律剥离。
+ * 关键约束（为什么 a.href 未限协议）：限定 http/https 协议会把相对路径链接一并过滤掉，
+ * 业务常用站内相对链接，故仅对引用类属性（cite）限协议；如需更严可自行补充 addProtocols。
+ */
 public class HtmlSafeList extends Safelist {
+    /** 全局共享白名单实例（无状态，线程安全）。 */
     public static final Safelist INSTANCE = new HtmlSafeList();
 
+    /**
+     * 构造放行清单：常见排版标签 + 有限属性 + 引用协议白名单（内容见类注释与下方清单）。
+     */
     public HtmlSafeList(){
         addTags("a", "b", "blockquote", "br", "caption", "cite", "code", "col", "colgroup", "dd", "div", "span", "embed", "object", "dl", "dt",
                 "em", "h1", "h2", "h3", "h4", "h5", "h6", "i", "img", "li", "ol", "p", "pre", "q", "small",

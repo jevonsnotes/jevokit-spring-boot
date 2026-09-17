@@ -24,11 +24,18 @@ public class SqlInjectStringPropertiesEditChain implements StringPropertiesSuppo
 
     private final SqlInjectProperties properties;
 
+    /** 出站方向直通（SQL 注入防护只做入站清洗，响应内容不经本链处理）。 */
     @Override
     public String getTextEdit(String content) {
         return content;
     }
 
+    /**
+     * 入站方向（请求参数 → Bean 属性）：防护开启时执行 SQL 注入清洗（clear 剥离/reject 拒绝，见
+     * {@link SqlInjectUtil#clean(String, List)}），关闭时原样返回（行为与未引入防护一致）。
+     *
+     * @return 清洗后的值；reject 模式命中时抛 {@link io.github.jevonsnotes.jevokit.security.sql.inject.exception.SqlInjectException}
+     */
     @Override
     public String setTextEdit(String content) {
         String newer = content;

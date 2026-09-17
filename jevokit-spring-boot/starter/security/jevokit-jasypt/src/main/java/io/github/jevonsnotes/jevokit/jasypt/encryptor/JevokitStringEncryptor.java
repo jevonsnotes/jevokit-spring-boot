@@ -34,6 +34,13 @@ public class JevokitStringEncryptor implements StringEncryptor {
     private final static String PASSWORD_PROPERTY_KEY = "jasypt.encryptor.password";
     private final Singleton<StringEncryptor> singleton;
 
+    /**
+     * 自定义加密器优先构造：容器中存在指定名的 StringEncryptor bean 则委托之，否则回退默认 PBE 加密器。
+     *
+     * @param e                     Spring 环境（读取 jasypt.encryptor.* 配置）
+     * @param customEncryptorBeanName 自定义加密器 bean 名（不存在时自动回退默认实现）
+     * @param bf                    bean 工厂（按名查找自定义加密器）
+     */
     public JevokitStringEncryptor(final Environment e, final String customEncryptorBeanName, final BeanFactory bf) {
         singleton = new Singleton<>(() ->
                 Optional.of(customEncryptorBeanName)
@@ -46,6 +53,7 @@ public class JevokitStringEncryptor implements StringEncryptor {
                         }));
     }
 
+    /** 直接构造默认 PBE 加密器（参数与口令语义见类注释）。 */
     public JevokitStringEncryptor(Environment e) {
         singleton = new Singleton<>(() -> createDefault(e));
     }
@@ -114,11 +122,13 @@ public class JevokitStringEncryptor implements StringEncryptor {
         return password;
     }
 
+    /** 加密明文（懒加载初始化底层加密器后委托）。 */
     @Override
     public String encrypt(String message) {
         return singleton.get().encrypt(message);
     }
 
+    /** 解密密文（懒加载初始化底层加密器后委托）。 */
     @Override
     public String decrypt(String encryptedMessage) {
         return singleton.get().decrypt(encryptedMessage);

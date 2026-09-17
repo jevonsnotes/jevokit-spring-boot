@@ -37,6 +37,13 @@ public class AuditLogFilter implements Filter {
     private final AuditLogProperties properties;
     private final IpConfiguration ipConfig;
 
+    /**
+     * URL 驱动的审计入口：命中事件规则的请求包装请求/响应体，preHandle/afterHandle 两个时机落审计
+     * （around 开启时两次、否则仅完成后一次）；未命中/未开启直通。
+     *
+     * @throws IOException 由后续过滤链透传（审计本身不产生异常）
+     * @throws ServletException 由后续过滤链透传（审计本身不产生异常）
+     */
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         if(request instanceof HttpServletRequest

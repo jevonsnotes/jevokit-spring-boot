@@ -10,11 +10,21 @@ import java.util.Map;
 public class HeaderBuilder {
     private final Map<String, String> headers = new HashMap<>();
 
+/**
+    * 追加一个请求头。
+    * @param key 头字段名
+    * @param value 头字段值
+    * @return this（链式）
+    */
     public HeaderBuilder add(String key, String value) {
         this.headers.put(key, value);
         return this;
     }
 
+/**
+    * 产出累积的请求头 Map（内部 Map 直接返回，非拷贝——build 后勿再 add）。
+    * @return 请求头集合
+    */
     public Map<String, String> build() {
         return headers;
     }

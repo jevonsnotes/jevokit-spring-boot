@@ -23,11 +23,21 @@ public class ResponseXssHandler implements ResponseBodyAdvice {
 
     private final XssCleaner xssCleaner;
 
+    /**
+     * 当前请求防护开启且未忽略响应（spkit.security.xss.ignore-response=false）时启用响应清洗。
+     *
+     * @return true 表示响应体走本处理器的清洗逻辑
+     */
     @Override
     public boolean supports(MethodParameter methodParameter, Class aClass) {
         return ConfigHolder.getXssMeta().isEnabled() && !ConfigHolder.getXssMeta().isIgnoreResponse();
     }
 
+    /**
+     * 序列化前递归清洗响应对象中的全部 String 值（防止存储型 XSS 经响应回流）。
+     *
+     * @return 清洗后的对象；空对象与 Spring 错误处理方法（error）直通不清洗
+     */
     @Override
     public Object beforeBodyWrite(Object o, MethodParameter methodParameter, MediaType mediaType, Class aClass, ServerHttpRequest serverHttpRequest, ServerHttpResponse serverHttpResponse) {
         if (!ObjectUtils.isEmpty(o) && !methodParameter.getMethod().getName().equals("error")) {

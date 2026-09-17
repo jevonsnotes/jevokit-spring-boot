@@ -25,6 +25,10 @@ public class FIFO1MqListener implements RocketMQListener<TopicVo> {
 
     @Lock(namespace = "TOPIC_CONCURRENT_LOCK", fallbackWithException = RuntimeException.class, fallbackStr = "禁止并发消费", key = @Key(route = "messageId"))
     @Override
+/**
+    * 顺序消息消费：@Lock(route=messageId) 兜底防同消息并发处理。
+    * @param message 消息体
+    */
     public void onMessage(TopicVo message) {
         log.info("接收到【{}】消息={} ", "01-顺序", JSON.toJSONString(message));
     }

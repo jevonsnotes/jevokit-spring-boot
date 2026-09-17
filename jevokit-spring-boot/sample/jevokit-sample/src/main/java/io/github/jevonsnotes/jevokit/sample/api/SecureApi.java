@@ -40,6 +40,11 @@ public class SecureApi {
     @JSecureApi(transType = {"T030421", StrUtil.EMPTY})
     @RequestMapping("/test")
     @ResponseBody
+/**
+    * JSecure 全链演示：请求密文解密→验签→防重放→业务→响应加密（client-demo-1 密钥组）。
+    * @param testVo JSecure 请求包装（target 为业务体）
+    * @return JSecure 响应包装（通道自动加密）
+    */
     public JSecureResponse<TestVo> test(@RequestBody @Valid JSecureRequest<TestVo> testVo){
         HttpUtil.getRemoteIp(JSecureApiUtil.getCurrentRequest().orElseThrow(RuntimeException::new));
         TestVo target = testVo.getTarget();
@@ -50,6 +55,11 @@ public class SecureApi {
     @JSecureApi(transType = {"T030421"})
     @RequestMapping("/test4")
     @ResponseBody
+/**
+    * JSecure 演示（client-demo-2 密钥组：AES secret + 不同国密对）。
+    * @param testVo JSecure 请求包装
+    * @return JSecure 响应包装
+    */
     public JSecureResponse<TestVo> test4(@RequestBody @Valid JSecureRequest<TestVo> testVo){
         HttpUtil.getRemoteIp(JSecureApiUtil.getCurrentRequest().orElseThrow(RuntimeException::new));
         TestVo target = testVo.getTarget();
@@ -60,11 +70,20 @@ public class SecureApi {
 
     @RequestMapping("/test2")
     @ResponseBody
+/**
+    * 裸业务体入口的 JSecure 形态：无 JSecureRequest 包装同样走安全通道。
+    * @param testVo 业务体
+    * @return JSecure 响应包装
+    */
     public JSecureResponse<TestVo> test2(@RequestBody @Valid TestVo testVo){
         return JSecureResponse.ok(testVo);
     }
     @RequestMapping("/test3")
     @ResponseBody
+/**
+    * 普通（非 JSecure）对照端点：无加密通道，演示同一应用内两种形态并存。
+    * @return 普通响应包装
+    */
     public ApiResponse<String> test2(){
 
         TestVo data = new TestVo();

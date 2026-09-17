@@ -20,6 +20,11 @@ public class DefaultXssCleaner implements XssCleaner{
 
     private final XssProperties properties;
 
+    /**
+     * 按当前请求模式清洗：escape 实体化转义；reject 命中即抛 {@link XssException}；
+     * clear 走 jsoup 白名单净化 + 附加污染表剥离（三模式输出形态与幂等语义见类注释与
+     * {@link XssCleaner#clean(String)}）。
+     */
     @Override
     public String clean(String content) {
         if(StrUtil.isNotBlank(content)){

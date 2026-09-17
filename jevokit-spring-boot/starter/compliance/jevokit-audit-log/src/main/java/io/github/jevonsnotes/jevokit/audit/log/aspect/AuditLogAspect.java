@@ -39,6 +39,13 @@ public class AuditLogAspect {
     }
 
 
+    /**
+     * 环绕 @AuditLog 方法：preHandle 时机（around 开启时）与业务完成后各落一次审计，
+     * 事件链 ThreadLocal 在 afterHandle 自动回退。
+     *
+     * @param jp 切点（@AuditLog 标注的方法，事件类型/名称取自注解）
+     * @return 业务原返回值（审计不加工业务结果）
+     */
     @Around("auditLogPointCut()")
     public Object doAround(ProceedingJoinPoint jp) throws Throwable {
         if(!properties.isEnabled() || !AuditLogUtils.needToPrecess(properties, processor)){
@@ -66,6 +73,12 @@ public class AuditLogAspect {
     }
 
 
+    /**
+     * 取方法上的 @AuditLog 注解（事件类型/名称来源）。
+     *
+     * @param jp 切点
+     * @return 注解；非方法切点返回 null
+     */
     public AuditLog getMethodAnnotation(JoinPoint jp) {
         final Method method = getMethod(jp);
         if (method != null) {
@@ -73,6 +86,12 @@ public class AuditLogAspect {
         }
         return null;
     }
+    /**
+     * 解析切点对应的 Method。
+     *
+     * @param jp 切点
+     * @return 目标方法；非方法切点返回 null
+     */
     public Method getMethod(JoinPoint jp) {
         Signature signature = jp.getSignature();
         if (signature instanceof MethodSignature) {

@@ -53,7 +53,7 @@ public class LockUtil {
     /**
      * 获取一个简单锁对象
      * @param key 锁值字符串
-     * @return LockKey 返回一个转换后的锁对象
+     * @return LockKey 返回一个转换后的锁对象（池中同 key 复用同一实例，并刷新其活跃时间）
      */
     public static LockKey getKey(final String key) {
         Date now = new Date();

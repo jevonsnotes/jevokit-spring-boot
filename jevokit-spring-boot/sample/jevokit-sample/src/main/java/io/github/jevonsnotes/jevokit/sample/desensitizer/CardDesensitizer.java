@@ -14,6 +14,14 @@ import java.lang.reflect.Field;
  */
 public class CardDesensitizer implements Desensitizer<TestVo> {
     @Override
+/**
+    * 证件类型动态脱敏：idType=1 按身份证规则，否则 DEFAULT；object 为 null 时整体走 DEFAULT。
+    * @param object 目标对象（读 idType 分流）
+    * @param currentField 当前字段
+    * @param currentVal 当前值
+    * @param context 脱敏上下文（写回目标类型）
+    * @return 脱敏结果
+    */
     public String des(TestVo object, Field currentField, String currentVal, DstContext context) {
         if(object != null){
             if("1".equals(object.getIdType())) {

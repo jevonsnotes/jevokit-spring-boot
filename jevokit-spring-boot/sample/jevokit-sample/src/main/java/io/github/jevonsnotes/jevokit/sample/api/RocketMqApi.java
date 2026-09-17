@@ -55,6 +55,11 @@ public class RocketMqApi {
     }
 
     @RequestMapping("/test")
+/**
+    * 四形态发送分发演示：type 1-4 对应普通/顺序/延迟/事务（helper 缺位时快速失败并说明原因）。
+    * @param vo 消息体（type 决定形态）
+    * @return 发送结果
+    */
     public ApiResponse<String> test(@RequestBody TopicVo vo){
         switch (vo.getType()){
             case 1 :

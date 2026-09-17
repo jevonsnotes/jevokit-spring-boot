@@ -26,6 +26,7 @@ import io.github.jevonsnotes.jevokit.security.code.inject.util.CodeInjectUtil;
 @Slf4j
 public class CodeInjectConfiguration {
 
+    /** 注册校验工具 bean（驱动静态配置注入，见 CodeInjectUtil 类注释的初始化约束）。 */
     @Bean
     public CodeInjectUtil dynamicCodeInjectUtil(){
         return new CodeInjectUtil();

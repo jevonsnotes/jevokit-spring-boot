@@ -18,6 +18,10 @@ public class H2SQLDao implements NoGenDao {
     private final JdbcTemplate jdbcTemplate;
 
     @Override
+/**
+    * H2 方言建表 SQL。
+    * @return biz_no 表 DDL
+    */
     public String getCreateSqlBizTable() {
         return "CREATE TABLE biz_no (" +
                 "  biz_tag varchar(128) NOT NULL," +
@@ -33,16 +37,28 @@ public class H2SQLDao implements NoGenDao {
     }
 
     @Override
+/**
+    * H2 环境校验语句。
+    * @return 校验 SQL
+    */
     public String validation() {
         return "SELECT 1 FROM biz_no limit 1;";
     }
     @Override
+/**
+    * H2"表不存在"报错匹配正则（建表探测用）。
+    * @return 正则串（对应 NGConsts.PATTERN_TABLE_NOT_EXISTS_H2）
+    */
     public String getPattenNotExists() {
         return NGConsts.PATTERN_TABLE_NOT_EXISTS_H2;
     }
 
 
     @Override
+/**
+    * 查全部单号配置（H2 方言分页形态）。
+    * @return 配置行列表
+    */
     public List<BizNo> getTags() {
 
         SqlBundleDto sqlBundleDto = SqlUtil.generateSelectSelectivePreSql(new BizNo(), new String[]{});
@@ -50,6 +66,11 @@ public class H2SQLDao implements NoGenDao {
     }
 
     @Override
+/**
+    * 按主键选择性更新配置（H2 方言）。
+    * @param bizNo 待更新字段载体
+    * @return 影响行数
+    */
     public int updateSelectiveByPrimaryKey(BizNo bizNo) {
         SqlBundleDto sqlBundleDto = SqlUtil.generateUpdateSelectivePreSql(bizNo, new String[]{"biz_tag"});
         return jdbcTemplate.update(sqlBundleDto.getSql(),sqlBundleDto.getArgs());

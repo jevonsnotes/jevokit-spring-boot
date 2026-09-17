@@ -15,6 +15,7 @@ import io.github.jevonsnotes.jevokit.security.web.fixed.aspect.SpringWebFixedAsp
 @Slf4j
 public class SpringWebFixedConfiguration {
 
+    /** 注册漏洞封堵切面（无条件，见类注释）。 */
     @Bean
     public SpringWebFixedAspect springWebFixedAspect(){
         return new SpringWebFixedAspect();

@@ -174,6 +174,13 @@ public class CollectionUtil extends cn.hutool.core.collection.CollectionUtil {
         }
     }
 
+    /**
+     * Set 转 List（保持迭代顺序）
+     *
+     * @param set 来源集合
+     * @param <E> 元素类型
+     * @return 新建列表；入参为空集合时返回空列表
+     */
     public static <E>List<E> toList(Set<E> set){
         List<E> res = new ArrayList<>();
         if(CollectionUtil.isNotEmpty(set)){

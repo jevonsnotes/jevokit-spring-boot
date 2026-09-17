@@ -58,11 +58,21 @@ public class JevokitNoGenApi {
     private final BzNoHelper bzNoHelper;
 
     @RequestMapping("/getNo")
+/**
+    * 取单个单号（/jevokit/nogen/getNo）。
+    * @param bizTag 业务标签
+    * @return 单号字符串
+    * @throws org.springframework.web.client.HttpClientErrorException accessToken 校验失败（拦截器前置）
+    */
     public String getNo(@RequestParam("bizTag") String bizTag) {
         return bzNoHelper.getNo(bizTag);
     }
 
     @RequestMapping("/view/tags")
+/**
+    * 查全部单号配置（/jevokit/nogen/view/tags）。
+    * @return 配置清单 JSON
+    */
     public String viewTags() {
         JsonReadOptions opt = JsonReadOptions.builderFromString(JSONObject.toJSONString(bzNoHelper.getTagsVo()))
                 .build();
@@ -78,6 +88,12 @@ public class JevokitNoGenApi {
      * @return
      */
     @RequestMapping("/getNoLPad")
+/**
+    * 取单个单号并左侧补零到指定位数。
+    * @param bizTag 业务标签
+    * @param length 目标位数
+    * @return 定长单号
+    */
     public String getNo(@RequestParam("bizTag") String bizTag, @RequestParam("length") int length, @RequestParam("pad") String pad) {
         return bzNoHelper.getNoLPad(bizTag, length, pad);
     }
@@ -91,6 +107,12 @@ public class JevokitNoGenApi {
      * @return
      */
     @RequestMapping("/getNoRPad")
+/**
+    * 取单个单号并右侧补零到指定位数。
+    * @param bizTag 业务标签
+    * @param length 目标位数
+    * @return 定长单号
+    */
     public String getNoRPad(@RequestParam("bizTag") String bizTag, @RequestParam("length") int length, @RequestParam("pad") String pad) {
         return bzNoHelper.getNoRPad(bizTag, length, pad);
     }
@@ -104,6 +126,12 @@ public class JevokitNoGenApi {
      * @return
      */
     @RequestMapping("/recycle")
+/**
+    * 回收单号（仅 RECYCLE 模式业务有意义，回池复用）。
+    * @param bizTag 业务标签
+    * @param bizNo 待回收单号
+    * @return 回收结果描述
+    */
     public String recycle(@RequestParam("bizTag") String bizTag, @RequestParam("bizNo") String bizNo) {
         return bzNoHelper.recycle(bizTag, bizNo) ? SimpleConsts.SUCCESS : SimpleConsts.FAIL;
     }
@@ -116,6 +144,12 @@ public class JevokitNoGenApi {
      * @return
      */
     @RequestMapping("/getNos")
+/**
+    * 批量取单号。
+    * @param bizTag 业务标签
+    * @param size 数量
+    * @return 单号集合（HashSet，无序）
+    */
     public Set<String> getNos(@RequestParam("bizTag") String bizTag, @RequestParam("size") int size) {
         Set<String> nos = new HashSet<>();
         if (size > 100) {
@@ -136,6 +170,10 @@ public class JevokitNoGenApi {
     }
 
     @RequestMapping("/cache/clear")
+/**
+    * 清除 Redis 发号缓存（下次取号回源 DB 重建——配置变更后的手工复位入口）。
+    * @return 操作结果描述
+    */
     public String cacheClear() {
         bzNoHelper.clearHook();
         return SimpleConsts.SUCCESS;

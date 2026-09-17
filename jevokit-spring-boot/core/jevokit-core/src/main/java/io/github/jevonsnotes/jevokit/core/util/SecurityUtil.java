@@ -97,6 +97,12 @@ public class SecurityUtil {
         return aesEncrypt(val, requireKey(aesKey, CFG_PREFIX + "aes-key"));
     }
 
+    /**
+     * 获取aes明文（使用注入密钥，未注入抛 IllegalStateException）
+     *
+     * @param val 密文（Base64）
+     * @return 明文
+     */
     public static String aesDecrypt(String val) {
         return aesDecrypt(val, requireKey(aesKey, CFG_PREFIX + "aes-key"));
     }
@@ -123,6 +129,12 @@ public class SecurityUtil {
         return SecureUtil.aes(key.getBytes()).decryptStr(val);
     }
 
+    /**
+     * 获取sm4cbc密文（使用注入密钥，未注入抛 IllegalStateException）
+     *
+     * @param val 明文
+     * @return 密文（Base64，前 16 字节为随机 IV）
+     */
     public static String sm4cbcEncrypt(String val) {
         return sm4cbcEncrypt(val, requireKey(sm4Key, CFG_PREFIX + "sm4-key"));
     }
@@ -246,10 +258,11 @@ public class SecurityUtil {
     }
 
     /**
-     * 清除对象的字符串类型属性
+     * 清除对象的字符串类型属性（旧签名，仅保留兼容）
      *
-     * @param o
-     * @param callback
+     * @param o        目标对象，null 时原样返回
+     * @param callback 字符串转换回调，入参原值、返回替换值
+     * @return 处理后的对象（与入参同引用，原地修改）
      * @deprecated replace with {@link #filterStr(Object, CallBackP3R)}
      */
     @Deprecated
@@ -259,10 +272,11 @@ public class SecurityUtil {
 
 
     /**
-     * 对象字符串过滤
+     * 对象字符串过滤：深度优先递归遍历对象树，对每个字符串叶子（属性值/集合元素/Map 键值）执行回调并原地替换。
      *
-     * @param o
-     * @param callback
+     * @param o        目标对象；null 原样返回。支持 String/简单类型/Collection/Map/POJO 及其嵌套组合
+     * @param callback 转换回调，入参依次为（宿主对象、所在 Field 或 null、原字符串值），返回替换值
+     * @return 处理后的对象（与入参同引用；顶层为 String 时返回回调结果）
      */
     public static Object filterStr(Object o, CallBackP3R<String, Object, Field, String> callback) {
         if (o != null) {
@@ -368,12 +382,12 @@ public class SecurityUtil {
 
 
     /**
-     * 处理map类型
+     * 处理 Map 类型的字段或顶层容器：键值递归过滤后重建 Map 并回写
      *
-     * @param src
-     * @param field
-     * @param callback
-     * @param <T>
+     * @param src      宿主对象
+     * @param field    所在字段，顶层调用（src 自身为 Map）时为 null
+     * @param callback 转换回调
+     * @param <T>      宿主类型
      */
     private static <T> void processMap(T src, Field field, CallBackP3R<String, Object, Field, String> callback) {
         try {
@@ -426,12 +440,12 @@ public class SecurityUtil {
     }
 
     /**
-     * 处理集合类型
+     * 处理 Collection 类型的字段或顶层容器：元素递归过滤后重建集合并回写
      *
-     * @param src
-     * @param field
-     * @param callback
-     * @param <T>
+     * @param src      宿主对象
+     * @param field    所在字段，顶层调用（src 自身为集合）时为 null
+     * @param callback 转换回调
+     * @param <T>      宿主类型
      */
     private static <T> void processCollection(T src, Field field, CallBackP3R<String, Object, Field, String> callback) {
         try {

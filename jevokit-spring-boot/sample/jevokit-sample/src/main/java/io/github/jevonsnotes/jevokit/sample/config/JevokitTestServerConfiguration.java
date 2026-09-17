@@ -19,6 +19,11 @@ import java.io.IOException;
 @Configuration
 public class JevokitTestServerConfiguration {
     @Bean
+/**
+    * okhttp 个性化定制 Bean：向直连/代理客户端注册 MockWebServer 桩拦截器（E2E 网络用例的
+    * 可控上游）。
+    * @return 定制配置
+    */
     public CustomOkhttpConfiguration okhttpInterceptor() {
         return new CustomOkhttpConfiguration(){
             @Override

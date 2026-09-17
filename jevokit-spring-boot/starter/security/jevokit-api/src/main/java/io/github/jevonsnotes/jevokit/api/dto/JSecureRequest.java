@@ -47,9 +47,19 @@ public class JSecureRequest<T> {
     @Valid
     private T target;
 
+    /**
+     * 裁剪为仅含密文的报文形态（view/target 置空）——输出/转发密文场景用，防明文外泄。
+     *
+     * @return 仅含 data 密文的新对象（原对象不变）
+     */
     public JSecureRequest<T> toCiphertextDto(){
         return new JSecureRequest<>(this.transNo, this.transType, this.signature, this.data,null, null);
     }
+    /**
+     * 裁剪为仅含明文的报文形态（data/target 置空）——日志打印明文场景用，防密文混淆。
+     *
+     * @return 仅含 view 明文的新对象（原对象不变）
+     */
     public JSecureRequest<T> toPlaintextDto(){
         return new JSecureRequest<>(this.transNo, this.transType, this.signature, this.view, null, null);
     }

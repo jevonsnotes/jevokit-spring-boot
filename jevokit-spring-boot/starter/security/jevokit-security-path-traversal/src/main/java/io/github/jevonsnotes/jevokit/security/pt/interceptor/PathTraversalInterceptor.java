@@ -15,6 +15,11 @@ import jakarta.servlet.http.HttpServletResponse;
 public class PathTraversalInterceptor implements AsyncHandlerInterceptor {
     private final PathTraversalProperties properties;
 
+    /**
+     * 为命中 URL 的控制层请求写入路径穿越防护 ThreadLocal（依 @PtClean 注解调整模式，方法级覆盖类级）。
+     *
+     * @return 恒 true（本拦截器只做上下文标记，不拦截请求）
+     */
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         // 非控制层跳过
@@ -48,11 +53,13 @@ public class PathTraversalInterceptor implements AsyncHandlerInterceptor {
         return true;
     }
 
+    /** 请求结束清理 ThreadLocal（防线程池复用串请求）。 */
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
         ConfigHolder.removePt();
     }
 
+    /** 异步请求转为并发处理时清理 ThreadLocal（同 afterCompletion）。 */
     @Override
     public void afterConcurrentHandlingStarted(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         ConfigHolder.removePt();

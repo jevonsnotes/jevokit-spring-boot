@@ -56,28 +56,65 @@ public class JSecureResponse<T> {
     private T target;
 
 
+    /**
+     * 成功响应（携带数据实体）。
+     *
+     * @param data 业务数据（经加密适配器转密文 data 后出网）
+     * @return SUCCESS 协议响应
+     */
     public static <T>JSecureResponse<T> ok(T data){
        return new JSecureResponse<>(null,null,ApiError.SUCCESS.code(), ApiError.SUCCESS.msg(), null,null,null,data);
     }
+    /** 成功响应（无数据体）。 */
     public static <T>JSecureResponse<T> ok(){
        return new JSecureResponse<>(null,null,ApiError.SUCCESS.code(), ApiError.SUCCESS.msg(), null,null,null,null);
     }
+    /**
+     * 失败响应（取异常消息）。
+     *
+     * @param e 异常（message 作为提示，null 安全）
+     * @return FAIL 协议响应
+     */
     public static <T>JSecureResponse<T> fail(Throwable e){
        return new JSecureResponse<>(null,null,ApiError.FAIL.code(),e.getMessage(),null,null,null,null);
     }
+    /** 失败响应（默认失败消息）。 */
     public static <T>JSecureResponse<T> fail(){
        return new JSecureResponse<>(null,null,ApiError.FAIL.code(),ApiError.FAIL.msg(),null,null,null,null);
     }
+    /**
+     * 失败响应（自定义消息）。
+     *
+     * @param message 提示消息
+     * @return FAIL 协议响应
+     */
     public static <T>JSecureResponse<T> fail(String message){
        return new JSecureResponse<>(null,null,ApiError.FAIL.code(),message,null,null,null,null);
     }
+    /**
+     * 失败响应（自定义消息；code 参数当前未生效，协议码恒为 FAIL，见类注释约束）。
+     *
+     * @param code    自定义码（保留参数，暂不写入 code 字段）
+     * @param message 提示消息
+     * @return FAIL 协议响应
+     */
     public static <T>JSecureResponse<T> fail(String code,String message){
        return new JSecureResponse<>(null,null,ApiError.FAIL.code(),message,null,null,null,null);
     }
 
+    /**
+     * 裁剪为仅含密文的报文形态（view/target 置空）——出网前防明文外泄。
+     *
+     * @return 仅含 data 密文的新对象（原对象不变）
+     */
     public JSecureResponse<T> toCiphertextDto(){
         return new JSecureResponse<>(this.transNo,this.transType,this.code,this.message,this.signature,this.data,null,null);
     }
+    /**
+     * 裁剪为仅含明文的报文形态（data/target 置空）——日志打印明文场景用。
+     *
+     * @return 仅含 view 明文的新对象（原对象不变）
+     */
     public JSecureResponse<T> toPlaintextDto(){
         return new JSecureResponse<>(this.transNo,this.transType,this.code,this.message,this.signature,this.view,null,null);
     }

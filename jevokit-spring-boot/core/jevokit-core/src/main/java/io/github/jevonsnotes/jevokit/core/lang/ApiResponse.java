@@ -31,12 +31,22 @@ public class ApiResponse<T> implements Serializable {
     @Getter
     private T data;
 
+    /**
+     * 构造成功空响应（status=SUCCESS，message=statusText=Success，data 为 null）
+     */
     public ApiResponse() {
         this.status = 0L;
         this.statusText = "Success";
         this.message = this.statusText;
     }
 
+    /**
+     * 按显式状态构造（message 与 statusText 联动为同一值）
+     *
+     * @param status  状态码，约定常量见 {@link #SUCCESS}/{@link #FAIL}/{@link #WARN}/{@link #BUSY}
+     * @param message 状态消息
+     * @param data    业务数据，可为 null
+     */
     public ApiResponse(long status, String message, T data) {
         this.status = status;
         this.statusText = message;
@@ -124,26 +134,69 @@ public class ApiResponse<T> implements Serializable {
         this.timestamp = timestamp;
     }
 
+    /**
+     * 构造成功空响应（等价于无参构造）
+     *
+     * @param <M> data 类型
+     * @return 成功响应实例（data 为 null）
+     */
     public static <M> ApiResponse<M> ok() {
         return new ApiResponse<>();
     }
 
+    /**
+     * 构造携带数据的成功响应
+     *
+     * @param data 业务数据；为 Exception 时转失败态、为 Optional 时自动拆包（见单参构造器）
+     * @param <T> data 类型
+     * @return 成功响应实例
+     */
     public static <T> ApiResponse<T> ok(T data) {
         return new ApiResponse<>(data);
     }
 
+    /**
+     * 构造失败响应
+     *
+     * @param message 失败消息
+     * @param <T>     data 类型
+     * @return status=FAIL 的响应（data 为 null）
+     */
     public static <T> ApiResponse<T> fail(String message) {
         return new ApiResponse<>(-1L, message, null);
     }
 
+    /**
+     * 构造携带数据的失败响应
+     *
+     * @param message 失败消息
+     * @param data    附带的业务数据
+     * @param <T>     data 类型
+     * @return status=FAIL 的响应
+     */
     public static <T> ApiResponse<T> fail(String message, T data) {
         return new ApiResponse<>(-1L, message, data);
     }
 
+    /**
+     * 构造告警响应（业务可继续但需人工关注）
+     *
+     * @param message 告警消息
+     * @param <T>     data 类型
+     * @return status=WARN 的响应（data 为 null）
+     */
     public static <T> ApiResponse<T> warn(String message) {
         return new ApiResponse<>(-2L, message, null);
     }
 
+    /**
+     * 构造携带数据的告警响应
+     *
+     * @param message 告警消息
+     * @param data    附带的业务数据
+     * @param <T>     data 类型
+     * @return status=WARN 的响应
+     */
     public static <T> ApiResponse<T> warn(String message, T data) {
         return new ApiResponse<>(-2L, message, data);
     }

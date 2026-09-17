@@ -18,10 +18,21 @@ public class ResponseReaderHttpServletResponseWrapper extends HttpServletRespons
     private final ByteArrayOutputStream output = new ByteArrayOutputStream();
     private ServletOutputStream filterOutput;
 
+    /**
+     * 构造包装器（不立即占用原响应输出流，首次 getOutputStream 时才建立双写）
+     *
+     * @param response 原始响应
+     */
     public ResponseReaderHttpServletResponseWrapper(HttpServletResponse response) {
         super(response);
     }
 
+    /**
+     * 获取双写输出流（原响应 + 内部镜像缓冲），同一次处理内重复调用返回同一实例
+     *
+     * @return 双写 ServletOutputStream
+     * @throws IOException 获取原响应输出流失败
+     */
     public ServletOutputStream getOutputStream() throws IOException {
         if (this.filterOutput == null) {
             this.filterOutput = new ServletOutputStream() {
@@ -47,6 +58,11 @@ public class ResponseReaderHttpServletResponseWrapper extends HttpServletRespons
         return this.filterOutput;
     }
 
+    /**
+     * 取镜像缓冲中的完整响应体
+     *
+     * @return 已写出内容的字节快照；未写出任何内容时为空数组（非 null）
+     */
     public byte[] toByteArray() {
         return this.output.toByteArray();
     }

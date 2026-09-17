@@ -44,12 +44,19 @@ public interface AuditLogDao extends BaseAutoDao{
         return SpringUtil.getBean(AuditLogProperties.class);
     }
 
+    /**
+     * 创建历史表（结构复制主表，无数据）——方言无关，供自动建表流程调用。
+     */
     default void createTableAuditLogHis() {
         String sql = "CREATE TABLE "+ TABLE_NAME_HIS +" AS" +
                 " SELECT * FROM "+TABLE_NAME+" WHERE 1=0;";
         jdbcTemplate().execute(sql);
     }
 
+    /**
+     * 历史迁移：按 db-migrate-period 计算保留边界，主表过期行 INSERT 进 HIS 后 DELETE；
+     * 以 MIGRATE_FLAG 标记行互斥（存在即跳过，多实例安全），标记行在 finally 语义上删除。
+     */
     default void migrate() {
 
         DateTime date = DateUtil.date();
@@ -99,6 +106,12 @@ public interface AuditLogDao extends BaseAutoDao{
     } ;
 
 
+    /**
+     * 按主键 localKey 存在性判定插入或选择性更新（字段为 null 不覆盖旧值）。
+     *
+     * @param po 审计记录
+     * @return 影响行数
+     */
     default int saveOrUpdate(AuditLogDto po) {
 
         AuditLogDto dbo = getById(TABLE_PRIMARY_KEY,po.getLocalKey());
@@ -111,18 +124,42 @@ public interface AuditLogDao extends BaseAutoDao{
         }
     }
 
+    /**
+     * 插入审计记录（选择性 INSERT，null 字段不出现在列清单）。
+     *
+     * @param po 审计记录
+     * @return 影响行数
+     */
     default int insert(AuditLogDto po) {
         SqlBundleDto sqlBundleDto = SqlUtil.generateInsertSelectivePreSql(po);
         return jdbcTemplate().update(sqlBundleDto.getSql(),sqlBundleDto.getArgs());
     }
+    /**
+     * 按主键删除（迁移互斥标记行的清理也走本方法）。
+     *
+     * @param key localKey 主键值
+     * @return 影响行数
+     */
     default int deleteByKey(String key) {
         return jdbcTemplate().update("DELETE FROM "+TABLE_NAME +" WHERE "+TABLE_PRIMARY_KEY+" = ?",key);
     }
+    /**
+     * 按主键查询。
+     *
+     * @param key localKey 主键值
+     * @return 审计记录；不存在返回 null
+     */
     default AuditLogDto selectByKey(String key) {
         return getById(TABLE_PRIMARY_KEY,key);
     }
 
 
+    /**
+     * 按主键选择性更新（null 字段不覆盖）。
+     *
+     * @param po 审计记录（localKey 必填）
+     * @return 影响行数
+     */
     default int updateSelectiveByPrimaryKey(AuditLogDto po) {
         SqlBundleDto sqlBundleDto = SqlUtil.generateUpdateSelectivePreSql(po, new String[]{TABLE_PRIMARY_KEY});
         return jdbcTemplate().update(sqlBundleDto.getSql(),sqlBundleDto.getArgs());

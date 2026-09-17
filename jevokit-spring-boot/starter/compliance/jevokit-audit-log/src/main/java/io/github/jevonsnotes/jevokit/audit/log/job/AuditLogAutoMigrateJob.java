@@ -21,6 +21,9 @@ public class AuditLogAutoMigrateJob {
     private final AuditLogDao dao;
     private final AuditLogProperties auditLogProperties;
 
+    /**
+     * 每日 01:00 执行历史迁移（仅 DB 模式；互斥与保留期语义见类注释）。
+     */
     @Scheduled(cron = "0 0 1 * * ?")
     public void execute(){
         if(auditLogProperties.getPersistent().getMode() == AuditLogPersistentMode.DB){

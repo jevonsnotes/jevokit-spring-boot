@@ -32,10 +32,11 @@ public class CodeInjectUtil {
     private static CodeInjectProperties properties;
 
     /**
-     * 判断是否安全
-     * @param namespace 规则命名空间
-     * @param val
-     * @return 不存在规则时，默认返回true
+     * 判断字符串是否为安全形态（判定语义与白/黑名单规则见类注释）。
+     *
+     * @param namespace 规则命名空间（spkit.security.code-inject.namespaces 下的键）
+     * @param val       待判定字符串；空白（null/空串）视为安全（无内容可注入）
+     * @return true 安全（含命名空间无规则/未配置 namespaces 的默认放行）；false 不安全
      */
     public static boolean isSafe(String namespace,String val){
         if(properties.getNamespaces() != null && StrUtil.isNotEmpty(val)){
@@ -81,9 +82,10 @@ public class CodeInjectUtil {
         }
     }
     /**
-     * 判断是否安全（使用默认命名空间：default）
-     * @param val
-     * @return
+     * 判断是否安全（使用默认命名空间 default，判定语义同 {@link #isSafe(String, String)}）。
+     *
+     * @param val 待判定字符串；空白视为安全
+     * @return true 安全；false 不安全
      */
     public static boolean isSafe(String val){
         return isSafe(CodeInjectProperties.DEFAULT_PATTERNS_NAMESPACE,val);

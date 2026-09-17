@@ -15,6 +15,12 @@ import java.util.Map;
 public class AutoFetchParamFallback implements LockFallback<Object>{
 
 
+/**
+    * 按返回类型回传入参：泛型/集合逐层匹配类型相容参数，无匹配返回 null。
+    * @param signature 被拦截方法签名（取返回/入参类型）
+    * @param args 被拦截方法入参
+    * @return 类型相容的入参原样回传；无相容参数或返回 void 时 null
+    */
     public Object fallback(MethodSignature signature, Object... args) {
         final Type resType = signature.getMethod().getGenericReturnType();
         Class resClass = getClass(resType);

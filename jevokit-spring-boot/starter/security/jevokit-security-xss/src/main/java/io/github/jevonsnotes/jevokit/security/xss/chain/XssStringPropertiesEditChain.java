@@ -32,11 +32,17 @@ public class XssStringPropertiesEditChain  implements StringPropertiesSupportCha
     private final XssProperties properties;
 
 
+    /** 出站方向直通（XSS 防护只做入站清洗，响应内容不经本链处理）。 */
     @Override
     public String getTextEdit(String text) {
         return text;
     }
 
+    /**
+     * 入站方向（请求参数 → Bean 属性）：防护开启时 trim 后交清洗器处理，关闭时仅 trim。
+     *
+     * @return 清洗（或仅 trim）后的值；关闭态行为与未引入防护一致
+     */
     @Override
     public String setTextEdit(String text) {
         String newer = text;

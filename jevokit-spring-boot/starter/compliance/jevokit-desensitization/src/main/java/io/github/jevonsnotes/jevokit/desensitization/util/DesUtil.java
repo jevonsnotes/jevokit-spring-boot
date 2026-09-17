@@ -59,6 +59,13 @@ public class DesUtil {
     }
 
 
+    /**
+     * 获取（并缓存）自定义脱敏器实例。
+     *
+     * @param clazz 脱敏器实现类；必须保留 public 无参构造（反射实例化）
+     * @return 该类的共享实例（Class 级缓存，线程安全，整个 JVM 生命周期复用同一实例——实现应保持无状态）
+     * @throws RuntimeException 实例化失败（无参构造缺失/不可访问）时抛出，属装配期错误应修复而非捕获
+     */
     public static Desensitizer getDesensitizer(Class<? extends Desensitizer> clazz) {
         return CACHE.computeIfAbsent(clazz, c -> {
             try {
@@ -70,10 +77,11 @@ public class DesUtil {
     }
 
     /**
-     * 根据JevokitDesensitizationProperties配置来进行脱敏
-     * @param propName 属性名
-     * @param value 属性值
-     * @return 脱敏数据
+     * 按属性名规则脱敏（无注解场景的入口，如 JSON/XML 原文脱敏的每字段回调用它）。
+     *
+     * @param propName 属性名；支持全限定名（取最后一段与规则匹配，除非正则含转义点号要求全名）；null 时原样返回
+     * @param value    属性值；命中规则则脱敏，未命中/被 ignore-pattern 命中时原样返回（不抛错）
+     * @return 脱敏后的值（形态由当前算法决定，见 {@link #des(String, DstContext)}）；规则匹配失败仅告警不阻断
      */
     public static String desByProperties(String propName, String value) {
 
@@ -141,10 +149,13 @@ public class DesUtil {
     }
 
     /**
-     * 脱敏规则
+     * 脱敏执行总入口：按上下文的类型/级别与当前算法/权限档位处理单个值。
+     * <p>跳过条件（防御性，均原样返回）：value 为 null、value 已带 {@code @DST} 密文前缀（幂等，防二次脱敏）、
+     * dstContext 为 null 或其 type 为 null；ENCRYPT 档且当前用户有该级别明文权限（出口放行原文）。
      *
-     * @param value
-     * @return
+     * @param value      待脱敏值
+     * @param dstContext 脱敏上下文（类型决定掩码规则，级别决定密文内嵌权限档）
+     * @return BASIC 返回掩码串；SM4 返回 {@code @DST([LV*]密文)}；MIXED 返回密文+掩码组合；跳过时返回原值
      */
     public static String des(String value, DstContext dstContext) {
         if(dstContext != null && !StrUtil.trimToEmpty(value).startsWith(DstConst.DESENSITIZED_ENC_KEY)){
@@ -169,8 +180,10 @@ public class DesUtil {
     }
 
     /**
-     * 获取当前脱敏算法
-     * @return 返回算法
+     * 获取当前线程应使用的脱敏算法。
+     *
+     * @return 处于 {@code desByProcessTypeWrap(LOG)} 包裹内时返回 algorithm.log 配置，否则 algorithm.view；
+     *         配置不可用（容器未就绪）时降级 BASIC（掩码最安全，密文依赖 SM4 密钥存在）
      */
     public static DstAlgorithm currentAlgorithm(){
         JevokitDesensitizationProperties properties = getProperties();
@@ -188,10 +201,11 @@ public class DesUtil {
 
 
     /**
-     * 处理混合脱敏
-     * @param value 明文
-     * @param dstContext 脱敏上下文
-     * @return 脱敏数据
+     * 处理混合脱敏（基础掩码部分由本方法现算）。
+     *
+     * @param value      明文
+     * @param dstContext 脱敏上下文（类型决定掩码规则；级别为空时按 LV9 内嵌密文）
+     * @return 形如 {@code @DST([LV*]SM4密文|基础掩码)} 的组合串——密文供有权限者还原，掩码供人快速浏览
      */
     public static String processMixed(String value, DstContext dstContext) {
         return processMixed(value,null,dstContext);
@@ -210,11 +224,13 @@ public class DesUtil {
     }
 
     /**
-     * 处理混合脱敏
-     * @param value 明文
-     * @param basicValue 基础脱敏数据
-     * @param dstContext 脱敏上下文
-     * @return 脱敏数据
+     * 处理混合脱敏（显式传入基础掩码值，避免对同值重复掩码计算）。
+     *
+     * @param value      明文
+     * @param basicValue 已算好的基础脱敏值；空白时内部按 dstContext 现算。会做特殊字符掩码
+     *                   （{@code )[]} 替换为 {@code *}，防破坏 MIXED 信封的括号/分隔符语法）
+     * @param dstContext 脱敏上下文（级别为空时按 LV9 内嵌密文）
+     * @return 形如 {@code @DST([LV*]SM4密文|基础掩码)} 的组合串
      */
     public static String processMixed(String value,String basicValue, DstContext dstContext) {
 
@@ -240,10 +256,12 @@ public class DesUtil {
     }
 
     /**
-     * 国密SM4-CBC加密
-     * @param value 明文
-     * @param dstContext 脱敏上下文
-     * @return 脱敏数据
+     * 国密 SM4-CBC 可逆脱敏。
+     *
+     * @param value      明文
+     * @param dstContext 脱敏上下文（级别为空时按 LV9 内嵌，解密还原时依档位校验权限）
+     * @return 形如 {@code @DST([LV*]密文)} 的信封串；密钥取 spkit.crypto.sm4-key
+     * @throws IllegalStateException SM4 密钥未配置时 fail-fast（密文无密钥不可解，宁失败不产出坏数据）
      */
     public static String processSM4(String value, DstContext dstContext) {
         return String.format(DstConst.DESENSITIZED_ENC_ASE_TEMPLATE,
@@ -255,10 +273,29 @@ public class DesUtil {
     }
 
     /**
-     * 脱敏（基础类型）
-     * @param value 明文数据
+     * 基础掩码脱敏：按 {@link DstType} 的形态规则把敏感段替换为 {@code *}，不可逆。
+     * <p>各类型保留形态（保留=明文，其余掩码）：
+     * <ul>
+     *   <li>NAME：中文姓名保姓（≥3 字保首尾各 1 字，2 字保首字，单字全掩）；英文名按空格/间隔号分段保名掩姓；
+     *       单段英文名保首字母</li>
+     *   <li>ID_CARD：18 位保前 10 后 2；15 位保前 8 后 2；军人证件保留中文首尾段、数字段保后 2；
+     *       港澳通行证（H/M 开头 10 位）保前 3 后 2；港澳身份证保前 2 后 3；其他长度分段保留首尾</li>
+     *   <li>MOBILE：大陆 11 位保前 3 后 4（+86/0086 前缀原样保留）；港澳 9 开头 8 位保前 2 后 2；
+     *       台湾 9 位保前 2 后 3；<b>不匹配三地格式时原样返回（宁漏脱敏不阻断，见类注释）</b></li>
+     *   <li>EMAIL：本地部分保前 3 位 + 固定 {@code ***}，@ 与域名完整保留</li>
+     *   <li>ADDRESS：省/自治区/市/区/县逐级匹配保留，其余详细地址全掩</li>
+     *   <li>BANK_CARD：位数 ≤10 保前 4；长卡号保前 6 后 4</li>
+     *   <li>BANK_NAME / WORK_UNIT：按机构后缀词（银行/有限公司/支行 等）切分，保后缀词原文与各段首字</li>
+     *   <li>BANK_LINE_NUM：保前 2 位，其余掩码</li>
+     *   <li>PHONE：区号与分机号保留，号码主体掩前 4 位保后段</li>
+     *   <li>LICENSE_PLATE：&gt;5 位保前 3 后 2；短牌保前 1 后 2</li>
+     *   <li>PASSWORD：全掩；WECHAT：保首尾各 1 位</li>
+     *   <li>DEFAULT：&gt;5 位保 3+2；&gt;2 位保 1+1；其余全掩</li>
+     * </ul>
+     *
+     * @param value      明文数据
      * @param dstContext 脱敏对象上下文
-     * @return 脱敏数据；value 为 null、或 dstContext/type 为 null 时原样返回（不脱敏不抛错）
+     * @return 掩码后的数据（可能含特殊字符掩码，见 maskSpecChar）；value 为 null、或 dstContext/type 为 null 时原样返回（不脱敏不抛错）
      */
     public static String processBasic(String value, DstContext dstContext) {
         if (value == null || dstContext == null || dstContext.getType() == null) {
@@ -520,21 +557,25 @@ public class DesUtil {
     }
 
     /**
-     * 保留明文部分（当长度不满足预设值时，全部脱敏）
-     * @param val 明文
-     * @param preLength 保留前x位
-     * @param afterLength 保留后x位
-     * @return 脱敏数据
+     * 保留明文首尾、中间掩码（正方向）。
+     *
+     * @param val         明文；null 时原样返回
+     * @param preLength   保留前 x 位
+     * @param afterLength 保留后 x 位
+     * @return 长度 &gt; preLength+afterLength 时返回"保留前段 + 星号中段 + 保留后段"；长度不足预设时全掩
+     *         （宁可多掩不泄露——短值保留首尾反而暴露大比例明文）
      */
     public static String keepSide(String val, int preLength, int afterLength) {
         return keepSide(val,preLength,afterLength,false);
     }
     /**
-     * 保留明文部分（当长度不满足预设值时，全部脱敏）
-     * @param val 明文
-     * @param preLength 保留前x位
-     * @param afterLength 保留后x位
-     * @return 脱敏数据
+     * 保留明文中段、首尾掩码（反方向，用于"头部才是敏感段"的场景，如固话号码主体）。
+     *
+     * @param val         明文；null 时原样返回
+     * @param preLength   掩码前 x 位
+     * @param afterLength 掩码后 x 位
+     * @param negative    true 启用反向掩码（前段星号 + 保留中段 + 后段星号）；长度不足预设时全掩
+     * @return 反向掩码后的数据
      */
     public static String keepSide(String val, int preLength, int afterLength,boolean negative) {
         if(val != null){
@@ -565,10 +606,13 @@ public class DesUtil {
     }
 
     /**
-     * 解密
-     * @param val 加密内容
-     * @param ignorePower 是否忽略权限检查
-     * @return 返回解密内容
+     * 解密文本中的全部 {@code @DST(...)} 密文为明文（就地替换，非密文部分不动）。
+     *
+     * @param val        含密文的文本；无密文时原样返回
+     * @param ignorePower true 跳过权限校验（内部/运维场景）；false 按密文内嵌级别校验
+     * @return 全部密文还原后的文本；密文级别前缀缺失/无法解析时该段保持原样（防御性跳过）
+     * @throws RuntimeException 密文级别超出当前用户权限时抛出（拒绝还原，防越权查看明文）；
+     *                           SM4 解密失败（密钥不符/密文损坏）由底层抛出
      */
     public static String decrypt(String val,boolean ignorePower){
         Map<String,String> dic = new HashMap<>();
@@ -597,6 +641,15 @@ public class DesUtil {
         return holder.value;
     }
 
+    /**
+     * 对 JSON 原文做属性名规则脱敏（不依赖实体类注解，直接在字符串层面处理）。
+     * <p>处理规则：先转义易冲突字符（{@code \"} 占位符化），再逐属性匹配
+     * （"key":"value" 形态，按属性名走 {@link #desByProperties}），数组值（"key":["a","b"]）逐元素处理，
+     * 属性值为 JSON 字符串的场景（值本身是转义后的 JSON）递归同规则处理，最后还原转义。
+     *
+     * @param data JSON 文本；非合法 JSON（JsonUtil.isTypeJSON 判定）时原样返回
+     * @return 属性名命中规则则替换值后的 JSON 文本；结构不变，仅值变化
+     */
     public static String desensitizeJson(String data){
         if (JsonUtil.isTypeJSON(data)){
             data = escapeJson(data);
@@ -816,9 +869,11 @@ public class DesUtil {
     }
 
     /**
-     * 脱敏xml类型字符串
-     * @param data 待脱敏内容
-     * @return 脱敏内容
+     * 对 XML 原文做标签名规则脱敏：普通文本节点（{@code <tag>值</tag>}）与 CDATA 节点
+     * （{@code <tag><![CDATA[值]]></tag>}）均按标签名走 {@link #desByProperties} 脱敏。
+     *
+     * @param data XML 文本；非合法 XML（XmlUtil.isXml 判定）时原样返回
+     * @return 标签名命中规则则节点值被替换后的 XML 文本；结构不变，仅文本节点值变化
      */
     public static String desensitizeXml(String data) {
         if(XmlUtil.isXml(data)) {
@@ -920,11 +975,13 @@ public class DesUtil {
     }
 
     /**
-     * 脱敏数据（指定处理类型 view/log）
-     * @param processType 处理类型 view/log
-     * @param callback 回调函数，自定义逻辑
-     * @return 脱敏数据
-     * @param <T> 泛型
+     * 在指定处理类型（VIEW/LOG）下执行回调：回调内所有脱敏取 log/view 对应链路的算法配置。
+     * <p>用于日志链路（logback/LogBuilder）包住输出逻辑，使其脱敏走 algorithm.log 而非 algorithm.view。
+     *
+     * @param processType 处理类型；LOG 取日志链路算法，VIEW 取视图链路算法
+     * @param callback    回调函数，自定义逻辑
+     * @return 回调返回值（透传，本方法不加工）
+     * @param <T> 回调返回类型
      */
     public static <T>T desByProcessTypeWrap(DstProcessType processType, CallbackR<T> callback) {
 
@@ -936,9 +993,10 @@ public class DesUtil {
         }
     }
     /**
-     * 脱敏数据（指定处理类型 view/log）
-     * @param processType 处理类型 view/log
-     * @param callback 回调函数，自定义逻辑
+     * 在指定处理类型（VIEW/LOG）下执行无返回值回调（语义同 {@link #desByProcessTypeWrap(DstProcessType, CallbackR)}）。
+     *
+     * @param processType 处理类型；LOG 取日志链路算法，VIEW 取视图链路算法
+     * @param callback    回调函数，自定义逻辑
      */
     public static void desByProcessTypeWrap(DstProcessType processType, Callback callback) {
 

@@ -39,10 +39,20 @@ public class LockAspect {
     private static final String KEY_PATTERN = "lock:%s:%s:%s";
 
     @Pointcut("@annotation(io.github.jevonsnotes.jevokit.redis.lock.annotation.Lock)")
+/**
+    * 切点：@Lock 注解标注的方法（切点表达式含包名，包名迁移时须同步——rename 教训项）。
+    */
     public void Lock() {
     }
 
     @Around("Lock()")
+/**
+    * @Lock 环绕：按 value/route 提键，键为空白直接放行（锁失效而非报错）；
+    * 拿锁失败时按优先级降级——fallback 类 > fallbackWithException 抛出 > 仅 warn 日志（返回 null）。
+    * @param joinPoint 连接点
+    * @return 业务原返回值；或降级路径产物（fallback 结果 / null）
+    * @throws Throwable 业务异常，或降级配置的 fallbackWithException 异常实例
+    */
     public Object doAround(ProceedingJoinPoint joinPoint) throws Throwable {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         Lock lock = signature.getMethod().getAnnotation(Lock.class);

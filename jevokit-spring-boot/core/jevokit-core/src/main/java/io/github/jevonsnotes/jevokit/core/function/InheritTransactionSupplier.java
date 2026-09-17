@@ -14,6 +14,11 @@ public abstract class InheritTransactionSupplier<T> implements Supplier<T> {
     private final Map<Object, Object> transactionResourceMap = TransactionSynchronizationManager.getResourceMap();
     private final List<Object> history = new ArrayList<>();
     private final Thread caller = Thread.currentThread();
+    /**
+     * Supplier 入口：调用线程有事务绑定时先把事务资源传播到执行线程，执行完恢复解绑
+     *
+     * @return 业务结果
+     */
     @Override
     public T get() {
         if(hasTransaction()){
@@ -30,6 +35,11 @@ public abstract class InheritTransactionSupplier<T> implements Supplier<T> {
 
 
 
+    /**
+     * 业务逻辑实现（事务资源已按需绑定，等价于直接写 Supplier.get 的方法体）
+     *
+     * @return 业务结果
+     */
     public abstract T inheritedGet();
     /**
      * 传播事务

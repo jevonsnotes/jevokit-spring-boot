@@ -51,10 +51,10 @@ public class PageUtil extends cn.hutool.core.util.PageUtil {
      *
      * @param data     数据
      * @param pageSize 每页大小
-     * @param consumer 消费方法
+     * @param consumer 消费方法，入参为（当页子列表，页号从 0 起）
      * @param <T>      入参子元素类型
      * @param <R>      出参元素类型
-     * @return 返回值
+     * @return 各页消费结果按页序聚合的列表；数据量不超过 pageSize 时整批一次消费（单元素）
      */
     public static <T, R> List<R> consume(List<T> data, int pageSize, BiFunction<List<T>, Integer, R> consumer) {
         return consume(data, pageSize, consumer, null);
@@ -62,14 +62,14 @@ public class PageUtil extends cn.hutool.core.util.PageUtil {
 
 
     /**
-     * 分页消费-异步
+     * 分页消费-异步（使用内部共享线程池，CallerRunsPolicy 拒绝策略保证不丢任务）
      *
      * @param data     数据
      * @param pageSize 每页大小
-     * @param consumer 消费方法
+     * @param consumer 消费方法，入参为（当页子列表，页号从 0 起）
      * @param <T>      入参子元素类型
      * @param <R>      出参元素类型
-     * @return 返回值
+     * @return 各页消费结果按页序聚合的列表（内部 join 等待全部页完成）
      */
     public static <T, R> List<R> consumeAsync(List<T> data, int pageSize, BiFunction<List<T>, Integer, R> consumer) {
         return consume(data, pageSize, consumer, executor);
@@ -80,11 +80,11 @@ public class PageUtil extends cn.hutool.core.util.PageUtil {
      *
      * @param data     数据
      * @param pageSize 每页大小
-     * @param consumer 消费方法
-     * @param executor  异步执行器
+     * @param consumer 消费方法，入参为（当页子列表，页号从 0 起）
+     * @param executor 异步执行器；传 null 表示同步逐页执行
      * @param <T>      入参子元素类型
      * @param <R>      出参元素类型
-     * @return 返回值
+     * @return 各页消费结果按页序聚合的列表；数据量不超过 pageSize 时整批一次消费（单元素）
      */
     public static <T, R> List<R> consume(List<T> data, int pageSize, BiFunction<List<T>, Integer, R> consumer, Executor executor) {
         List<R> result = new ArrayList<>();

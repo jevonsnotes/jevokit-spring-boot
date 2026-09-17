@@ -15,6 +15,11 @@ import jakarta.servlet.http.HttpServletResponse;
 public class XssCleanInterceptor implements AsyncHandlerInterceptor {
     private final XssProperties xssProperties;
 
+    /**
+     * 为命中 URL 的控制层请求写入 XSS 防护 ThreadLocal（依 @XssClean 注解调整模式/忽略响应，方法级覆盖类级）。
+     *
+     * @return 恒 true（本拦截器只做上下文标记，不拦截请求）
+     */
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         // 非控制层跳过
@@ -50,11 +55,13 @@ public class XssCleanInterceptor implements AsyncHandlerInterceptor {
         return true;
     }
 
+    /** 请求结束清理 ThreadLocal（防线程池复用串请求）。 */
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
         ConfigHolder.removeXss();
     }
 
+    /** 异步请求转为并发处理时清理 ThreadLocal（同 afterCompletion，异步线程另行建立上下文）。 */
     @Override
     public void afterConcurrentHandlingStarted(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         ConfigHolder.removeXss();

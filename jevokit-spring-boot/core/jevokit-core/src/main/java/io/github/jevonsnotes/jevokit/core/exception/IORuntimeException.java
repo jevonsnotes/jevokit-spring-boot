@@ -30,6 +30,11 @@ public class IORuntimeException extends OkHttpRuntimeException {
         super(StrUtil.format(messageTemplate, params), throwable);
     }
 
+    /**
+     * 直接抛出该异常（抛出型工厂，省去 throw 样板）
+     *
+     * @param e 原异常，消息取其因链根因消息
+     */
     public static void ofThrow(Throwable e){
         throw new IORuntimeException(ExceptionUtil.getMessage(e), e);
     }

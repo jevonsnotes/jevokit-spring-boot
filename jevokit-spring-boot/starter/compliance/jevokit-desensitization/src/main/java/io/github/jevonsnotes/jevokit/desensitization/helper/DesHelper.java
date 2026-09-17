@@ -75,21 +75,23 @@ public class DesHelper {
 //    }
 
     /**
-     * 脱敏视图
-     * @param data
-     * @param <T>
-     * @return 返回克隆对象的脱敏视图
+     * 生成脱敏视图（深克隆默认开启，原始对象不被修改）。
+     *
+     * @param data 待脱敏对象（按 @DstProperty 标注与属性名规则处理）
+     * @param <T>  对象类型
+     * @return 克隆并脱敏后的新对象
      */
     public static <T> T desensitizeView(T data) {
         return desensitizeView(data, true);
     }
 
     /**
-     * 脱敏视图
+     * 生成脱敏视图（算法取 algorithm.view 链路配置）。
      *
-     * @param data
-     * @param <T>
-     * @return
+     * @param data      待脱敏对象
+     * @param deepClone true 深克隆后脱敏（原对象不动）；false 原地脱敏（调用方自担副作用）
+     * @param <T>       对象类型
+     * @return 脱敏后的对象
      */
     public static <T> T desensitizeView(T data, boolean deepClone) {
         Assert.isTrue(ready, "desHelper not ready");
@@ -105,6 +107,14 @@ public class DesHelper {
      * @param deepClone
      * @param <T>
      * @return
+     */
+    /**
+     * 原地/克隆脱敏（实例方法，日志链路递归处理对象时复用）。
+     *
+     * @param data      待脱敏对象（须配合 @Desensitization 触发切面语义）
+     * @param deepClone true 先深克隆
+     * @param <T>       对象类型
+     * @return 脱敏后的对象
      */
     @Desensitization
     public <T> T desensitize(T data, boolean deepClone) {
@@ -134,11 +144,13 @@ public class DesHelper {
         return data;
     }
 
+    /** 视图/日志链路切换入口（委托 {@link DesUtil}，语义见其同名方法注释）。 */
     public static <T>T desByProcessTypeWrap(DstProcessType processType, CallbackR<T> callback) {
 
         return DesUtil.desByProcessTypeWrap(processType,callback);
     }
 
+    /** 视图/日志链路切换入口（无返回值形态，语义同上）。 */
     public static void desByProcessTypeWrap(DstProcessType processType, Callback callback) {
         DesUtil.desByProcessTypeWrap(processType,callback);
     }
@@ -150,6 +162,13 @@ public class DesHelper {
      * @param data
      * @param <T>
      * @return 返回克隆对象的脱敏视图
+     */
+    /**
+     * 深度克隆并脱敏（等价 desensitize(data, true)，原始对象不被修改）。
+     *
+     * @param data 待脱敏对象
+     * @param <T>  对象类型
+     * @return 克隆并脱敏后的新对象
      */
     @Desensitization
     public <T> T desensitize(T data) {
@@ -164,6 +183,7 @@ public class DesHelper {
         return staticProperties;
     }
 
+    /** 容器就绪回调：把配置/权限拦截器提升为静态引用并置 ready 标志（静态入口的前置条件）。 */
     @PostConstruct
     public void init() {
         staticProperties = this.properties;
@@ -175,9 +195,11 @@ public class DesHelper {
 
 
     /**
-     * 脱敏日志对象
-     * @param obj
-     * @return 返回克隆对象的脱敏对象
+     * 脱敏日志对象（深克隆后递归处理：JSON/XML 字符串按报文脱敏，Map/List 逐项，
+     * 普通对象按标注脱敏；算法取 algorithm.log 链路）。
+     *
+     * @param obj 日志参数对象；null 原样返回
+     * @return 克隆并脱敏后的新对象（入参不被修改，日志可安全输出）
      */
     public static Object desensitizeLog(Object obj) {
         Assert.isTrue(ready, "desHelper not ready");
@@ -230,6 +252,12 @@ public class DesHelper {
         return obj;
     }
 
+    /**
+     * 权限判定：查该级别映射的权限代码集，交 SensitizationPowerInterceptor 判定当前用户可否查看明文。
+     *
+     * @param level 敏感级别；null 或 helper 未就绪时返回 false（安全默认：无权限）
+     * @return true 允许查看明文
+     */
     public static boolean checkPower(DstLevel level){
         if(level != null) {
             if(ready){

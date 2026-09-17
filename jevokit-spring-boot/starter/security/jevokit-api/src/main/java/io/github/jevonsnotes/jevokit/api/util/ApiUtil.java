@@ -6,6 +6,13 @@ package io.github.jevonsnotes.jevokit.api.util;
  * 保证两种前缀写法（{@code X-JS-} / {@code X-JS}）产出一致头名；客户端组装与服务端解析共用本规则。
  */
 public class ApiUtil {
+    /**
+     * 拼接协议头名：prefix 已以 - 结尾直接拼接，否则补 -（两种前缀写法产出一致头名）。
+     *
+     * @param key    头名主体
+     * @param prefix 终端配置的头前缀
+     * @return 实际头名
+     */
     public static String rebuildHeader(String key, String prefix) {
         return prefix.endsWith("-") ? prefix + key : prefix + "-" + key;
     }

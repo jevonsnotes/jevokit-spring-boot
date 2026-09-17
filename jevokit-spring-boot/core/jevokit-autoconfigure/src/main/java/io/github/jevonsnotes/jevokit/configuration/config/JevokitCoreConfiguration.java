@@ -27,11 +27,22 @@ import java.util.List;
 @EnableConfigurationProperties(CryptoProperties.class)
 public class JevokitCoreConfiguration {
 
+    /**
+     * 装配字符串属性编辑器：按容器内 chain 注册顺序串成处理链
+     *
+     * @param chains 容器内全部 StringPropertiesSupportChain 实现（可为空列表，此时编辑器直通）
+     * @return 组装好的编辑器 Bean
+     */
     @Bean
     public StringPropertiesEditor stringPropertiesEditor(List<StringPropertiesSupportChain> chains){
         return new StringPropertiesEditor(chains);
     }
 
+    /**
+     * 装配 hutool SpringUtil（静态工具取 Bean 的入口），应用已自备时让位
+     *
+     * @return SpringUtil 实例
+     */
     @Bean
     @ConditionalOnMissingBean
     public SpringUtil springUtil(){

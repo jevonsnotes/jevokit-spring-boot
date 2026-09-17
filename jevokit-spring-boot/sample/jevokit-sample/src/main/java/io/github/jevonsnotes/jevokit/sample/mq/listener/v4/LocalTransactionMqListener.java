@@ -18,12 +18,23 @@ public class LocalTransactionMqListener implements RocketMQLocalTransactionListe
 
 
     @Override
+/**
+    * 事务消息本地事务执行演示：返回 COMMIT 驱动半消息投递。
+    * @param msg 半消息
+    * @param arg 发起时透传上下文
+    * @return 本地事务状态（演示恒 COMMIT）
+    */
     public RocketMQLocalTransactionState executeLocalTransaction(Message msg, Object arg) {
         log.info("本地事务执行器收到消息：msg={} , arg = {}" ,JSON.toJSONString(msg),JSON.toJSONString(arg));
         return RocketMQLocalTransactionState.COMMIT;
     }
 
     @Override
+/**
+    * 事务回查演示：长时间未收到本地事务结果时引擎回调。
+    * @param msg 半消息
+    * @return 回查结论状态
+    */
     public RocketMQLocalTransactionState checkLocalTransaction(Message msg) {
         log.info("事务回查监听器收到消息：msg={} " ,JSON.toJSONString(msg));
 

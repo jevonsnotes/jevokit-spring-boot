@@ -24,16 +24,23 @@ public class DefaultAuditLogProcessor implements AuditLogProcessor {
     public static final String DEF_USER_CODE = "DEF_USER_CODE";
     public static final String DEF_COM_CODE = "DEF_COM_CODE";
 
+    /** 占位用户码（kit 不绑定身份体系，业务覆盖本处理器提供真实值）。 */
     @Override
     public String getUserCode() {
         return DEF_USER_CODE;
     }
 
+    /** 占位机构码（同 getUserCode）。 */
     @Override
     public String getComCode() {
         return DEF_COM_CODE;
     }
 
+    /**
+     * 按持久化模式分发：LOG 仅结构化日志、DB 落审计表（无 DAO 时静默跳过）、MIXED 两者兼做。
+     *
+     * @param dto 审计记录
+     */
     public void save(AuditLogDto dto) {
 
         AuditLogProperties properties = SpringUtil.getBean(AuditLogProperties.class);

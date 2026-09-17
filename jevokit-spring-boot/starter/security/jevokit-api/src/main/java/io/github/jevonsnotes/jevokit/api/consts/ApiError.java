@@ -17,9 +17,11 @@ public enum ApiError {
     private final String code;
     private final String msg;
 
+    /** 获取协议码（"0" 成功 / "999" 失败）。 */
     public String code() {
         return this.code;
     }
+    /** 获取协议默认消息文本。 */
     public String msg() {
         return this.msg;
     }

@@ -28,27 +28,60 @@ import java.sql.Connection;
 @Slf4j
 public class JevokitNoGenConfiguration{
     @Bean
+/**
+    * 配置 Bean。
+    * @return spkit.nogen 绑定实例
+    */
     public JevokitNoGenProperties jevokitNoGenProperties(){
         return new JevokitNoGenProperties();
     }
     @Bean
+/**
+    * 按 jdbc url 方言路由库种 DAO（H2/MySQL/PG）。
+    * @param jdbcTemplate 数据源模板（取连接元数据判型）
+    * @return 对应方言 DAO 实现
+    */
     public NoGenDao noGenDao(JdbcTemplate jdbcTemplate){
         return convert(getJdbcUrl(jdbcTemplate),jdbcTemplate);
     }
 
     @Bean
+/**
+    * 发号门面 Bean。
+    * @param properties 配置
+    * @param noGenDao 持久化 DAO
+    * @param client Redisson 客户端（序列/回收池载体）
+    * @return 发号门面
+    */
     public BzNoHelper bzNoHelper(JevokitNoGenProperties properties, NoGenDao noGenDao, RedissonClient client){
         return new BzNoHelper(properties,client,noGenDao);
     }
     @Bean
+/**
+    * 自动建表器 Bean。
+    * @param jdbcTemplate 数据源模板
+    * @param noGenDao 方言 DAO
+    * @param properties 配置
+    * @return 建表器
+    */
     public JevokitNoGenAutoInitDB jevokitNoGenAutoInitDB(JdbcTemplate jdbcTemplate,NoGenDao noGenDao,JevokitNoGenProperties properties){
         return new JevokitNoGenAutoInitDB(jdbcTemplate,noGenDao,properties);
     }
     @Bean
+/**
+    * 发号 API Bean。
+    * @param bzNoHelper 发号门面
+    * @return API 控制器
+    */
     public JevokitNoGenApi jevokitNoGenApi(BzNoHelper bzNoHelper){
         return new JevokitNoGenApi(bzNoHelper);
     }
     @Bean
+/**
+    * Web 拦截装配 Bean。
+    * @param properties 配置（accessToken 校验来源）
+    * @return WebMvcConfigurer
+    */
     public JevokitNoGenWebConfiguration jevokitNoGenWebConfiguration(JevokitNoGenProperties properties){
         return new JevokitNoGenWebConfiguration(properties);
     }

@@ -18,6 +18,7 @@ public class MySQLDao implements AuditLogDao {
     private final AuditLogProperties properties;
 
 
+    /** 建主表（MySQL 方言 DDL，大字段 TEXT）。 */
     @Override
     public void createTableAuditLog() {
         String sql = "CREATE TABLE "+ TABLE_NAME +" (" +
@@ -48,22 +49,29 @@ public class MySQLDao implements AuditLogDao {
         jdbcTemplate.execute(sql);
     }
 
+    /** 主表校验 SQL（MySQL 方言 limit 1 探测）。 */
     @Override
     public String validation() {
         return  "SELECT 1 FROM "+ TABLE_NAME +" limit 1;";
     }
 
+    /** 历史表校验 SQL（MySQL 方言）。 */
     @Override
     public String validationHis() {
         return "SELECT 1 FROM "+ TABLE_NAME_HIS +" limit 1;";
     }
 
+    /** MySQL "表不存在"异常匹配模式。 */
     @Override
     public String getPattenNotExists() {
         return DBConst.PATTERN_TABLE_NOT_EXISTS;
     }
 
 
+    /**
+     * 空实现：MySQL 侧不做自动历史迁移（保留表原状，需要时用通用逻辑或手工归档；
+     * 见类注释关键约束）。
+     */
     @Override
     public void migrate() {
     }

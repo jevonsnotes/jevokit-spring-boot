@@ -25,6 +25,7 @@ public class IpConfiguration implements ApplicationListener<WebServerInitialized
      *
      * @param event the event to respond to
      */
+    // 容器就绪回调：此时端口才真正确定，顺带解析本机对外 IP
     @Override
     public void onApplicationEvent(WebServerInitializedEvent event) {
         this.port = event.getWebServer().getPort();

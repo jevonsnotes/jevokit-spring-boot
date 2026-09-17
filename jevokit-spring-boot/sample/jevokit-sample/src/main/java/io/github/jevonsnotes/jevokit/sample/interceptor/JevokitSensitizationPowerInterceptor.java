@@ -19,6 +19,12 @@ public class JevokitSensitizationPowerInterceptor implements SensitizationPowerI
     private AtomicInteger counter = new AtomicInteger(0);
 
     @Override
+/**
+    * 权限判定演示：计数器取模（每 3 次放行 1 次）模拟动态权限，便于人工观察可见性变化。
+    * @param level 敏感级
+    * @param powerKey 权限键集合
+    * @return true=当前可见明文
+    */
     public boolean check(DstLevel level, List<String> powerKey) {
         log.info("识别到权限 level {} , key {}",level,powerKey);
         return counter.incrementAndGet() % 3 ==0;

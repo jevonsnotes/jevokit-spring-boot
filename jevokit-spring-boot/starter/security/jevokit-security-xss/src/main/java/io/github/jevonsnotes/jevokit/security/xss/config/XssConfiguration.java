@@ -41,17 +41,22 @@ public class XssConfiguration implements WebMvcConfigurer {
     private final XssProperties xssProperties;
 
 
+    /**
+     * 注册默认清洗器（业务可用自定义 XssCleaner bean 覆盖）。
+     */
     @Bean
     @ConditionalOnMissingBean
     public XssCleaner xssCleaner(XssProperties properties) {
         return new DefaultXssCleaner(properties);
     }
 
+    /** 注册表单绑定清洗处理器。 */
     @Bean
     public FormXssHandler formXssHandler(StringPropertiesEditor editor) {
         return new FormXssHandler(editor);
     }
 
+    /** 注册字符串属性编辑链节点（表单 String 属性清洗的一环）。 */
     @Bean
     public XssStringPropertiesEditChain xssStringPropertiesEditChain(XssProperties properties,
                                                                      XssCleaner xssCleaner) {
@@ -59,16 +64,21 @@ public class XssConfiguration implements WebMvcConfigurer {
     }
 
 
+    /** 注册响应体清洗处理器（受 ignore-response 开关控制）。 */
     @Bean
     public ResponseXssHandler responseXssHandler(XssCleaner xssCleaner) {
         return new ResponseXssHandler( xssCleaner);
     }
+    /** 注册 XML 报文清洗处理器。 */
     @Bean
     public XmlXssHandler xmlXssHandler(XssCleaner xssCleaner) {
         return new XmlXssHandler( xssCleaner);
     }
 
 
+    /**
+     * 向全局 ObjectMapper 注册 String 反序列化清洗（JSON body 的每个字符串字段生效）。
+     */
     @Bean
     public Jackson2ObjectMapperBuilderCustomizer xssJacksonCustomizer(XssProperties properties,
                                                                       XssCleaner xssCleaner) {
@@ -76,6 +86,10 @@ public class XssConfiguration implements WebMvcConfigurer {
     }
 
 
+    /**
+     * 注册 XSS 拦截器：按 url-patterns（默认 /**）为命中请求写入防护 ThreadLocal，
+     * 请求结束清理（排除 url-exclude-patterns）。
+     */
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         List<String> urlPatterns = xssProperties.getUrlPatterns();

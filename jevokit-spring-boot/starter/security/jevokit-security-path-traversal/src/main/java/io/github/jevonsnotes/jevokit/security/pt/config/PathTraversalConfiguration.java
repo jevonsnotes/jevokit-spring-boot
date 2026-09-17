@@ -35,12 +35,8 @@ public class PathTraversalConfiguration implements WebMvcConfigurer {
 
 
     /**
-     * Add Spring MVC lifecycle interceptors for pre- and post-processing of
-     * controller method invocations and resource handler requests.
-     * Interceptors can be registered to apply to all requests or be limited
-     * to a subset of URL patterns.
-     *
-     * @param registry
+     * 注册路径穿越拦截器：按 url-patterns（默认 /**）为命中请求写入防护 ThreadLocal，
+     * 请求结束清理（排除 url-exclude-patterns）。
      */
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
@@ -55,15 +51,18 @@ public class PathTraversalConfiguration implements WebMvcConfigurer {
                 .order(Ordered.LOWEST_PRECEDENCE);
         log.info("Defender is ready! [{}]","path traversal");
     }
+    /** 注册请求体清洗处理器（ThreadLocal 开启时生效）。 */
     @Bean
     public RequestBodyPathTraversalHandler pathTraversalHandler(){
         return new RequestBodyPathTraversalHandler(properties);
     }
+    /** 注册表单绑定清洗处理器。 */
     @Bean
     public FormPathTraversalHandler formPathTraversalHandler(StringPropertiesEditor editor){
         return new FormPathTraversalHandler(editor);
     }
 
+    /** 注册字符串属性编辑链节点（表单 String 属性清洗的一环）。 */
     @Bean
     public PtStringPropertiesEditChain ptStringPropertiesEditChain(){
         return new PtStringPropertiesEditChain(properties);

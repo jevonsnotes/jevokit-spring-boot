@@ -16,6 +16,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class StringPropertiesEditor extends PropertyEditorSupport {
     private final List<StringPropertiesSupportChain> chains;
+    /**
+     * 出站方向（对象 → 字符串）：值依次流经全部 chain 的 getTextEdit
+     *
+     * @return 编辑后的字符串；原值为 null 时从空串起步过链
+     */
     @Override
     public String getAsText() {
         Object value = getValue();
@@ -27,6 +32,11 @@ public class StringPropertiesEditor extends PropertyEditorSupport {
         return value.toString();
     }
 
+    /**
+     * 入站方向（字符串 → 对象）：文本依次流经全部 chain 的 setTextEdit 后 setValue
+     *
+     * @param text 原始文本；null 直接 setValue(null)，不过链
+     */
     @Override
     public void setAsText(String text) throws IllegalArgumentException {
 

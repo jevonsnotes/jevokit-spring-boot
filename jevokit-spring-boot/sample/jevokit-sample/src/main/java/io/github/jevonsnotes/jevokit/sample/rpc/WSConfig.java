@@ -31,16 +31,28 @@ public class WSConfig {
     private ProducerService producerService;
 
     @Bean
+/**
+    * CXF Servlet 注册：/webService/* 交由 CXF 处理。
+    * @return Servlet 注册 Bean
+    */
     public ServletRegistrationBean disServlet(){
         return new ServletRegistrationBean(new CXFServlet(),servletContext +"/*"); //webservice下的请求将有CXFServlet处理
     }
 
     @Bean(name = Bus.DEFAULT_BUS_ID)
+/**
+    * CXF Spring 总线 Bean。
+    * @return SpringBus
+    */
     public SpringBus springBus(){
         return  new SpringBus();
     }
 
     @Bean
+/**
+    * 发布 SOAP 端点：ProducerService 挂到 /webService/producerService（发布地址启动时打印）。
+    * @return 已发布端点
+    */
     public Endpoint endpoint(){
 
         EndpointImpl endpoint = new EndpointImpl(springBus(), producerService);

@@ -10,6 +10,11 @@ public abstract class WatchDog extends TimerTask{
     private final Timer timer;
     private boolean completed;
 
+    /**
+     * 构造监视器
+     *
+     * @param name 后台 Timer 线程名（便于日志/线程 dump 定位）
+     */
     public WatchDog(String name){
         timer = new Timer(name);
     }

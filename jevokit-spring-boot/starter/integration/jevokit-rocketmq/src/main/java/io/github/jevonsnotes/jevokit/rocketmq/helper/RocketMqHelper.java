@@ -57,87 +57,89 @@ public class RocketMqHelper {
 
 
     @PostConstruct
+/**
+    * 生命周期日志（@PostConstruct）：装配完成即打点，无其他副作用。
+    */
     public void init() {
         log.info("RocketMqHelper 初始化");
     }
 
-    /**
-     * 发送异步消息
-     *
-     * @param topic   消息Topic
-     * @param message 消息实体
-     */
+/**
+    * 异步发送（枚举 topic 取 name()），回调用默认实现（成败各打一条日志）。
+    * @param topic 目标 Topic（枚举名即 topic 名）
+    * @param message 业务消息，自动包装为 Spring Messaging Message
+    */
     public void asyncSend(Enum topic, Object message) {
         asyncSend(topic.name(), message, getDefaultSendCallBack());
     }
 
-    /**
-     * 发送异步消息
-     *
-     * @param topic   消息Topic
-     * @param message 消息实体
-     */
+/**
+    * 异步发送（枚举 topic + 已包装消息），默认回调。
+    * @param topic 目标 Topic
+    * @param message 已包装消息
+    */
     public void asyncSend(Enum topic, Message message) {
         asyncSend(topic.name(), message, getDefaultSendCallBack());
     }
 
-    /**
-     * 发送异步消息
-     *
-     * @param topic   消息Topic
-     * @param message 消息实体
-     */
+/**
+    * 异步发送（字符串 topic），默认回调。语义同 {@link #asyncSend(String, Message, SendCallback)}。
+    * @param topic 目标 Topic（destination 语法，支持 topic:tag）
+    * @param message 业务消息
+    */
     public void asyncSend(String topic, Object message) {
         asyncSend(topic, convertMessage(message));
     }
-    /**
-     * 发送异步消息
-     *
-     * @param topic   消息Topic
-     * @param message 消息实体
-     */
+/**
+    * 异步发送（字符串 topic + 已包装消息），默认回调。
+    * @param topic 目标 Topic
+    * @param message 已包装消息
+    */
     public void asyncSend(String topic, Message message) {
         asyncSend(topic, message, getDefaultSendCallBack());
     }
 
-    /**
-     * 发送异步消息
-     * @param topic
-     * @param message
-     * @param messageGroup 确保同一个消息组的消息按顺序存储
-     */
+/**
+    * 异步顺序发送：相同 messageGroup 哈希到同一队列，组内保序。
+    * @param topic 目标 Topic
+    * @param message 业务消息
+    * @param messageGroup 分区键——需保序的业务维度（如同一单号）
+    */
     public void asyncSendOrderly(String topic, Object message,String messageGroup) {
         asyncSend(topic, convertMessage(message),messageGroup,null,null,TopicMsgType.FIFO,getDefaultSendCallBack());
     }
 
 
-    /**
-     * 发送异步消息
-     *
-     * @param topic        消息Topic
-     * @param message      消息实体
-     * @param sendCallback 回调函数
-     */
+/**
+    * 异步发送（枚举 topic + 自定义回调）。
+    * @param topic 目标 Topic
+    * @param message 业务消息
+    * @param sendCallback 成败回调（补偿/重投挂载点），null 同默认回调
+    */
     public void asyncSend(Enum topic, Object message, SendCallback sendCallback) {
         asyncSend(topic.name(), message, sendCallback);
     }
-    /**
-     * 发送异步消息
-     *
-     * @param topic        消息Topic
-     * @param message      消息实体
-     * @param sendCallback 回调函数
-     */
+/**
+    * 异步发送（枚举 topic + 已包装消息 + 自定义回调）。
+    * @param topic 目标 Topic
+    * @param message 已包装消息
+    * @param sendCallback 成败回调
+    */
     public void asyncSend(Enum topic, Message<?> message, SendCallback sendCallback) {
         asyncSend(topic.name(), message, sendCallback);
     }
 
-    /**
-     * 发送异步消息
-     * DelayLevel 按序号对应 1s 5s 10s 30s 1m 2m 3m 4m 5m 6m 7m 8m 9m 10m 20m 30m 1h 2h
-     * @param topic   消息Topic
-     * @param message 消息实体
-     */
+/**
+    * 异步发送全参形态：按 topicMsgType 路由 NORMAL/DELAY/FIFO 三分支。
+    * @param topic 目标 Topic
+    * @param message 已包装消息
+    * @param messageGroup FIFO 分区键（仅 FIFO 分支使用）
+    * @param timeout 超时毫秒，null 取默认 5000
+    * @param delayLevel 延迟档位序号（1-18 对应 1s…2h），null 时取 producer sendMsgTimeout
+    * @param topicMsgType 发送形态（见 TopicMsgType）
+    * @param sendCallback 原生回调；null 仅在 NORMAL 分支回退默认回调，DELAY/FIFO 分支原样透传 null
+    * （引擎侧收到 null 回调的行为未定义——自定义形态请显式传回调）
+    */
     public void asyncSend(String topic, Message<?> message,String messageGroup,Long timeout, Integer delayLevel,TopicMsgType topicMsgType, org.apache.rocketmq.client.producer.SendCallback sendCallback) {
         timeout = timeout == null ? SEND_TIMEOUT :timeout;
         delayLevel = delayLevel == null ? rocketMQTemplate.getProducer().getSendMsgTimeout() : delayLevel;
@@ -157,23 +159,21 @@ public class RocketMqHelper {
 
     }
 
-    /**
-     * 发送异步消息
-     *
-     * @param topic        消息Topic
-     * @param message      消息实体
-     * @param sendCallback 回调函数
-     */
+/**
+    * 异步发送（字符串 topic + 业务消息 + 自定义回调）。
+    * @param topic 目标 Topic
+    * @param message 业务消息
+    * @param sendCallback 成败回调
+    */
     public void asyncSend(String topic, Object message, SendCallback sendCallback) {
         asyncSend(topic, convertMessage(message), sendCallback);
     }
-    /**
-     * 发送异步消息
-     *
-     * @param topic        消息Topic
-     * @param message      消息实体
-     * @param sendCallback 回调函数
-     */
+/**
+    * 异步发送便捷形态：等价全参形态的 NORMAL + 默认超时。
+    * @param topic 目标 Topic
+    * @param message 已包装消息
+    * @param sendCallback 成败回调
+    */
     public void asyncSend(String topic, Message<?> message, SendCallback sendCallback) {
         asyncSend(topic, message, null,null,null,TopicMsgType.NORMAL,sendCallback);
     }
@@ -186,91 +186,96 @@ public class RocketMqHelper {
         }
     }
 
-    /**
-     * 发送异步消息
-     *
-     * @param topic        消息Topic
-     * @param message      消息实体
-     * @param sendCallback 回调函数
-     * @param delayLevel    延时时间
-     */
+/**
+    * 异步延迟发送便捷形态：固定走 DELAY 分支。
+    * @param topic 目标 Topic
+    * @param message 已包装消息
+    * @param sendCallback 成败回调（注意全参形态对 null 回调的透传语义）
+    * @param timeout 超时毫秒，null 取默认
+    * @param delayLevel 延迟档位序号（1-18）
+    */
     public void asyncSend(String topic, Message<?> message, SendCallback sendCallback, Long timeout,int delayLevel) {
         asyncSend(topic, message, null,timeout,delayLevel,TopicMsgType.DELAY,sendCallback);
     }
 
 
-    /**
-     * 发送顺序消息
-     *
-     * @param message
-     * @param topic
-     * @param messageGroup 相同hashKey会发送到同一个队列
-     */
+/**
+    * 同步顺序发送（枚举 topic）。语义同 {@link #syncSendOrderly(String, Message, String)}。
+    * @param topic 目标 Topic
+    * @param message 已包装消息
+    * @param messageGroup 分区键，相同键进同一队列保序
+    */
     public void syncSendOrderly(Enum topic, Message message, String messageGroup) {
         syncSendOrderly(topic.name(), message, messageGroup);
     }
 
 
-    /**
-     * 发送顺序消息
-     *
-     * @param message
-     * @param topic
-     * @param messageGroup
-     */
+/**
+    * 同步顺序发送：阻塞至 broker 确认。
+    * @param topic 目标 Topic
+    * @param message 已包装消息
+    * @param messageGroup 分区键
+    */
     public void syncSendOrderly(String topic, Message message, String messageGroup) {
         rocketMQTemplate.syncSendOrderly(topic, message, messageGroup);
     }
-    /**
-     * 发送顺序消息
-     *
-     * @param message
-     * @param topic
-     * @param messageGroup
-     */
+/**
+    * 同步顺序发送（业务消息自动包装）。
+    * @param topic 目标 Topic
+    * @param message 业务消息
+    * @param messageGroup 分区键
+    */
     public void syncSendOrderly(String topic, Object message, String messageGroup) {
         rocketMQTemplate.syncSendOrderly(topic, convertMessage(message), messageGroup);
     }
-    /**
-     * 发送普通消息
-     * @param message
-     * @param topic
-     */
+/**
+    * 同步普通发送（业务消息自动包装）：阻塞至 broker 确认，失败抛异常。
+    * @param topic 目标 Topic
+    * @param message 业务消息
+    */
     public void syncSend(String topic, Object message) {
         syncSend(topic,convertMessage(message));
     }
 
-    /**
-     * 发送普通消息
-     * @param message
-     * @param topic
-     */
+/**
+    * 同步普通发送（已包装消息）。
+    * @param topic 目标 Topic
+    * @param message 已包装消息
+    */
     public void syncSend(String topic, Message<?> message) {
         rocketMQTemplate.syncSend(topic, message);
     }
 
 
-    /**
-     *  发送延时消息
-     * @param topic
-     * @param message
-     * @param delayLevel MILLISECONDS
-     */
+/**
+    * 同步延迟发送（业务消息自动包装，默认超时）。
+    * @param topic 目标 Topic
+    * @param message 业务消息
+    * @param delayLevel 延迟档位序号（1-18 对应 1s…2h，非任意时刻）
+    */
     public void syncSendDelay(String topic, Object message, int delayLevel) {
         syncSendDelay(topic,convertMessage(message),null,delayLevel);
     }
-    /**
-     *  发送延时消息
-     * @param topic
-     * @param message
-     * @param delayLevel 按序号对应 1s 5s 10s 30s 1m 2m 3m 4m 5m 6m 7m 8m 9m 10m 20m 30m 1h 2h
-     */
+/**
+    * 同步延迟发送全参形态：超时 null 时取 producer sendMsgTimeout。
+    * @param topic 目标 Topic
+    * @param message 已包装消息
+    * @param timeout 超时毫秒，null 取 producer 配置
+    * @param delayLevel 延迟档位序号（1-18）
+    */
     public void syncSendDelay(String topic, Message<?> message, Long timeout, int delayLevel) {
         timeout = timeout == null ? rocketMQTemplate.getProducer().getSendMsgTimeout():timeout;
         rocketMQTemplate.syncSend(topic, message,timeout,delayLevel);
     }
 
 
+/**
+    * 同步事务消息：半消息发出后由本地事务执行器的执行结果驱动提交/回滚。
+    * @param topic 目标 Topic
+    * @param message 已包装消息
+    * @param arg 透传给本地事务执行/回查的上下文参数
+    * @return 引擎侧事务发送结果（含本地事务状态与消息 id）
+    */
     public TransactionSendResult syncSendTran(String topic, Message message,  Object arg) {
         return rocketMQTemplate.sendMessageInTransaction(topic, message, arg);
     }
@@ -296,6 +301,9 @@ public class RocketMqHelper {
 
 
     @PreDestroy
+/**
+    * 生命周期日志（@PreDestroy）：销毁打点，无其他清理（客户端由官方 starter 托管）。
+    */
     public void destroy() {
         log.info("RocketMqHelper 注销");
     }

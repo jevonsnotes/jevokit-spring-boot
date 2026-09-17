@@ -19,6 +19,10 @@ import io.github.jevonsnotes.jevokit.sample.vo.TopicVo;
         enableMsgTrace = true)
 public class DelayMqListener implements RocketMQListener<TopicVo> {
     @Override
+/**
+    * 延迟消息消费演示（裸 TopicVo）。
+    * @param message 消息体
+    */
     public void onMessage(TopicVo message) {
         log.info("接收到延时消息：{}",JSON.toJSONString(message));
     }

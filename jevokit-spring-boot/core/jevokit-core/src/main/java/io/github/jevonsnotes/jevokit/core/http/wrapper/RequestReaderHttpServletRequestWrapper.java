@@ -51,6 +51,12 @@ public class RequestReaderHttpServletRequestWrapper extends HttpServletRequestWr
     private long bodyBufferingTimeNs = 0;
 
 
+    /**
+     * 构造并缓存请求体（一次性读空原始输入流）
+     *
+     * @param request 原始请求
+     * @throws IOException 读取请求体失败
+     */
     public RequestReaderHttpServletRequestWrapper(HttpServletRequest request) throws IOException {
         super(request);
         long bufferStartTime = System.nanoTime();
@@ -59,10 +65,22 @@ public class RequestReaderHttpServletRequestWrapper extends HttpServletRequestWr
         this.request = request;
     }
 
+    /**
+     * 获取字符读取器（基于缓存的请求体，可重复获取）
+     *
+     * @return 缓冲字符流
+     * @throws IOException 不会实际抛出（读的是内存缓冲）
+     */
     public BufferedReader getReader() throws IOException {
         return new BufferedReader(new InputStreamReader(this.getInputStream()));
     }
 
+    /**
+     * 获取字节输入流（基于缓存的请求体，可重复获取；jersey 类调用方走单例缓存流）
+     *
+     * @return 包装缓存体的 ServletInputStream（isFinished/isReady 恒为 false）
+     * @throws IOException 不会实际抛出（读的是内存缓冲）
+     */
     public ServletInputStream getInputStream() throws IOException {
 
         Optional<String> caller = singletonInputStreamSupportOnlyOfCaller();
@@ -91,6 +109,12 @@ public class RequestReaderHttpServletRequestWrapper extends HttpServletRequestWr
     }
 
 
+    /**
+     * 取参数（query string 与 POST 表单体合并视图）
+     *
+     * @param name 参数名
+     * @return 首个匹配值；无匹配返回 null
+     */
     @Override
     public String getParameter(String name) {
         try {
@@ -106,6 +130,11 @@ public class RequestReaderHttpServletRequestWrapper extends HttpServletRequestWr
     }
 
 
+    /**
+     * 取缓存的请求体副本
+     *
+     * @return 请求体字节数组（内部数组的同一引用，勿原地修改）
+     */
     public byte[] toByteArray() {
         return this.body;
     }
@@ -217,6 +246,11 @@ public class RequestReaderHttpServletRequestWrapper extends HttpServletRequestWr
         return should;
     }
 
+    /**
+     * 取参数名枚举（触发参数解析，合并 query 与表单体）
+     *
+     * @return 全部参数名的枚举视图
+     */
     @Override
     public Enumeration<String> getParameterNames() {
         try {
@@ -241,6 +275,11 @@ public class RequestReaderHttpServletRequestWrapper extends HttpServletRequestWr
         };
     }
 
+    /**
+     * 取参数表（值数组已逐项 clone，修改返回值不影响内部状态）
+     *
+     * @return 参数名到值数组的 Map；尚未解析过（无参数请求）时返回空 Map（非 null）
+     */
     public HashMap<String, String[]> getParameters() {
         if (parameters == null) return EMPTY_MAP;
         HashMap<String, String[]> map = new HashMap<String, String[]>(parameters.size() * 2);
@@ -250,6 +289,12 @@ public class RequestReaderHttpServletRequestWrapper extends HttpServletRequestWr
         return map;
     }
 
+    /**
+     * 取参数值数组（返回内部数组的 clone，修改不影响后续读取）
+     *
+     * @param name 参数名
+     * @return 全部匹配值；无匹配返回 null
+     */
     @Override
     public String[] getParameterValues(String name) {
         try {
@@ -264,6 +309,11 @@ public class RequestReaderHttpServletRequestWrapper extends HttpServletRequestWr
         return arr.clone();
     }
 
+    /**
+     * 取参数表（等价 {@link #getParameters()}，值为逐项 clone 的副本）
+     *
+     * @return 参数名到值数组的 Map
+     */
     @Override
     public Map<String, String[]> getParameterMap() {
         try {
@@ -278,7 +328,7 @@ public class RequestReaderHttpServletRequestWrapper extends HttpServletRequestWr
      * 判断caller是否只支持单例输入流
      * 调用深度：singletonInputStreamSupportOnlyOfCaller→getInputStream→外部
      *
-     * @return 返回模式
+     * @return 命中 SINGLETON_INPUT_STREAM_ONLY_OF_CALLER 正则的调用方全限定名；未命中返回空 Optional
      */
     public Optional<String> singletonInputStreamSupportOnlyOfCaller() {
 

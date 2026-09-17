@@ -25,12 +25,14 @@ import io.github.jevonsnotes.jevokit.desensitization.interceptor.impl.DefaultSen
 @Slf4j
 public class JevokitDesensitizationConfiguration{
 
+    /** 注册脱敏切面（业务可自定义覆盖）。 */
     @ConditionalOnMissingBean
     @Bean
     public DesensitizationAspect desensitizationAspect(){
         return new DesensitizationAspect();
     }
 
+    /** 注册脱敏辅助器（@PostConstruct 提升静态引用）。 */
     @ConditionalOnMissingBean
     @Bean
     public DesHelper desHelper(JevokitDesensitizationProperties properties,SensitizationPowerInterceptor sensitizationPowerInterceptor){
@@ -38,6 +40,7 @@ public class JevokitDesensitizationConfiguration{
     }
 
 
+    /** 注册模块配置（@RefreshScope 支持规则热更新）。 */
     @RefreshScope
     @Bean
     public JevokitDesensitizationProperties jevokitDesensitizationProperties(){

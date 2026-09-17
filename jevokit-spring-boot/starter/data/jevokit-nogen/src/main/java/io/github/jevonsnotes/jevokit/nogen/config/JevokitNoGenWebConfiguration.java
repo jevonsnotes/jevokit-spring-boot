@@ -17,6 +17,10 @@ import io.github.jevonsnotes.jevokit.nogen.interceptor.NoGenInterceptor;
 public class JevokitNoGenWebConfiguration  implements WebMvcConfigurer {
     private final JevokitNoGenProperties properties;
     @Override
+/**
+    * 注册 NoGenInterceptor 到 /jevokit/nogen/**（LOWEST_PRECEDENCE，业务拦截器先行）。
+    * @param registry 拦截器注册器
+    */
     public void addInterceptors(InterceptorRegistry registry) {
 
         NoGenInterceptor interceptor = new NoGenInterceptor(properties);

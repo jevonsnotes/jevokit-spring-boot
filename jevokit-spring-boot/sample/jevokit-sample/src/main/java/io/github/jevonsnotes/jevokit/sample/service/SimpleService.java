@@ -13,6 +13,11 @@ import io.github.jevonsnotes.jevokit.core.annotation.AuditLog;
 public class SimpleService {
 
     @AuditLog(eventType = "testType",eventName = "调用函数测试事件")
+/**
+    * 内层方法审计演示：非 Controller 托管 Bean 上的 @AuditLog 事件上报。
+    * @param vo 任意载体
+    * @return 原样回传
+    */
     public <T>T testInnerFunc(T vo){
         return vo;
     }

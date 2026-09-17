@@ -7,10 +7,19 @@ package io.github.jevonsnotes.jevokit.core.holder;
  * @param <T> 承载值类型
  */
 public class GenericHolder<T> implements Holder{
+    /** 承载的泛型值（公开字段，回调内直接读写） */
     public T value;
+    /**
+     * 以初始值构造信封
+     *
+     * @param value 初始值
+     */
     public GenericHolder(T value) {
         this.value = value;
     }
+    /**
+     * 构造空信封（value 为 null）
+     */
     public GenericHolder() {
     }
 }

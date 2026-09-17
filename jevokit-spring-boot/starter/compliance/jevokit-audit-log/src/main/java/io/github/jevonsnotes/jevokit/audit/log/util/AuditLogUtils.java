@@ -46,12 +46,23 @@ public class AuditLogUtils {
     private static final ThreadLocal<AuditLogEventDto> EVENTS = new ThreadLocal<>();
 
 
+    /** 清理线程内的源路径 ThreadLocal（请求结束调用）。 */
     public static void removeSrcServletPath(){
        SRC_SERVLET_PATH.remove();
     }
+    /**
+     * 获取源路径（forward 场景保留入口路径，使审计归属原始 URL）。
+     *
+     * @return 源路径；未设置返回 null
+     */
     public static String getSrcServletPath(){
        return SRC_SERVLET_PATH.get();
     }
+    /**
+     * 记录源路径（forward 前设置，后续嵌套审计均归属该路径）。
+     *
+     * @param path 源路径
+     */
     public static void setSrcServletPath(String path){
         SRC_SERVLET_PATH.set(path);
     }
@@ -74,10 +85,23 @@ public class AuditLogUtils {
     }
 
 
+    /**
+     * 取审计用路径：ThreadLocal 已有源路径优先（forward 归因），否则取请求当前 servletPath。
+     *
+     * @param request 请求；null 返回 null
+     * @return 归因路径
+     */
     public static String getServletPath(HttpServletRequest request) {
         return request == null ? null : (StrUtil.isEmpty(SRC_SERVLET_PATH.get()) ? request.getServletPath() : SRC_SERVLET_PATH.get());
     }
 
+    /**
+     * 审计事件入栈并（around 开启时）落开始审计：首层生成 globalKey，嵌套层继承 globalKey、
+     * 以父事件 localKey 为 parentKey 生成新 localKey。
+     *
+     * @param callback   落审计回调（异常仅记日志，不阻断业务）
+     * @param properties 审计配置（enabled-around 决定是否执行回调）
+     */
     public static void preHandle(Callback callback,AuditLogProperties properties){
         if(EVENTS.get() == null){
             EVENTS.set(AuditLogEventDto
@@ -106,6 +130,13 @@ public class AuditLogUtils {
             }
         }
     }
+    /**
+     * 完成审计并回退事件栈：补记 endTime 后执行落审计回调，finally 按 parent 回退 ThreadLocal
+     * （回退失败会导致事件残留串到线程池下一请求）。
+     *
+     * @param callback   落审计回调（异常仅记日志）
+     * @param properties 审计配置
+     */
     public static void afterHandle(Callback callback,AuditLogProperties properties){
         AuditLogEventDto event = EVENTS.get();
         if(event != null){
@@ -121,11 +152,17 @@ public class AuditLogUtils {
     }
 
     /**
-     * 封装审计日志，并调用保存方法
+     * 组装审计 DTO 并提交处理器保存：抓取来源 IP（代理链回退）、报文体（按 content-limit 截断）、
+     * 状态/耗时与三级事件键；methodSign 为空表示过滤器链路（抓报文体），否则为切面链路（不抓）。
      *
-     * @param eventType
-     * @param request
-     * @param response
+     * @param eventType 事件类型
+     * @param eventName 事件名称（name-mapper 映射，缺省取 eventType）
+     * @param request   请求
+     * @param response  响应
+     * @param ipConfig  本机 IP/端口配置
+     * @param processor 审计处理器
+     * @param properties 审计配置
+     * @param methodSign 触发方法签名；过滤器链路传 null
      */
     public static void save(
             String eventType, String eventName, HttpServletRequest request,
@@ -231,6 +268,9 @@ public class AuditLogUtils {
         }
         return content;
     }
+    /**
+     * 事件栈回退一层（有 parent 则弹回父事件，否则整体移除）与源路径清理。
+     */
     public static void clear() {
 
         SRC_SERVLET_PATH.remove();
@@ -242,6 +282,13 @@ public class AuditLogUtils {
         }
     }
 
+    /**
+     * 判定本次请求是否需要审计：ignore-non-user=true 时占位用户码（未登录）跳过。
+     *
+     * @param properties 审计配置
+     * @param processor  审计处理器（取用户码）
+     * @return true 需要审计
+     */
     public static boolean needToPrecess(AuditLogProperties properties,AuditLogProcessor processor)  {
         return !properties.isIgnoreNonUser() || (StrUtil.isNotBlank(processor.getUserCode())
                 && !DefaultAuditLogProcessor.DEF_USER_CODE.equals(processor.getUserCode()));
