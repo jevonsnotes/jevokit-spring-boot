@@ -6,7 +6,7 @@
 
 ## 现象 / 复现
 
-去 picc 化重构统一验证阶段（2026-09-10），eng-3 发现 test-server fat jar 的 MANIFEST 显示 `Spring-Boot-Version: 4.2.0-M1`，而依赖基线是 spring-boot-starter-parent 3.5.16（BOM 的 Maven parent）。clean-room 23/23 项测试在此状态下通过。
+统一验证阶段（2026-09-10），eng-3 发现 test-server fat jar 的 MANIFEST 显示 `Spring-Boot-Version: 4.2.0-M1`，而依赖基线是 spring-boot-starter-parent 3.5.16（BOM 的 Maven parent）。clean-room 23/23 项测试在此状态下通过。
 
 复现路径：根 pom 无 Maven parent（对 BOM 的 parent 声明历史上被注释）→ BOM 以 import scope 引入 → 插件无版本声明 → 构建时 repackage → 检查 fat jar MANIFEST。
 

@@ -5,9 +5,9 @@
 ## 前置条件（每次发布前逐项核对）
 
 1. **GPG 密钥**：keyId `71080C224E332E21`（rsa4096，jevonsnotes \<jevonsnotes@163.com\>），已上传 keyserver。
-   - 本机密钥环位置：`C:\Users\picc\.gnupg`（Windows Git 自带 gpg 2.4.7，2026-09-16 已从 cygwin 侧合并私钥/公钥/trustdb；cygwin 侧原始目录 `D:\install\cygwin64\home\picc\.gnupg` 保留，备份 `~/.gnupg.bak-20260916`）
+   - 本机密钥环位置：`~/.gnupg`（Windows Git 自带 gpg 2.4.7，2026-09-16 已从 cygwin 侧合并私钥/公钥/trustdb；备份 `~/.gnupg.bak-20260916`）
    - 验证：`gpg --list-secret-keys --keyid-format long` 能看到该 key 即可
-2. **settings.xml**（`C:\Users\picc\.m2\settings.xml`）已配两段：
+2. **settings.xml**（`~/.m2/settings.xml`）已配两段：
    - `<server><id>central</id>` —— Sonatype Central 的 user token（username/password）
    - `<server><id>gpg.passphrase</id>` —— 私钥口令（passphrase）
 3. **公钥可检索**：`https://keys.openpgp.org` 或 keyserver.ubuntu.com 搜 `71080C224E332E21` 可查到（Central 校验签名时在线取公钥）

@@ -2,17 +2,17 @@
 
 - 根因类别：边界条件遗漏
 - 状态：已修复·已沉淀
-- 相关模块：`server/spring-boot-kit-test-server/src/test/.../SimpleTest.java`（原 `server/picc-spring-test-server/`）；被删模块 `others/picc-spring-eureka`；ADR-6（target-structure.md v1.3）
+- 相关模块：`server/spring-boot-kit-test-server/src/test/.../SimpleTest.java`；被删模块 `others/*-eureka`；ADR-6（target-structure.md v1.3）
 
 ## 现象 / 复现
 
-去 PICC 化重构三片并行期间，eng-3 片（others + test-server）按协调规则 3 完成片内自检：`grep -ri "picc|eureka|tongweb"`（排除 target/）零命中（仅剩 §7 例外的密钥值），报完成。统一验证阶段 `mvn clean install` 时 test-server **test-compile 失败**：`SimpleTest.test2()` 使用 `reactor.cache.CacheFlux` / `reactor.core.publisher.Flux/Mono/Signal`，而这些类此前**经 picc-spring-eureka 模块的传递依赖**进入 test-server 的 classpath——eureka 整目录删除后 reactor 无来源，断链。
+大规模重命名重构三片并行期间，eng-3 片（others + test-server）按协调规则 3 完成片内自检：`grep -ri "eureka|tongweb"`（排除 target/）零命中（仅剩 §7 例外的密钥值），报完成。统一验证阶段 `mvn clean install` 时 test-server **test-compile 失败**：`SimpleTest.test2()` 使用 `reactor.cache.CacheFlux` / `reactor.core.publisher.Flux/Mono/Signal`，而这些类此前**经 eureka 模块的传递依赖**进入 test-server 的 classpath——eureka 整目录删除后 reactor 无来源，断链。
 
 复现路径：删除任何"传递依赖提供方"模块后，只要下游源码（本例是 test 源码）直接 import 了传递进来的第三方类，编译即断；而此类 import 语句中**不含任何被删模块的业务字样**。
 
 ## 根因
 
-**删除动作的验证手段与删除动作的影响面不匹配。** 自检口径是"字样级 grep"（picc/eureka/tongweb），它能防住"改名/引用清理遗漏"（直接引用残留），但防不住"无字样的传递依赖消费断链"（间接影响）：reactor.cache 与 eureka 之间没有文本级关联，字样 grep 的匹配边界天然覆盖不到它。删除操作的影响面 = 直接引用 + 传递依赖消费面，而字样 grep 只覆盖前者。
+**删除动作的验证手段与删除动作的影响面不匹配。** 自检口径是"字样级 grep"（eureka/tongweb），它能防住"改名/引用清理遗漏"（直接引用残留），但防不住"无字样的传递依赖消费断链"（间接影响）：reactor.cache 与 eureka 之间没有文本级关联，字样 grep 的匹配边界天然覆盖不到它。删除操作的影响面 = 直接引用 + 传递依赖消费面，而字样 grep 只覆盖前者。
 
 归类说明：本条**不是**"未复用已有能力"（没有重复造轮子），是删除动作的间接影响超出了验证手段的字面匹配边界，归**边界条件遗漏**。与 [bug-transitive-dep-test-source-miss-20260910.md](bug-transitive-dep-test-source-miss-20260910.md)（架构师沉淀：删传递依赖提供方时只扫 main 漏扫 test）**同源互补**：那条讲"扫的源码集不全"，本条讲"扫的匹配维度不全"——两者合起来才是完整的消费面排查方法。
 
@@ -41,7 +41,7 @@ ADR-6 决策（不加依赖，学习实验不固化为显式依赖）：
 
 ## 防范措施
 
-1. **删模块/依赖后的消费面排查必须加"传递依赖消费者"维度**：grep 目标生态的库包名（`reactor.`、`com.netflix.` 等），而非仅业务字样（picc/eureka/tongweb）。字样 grep 只防改名遗漏，不防依赖断链，派发文档中应标注自检口径的适用边界。
+1. **删模块/依赖后的消费面排查必须加"传递依赖消费者"维度**：grep 目标生态的库包名（`reactor.`、`com.netflix.` 等），而非仅业务字样（eureka/tongweb）。字样 grep 只防改名遗漏，不防依赖断链，派发文档中应标注自检口径的适用边界。
 2. **main 与 test 源码集都要扫**（与架构师条目互补，缺一不可）。
 3. **编译是最终防线**：并行改造期不做整仓编译没问题，但收尾的 `install -fae` 全绿是不可跳过的验收项。
 4. 交付物中的实验/学习代码（demo、TODO 注释标记的试错代码）在重构清单盘点时应单独标记，它们往往引用非常规依赖且不在功能测试保护伞内。

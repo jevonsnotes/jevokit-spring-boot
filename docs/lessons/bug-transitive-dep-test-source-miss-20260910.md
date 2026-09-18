@@ -6,21 +6,21 @@
 
 ## 现象 / 复现
 
-去 picc 化重构（2026-09-10）删除 eureka 模块后，三片分片自检全部通过（grep picc 零命中），统一编译验证阶段报全仓唯一错误：
+大规模重命名重构（2026-09-10）删除 eureka 模块后，三片分片自检全部通过（grep 零命中），统一编译验证阶段报全仓唯一错误：
 
 ```
 spring-boot-kit-test-server testCompile 失败：
 SimpleTest.java:11 程序包 reactor.cache 不存在
 ```
 
-基线编译日志（docs/refactor/baseline-testserver-package.log）对账证实：重构前 testCompile 通过——当时 reactor-core 经 `picc-spring-eureka → spring-cloud-starter-loadbalancer → reactor-core` 传递链可用；删 eureka（执行正确）后链路消失，SimpleTest 的 reactor 消费（全仓唯一）断链。
+基线编译日志对账证实：重构前 testCompile 通过——当时 reactor-core 经 eureka 模块的传递链可用；删 eureka（执行正确）后链路消失，SimpleTest 的 reactor 消费（全仓唯一）断链。
 
 架构侧在 target-structure.md §1.2-2 已识别了主类 `@LoadBalanced` 的同类断链并处置，说明分析方法本身是对的——错的只是扫描范围：消费面 grep 用了 `**/src/main/**/*.java` 惯例，test 源码不在视野内。
 
 ## 根因
 
 1. **源码集边界遗漏**：Maven 模块的源码集有 main/test 两个（广义还有 it/testFixtures），分别驱动 compile 与 testCompile 两个编译阶段。删传递依赖提供方的影响面是传递闭包的全部消费者，test 源码的 import 同样在闭包内。分析时把"生产代码"默认为"全部代码"，边界无意识收窄。
-2. **grep 防线对此类问题结构性无感**：分片自检查的是"picc 标识符残留"，而本断链与 picc 无关（reactor 是无辜旁观的传递依赖），且属编译期断链而非文本残留——文本防线拦不住依赖图问题。
+2. **grep 防线对此类问题结构性无感**：分片自检查的是"标识符残留"，而本断链与 eureka 无关（reactor 是无辜旁观的传递依赖），且属编译期断链而非文本残留——文本防线拦不住依赖图问题。
 3. **暴露点滞后**：并行分片流程（BOM 先行、全量换坐标）决定了分片内无法独立编译跨片依赖，统一编译必然排在三片齐后——问题因此在最贵的时间点（收尾仲裁 + 返工 + 复跑）才暴露，本可在设计阶段零成本发现。
 
 ## 同类隐患排查
