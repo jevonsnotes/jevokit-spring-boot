@@ -40,6 +40,9 @@
         <!-- 统一编码声明：compiler/javadoc/source 等插件默认读取（javadoc fork 场景下比插件参数更稳） -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <!-- argLine 空默认值：jacoco prepare-agent 会设置 argLine 传 javaagent 给 surefire；
+             此处空默认确保 jacoco 未激活时 @{argLine} 延迟替换不出字面量错误 -->
+        <argLine></argLine>
 <!--        <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>-->
 <!--        <maven-deploy-plugin.version>2.8.2</maven-deploy-plugin.version>-->
 <!--        <versions-maven-plugin.version>2.8.1</versions-maven-plugin.version>-->
@@ -129,6 +132,22 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>3.5.6</version>
+                    <configuration>
+                        <!-- 测试 JVM 统一 UTF-8（缺陷修复：Windows GBK 本机乱码）：
+                             surefire fork 的测试 JVM 继承平台默认编码（本机 JDK17 file.encoding=GBK），
+                             logback ConsoleAppender 走 System.out 按 GBK 编码中文，而 surefire
+                             把 stdout 原样字节写入声明 UTF-8 的 TEST-*.xml 报告 → 报告乱码
+                             （张*丰 变 寮?*涓?）。故在测试 JVM 上强制：
+                               -Dfile.encoding=UTF-8           覆盖默认字符集（JDK17 默认仍随平台）
+                               -Dstdout/stderr.encoding=UTF-8  JDK19+ 属性，JDK17 忽略，向前兼容
+                             注意：直接写死 argLine 会覆盖 jacoco prepare-agent 设置的 @{argLine}
+                             javaagent 行（覆盖率静默失效），必须用 @{argLine} 延迟替换保留；
+                             父 pom properties 已给 argLine 空默认值，jacoco 未激活时不出
+                             "@{argLine}" 字面量 JVM 启动错误。
+                             同根因家族（平台默认字符集依赖）见教训：
+                             getBytes 默认编码跨平台。 -->
+                        <argLine>@{argLine} -Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8</argLine>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>

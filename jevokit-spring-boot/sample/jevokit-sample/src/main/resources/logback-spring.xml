@@ -5,21 +5,18 @@
     <springProperty scope="context" name="springAppEnv" source="spring.profiles.active" defaultValue="unknown-env"/>
     <property name="commonEncoderPattern" value="%date [%green(%-5level)] [%thread] [%cyan(%logger{80})] [%X{trace.id}] [%X{transaction.id}] [%X{error.id}] [%file : %line] %msg%n"/>
     <property name="LOG_HOME" value="${LOG_ROOT:-logs}/${springAppName}" />
-<!--    <appender name="consoleLog" class="ch.qos.logback.core.ConsoleAppender">-->
-<!--        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">-->
-<!--            <pattern>${commonEncoderPattern}</pattern>-->
-<!--            <charset>UTF-8</charset>-->
-<!--        </encoder>-->
-<!--    </appender>-->
-    <appender name="consoleLog" class="io.github.jevonsnotes.jevokit.desensitization.support.logback.appender.DesensitizedConsoleAppender">
+    <appender name="consoleLog" class="ch.qos.logback.core.ConsoleAppender">
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <pattern>${commonEncoderPattern}</pattern>
             <charset>UTF-8</charset>
         </encoder>
+        <!-- 日志脱敏过滤器：替代已废弃的 DesensitizedConsoleAppender/DesensitizedRollingFileAppender，
+             以标准 filter 形式挂在任意 appender 上，输出前改写日志参数（对象/json/xml 字符串自动脱敏） -->
+        <filter class="io.github.jevonsnotes.jevokit.desensitization.support.logback.filter.DesensitizedLogFilter"/>
     </appender>
 
     <appender name="DST_LOG"
-              class="io.github.jevonsnotes.jevokit.desensitization.support.logback.appender.DesensitizedRollingFileAppender">
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
         <File>${LOG_HOME}/desensitized.log</File>
         <rollingPolicy
                 class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
@@ -34,6 +31,8 @@
         <encoder>
             <pattern>${commonEncoderPattern}</pattern>
         </encoder>
+        <!-- 日志脱敏过滤器（同上，标准 RollingFileAppender + filter） -->
+        <filter class="io.github.jevonsnotes.jevokit.desensitization.support.logback.filter.DesensitizedLogFilter"/>
     </appender>
 
     <logger name="DST_LOG" level="INFO" additivity="false">

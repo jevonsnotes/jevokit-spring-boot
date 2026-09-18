@@ -46,6 +46,7 @@
 | 跨边界隐式契约断裂三合一：值捕获跨线程/资源所有权跨方法/getBytes 默认编码跨平台（BUG-1/4/5） | 契约不一致 | 已修复·已沉淀 | [bug-boundary-implicit-contract-break-20260911.md](bug-boundary-implicit-contract-break-20260911.md) |
 | 共享可变静态状态两轴：跨实例构造偷换（JasyptUtil 静态字段）与半截双检锁漏 put（DesUtil 惰性缓存永远 miss） | 性能·并发 | 已修复·已沉淀 | [bug-shared-mutable-static-state-20260911.md](bug-shared-mutable-static-state-20260911.md) |
 | 包名迁移翻转 FQCN 字母序——@ConditionalOnBean 跨第三方 Bean 静默不装配 | 其他（装配顺序的隐式依赖） | 已修复·已沉淀 | [bug-package-rename-fqcn-sort-flip-20260917.md](bug-package-rename-fqcn-sort-flip-20260917.md) |
+| 测试报告编码不一致：Surefire XML UTF-8 声明与 JVM 平台默认 GBK 冲突（Windows + JDK17） | 契约不一致 | 已修复·已沉淀 | [bug-surefire-report-encoding-gbk-mismatch-20260918.md](bug-surefire-report-encoding-gbk-mismatch-20260918.md) |
 
 ## 单条目骨架
 
