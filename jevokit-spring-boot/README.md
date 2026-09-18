@@ -404,14 +404,18 @@ public class DesensitizationApi {
 }    
 ```
 #### 日志脱敏
-基于logback实现日志脱敏，自动识别日志入参，支持对象类型、xml结构字符串、json结构字符串
-logback配置文件按需替换appender
+基于 logback filter 实现脱敏，自动识别日志入参（对象、XML 结构字符串、JSON 结构字符串），无需替换 appender。
+在 `logback-spring.xml` 中为任意 appender 添加 `DesensitizedLogFilter` 即可：
+```xml
+<appender name="consoleLog" class="ch.qos.logback.core.ConsoleAppender">
+    <filter class="io.github.jevonsnotes.jevokit.desensitization.support.logback.filter.DesensitizedLogFilter"/>
+</appender>
+<appender name="DST_LOG" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <File>${LOG_HOME}/desensitized.log</File>
+    <filter class="io.github.jevonsnotes.jevokit.desensitization.support.logback.filter.DesensitizedLogFilter"/>
+</appender>
 ```
-DesensitizedConsoleAppender
-DesensitizedRollingFileAppender
-DesensitizedLogstashTcpSocketFileAppender
-```
-注意：需要脱敏的对象需要以参数的方式来使用日志输出方法，比如
+注意：需要脱敏的对象需以参数方式使用日志输出方法，例如：
 ```
 log.info("request log {}", xmlContent)
 log.error("something excetion： {}", xmlContent, e)
