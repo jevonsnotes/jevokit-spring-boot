@@ -86,7 +86,6 @@ public class EncryptResponseAdviceAdapter implements ResponseBodyAdvice<Object>,
                 printPlaintext(resp.toPlaintextDto());
                 return resp;
             }
-            JSecureContext.remove();
         } catch (Exception e) {
             throw new JSecureApiException(ApiError.FAIL.code(), e.getMessage());
         }
@@ -95,12 +94,7 @@ public class EncryptResponseAdviceAdapter implements ResponseBodyAdvice<Object>,
         return body;
     }
 
-    /**
-     * 异常处理
-     *
-     * @param e 捕捉jSecure接口异常、@valid校验异常
-     * @return 接口返回体
-     */
+
     @ResponseBody
     @ExceptionHandler({JSecureApiException.class, MethodArgumentNotValidException.class, Exception.class})
     /**
