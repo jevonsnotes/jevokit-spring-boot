@@ -1,39 +1,37 @@
 Table of Contents
 =================
 
-* [spring boot kit doc](#spring-boot-kit)
-   * [security](#security)
+* [jevokit-spring-boot](#jevokit-spring-boot)
+   * [security（安全加固）](#security安全加固)
       * [快速使用](#快速使用)
       * [xss](#xss)
       * [path-traversal](#path-traversal)
       * [sql-inject](#sql-inject)
       * [code-inject](#code-inject)
       * [工具](#工具)
-         * [CodeInjectUtil](#codeinjectutil)
-         * [SecureRandomUtil](#securerandomutil)
-   * [审计](#审计)
-      * [审计日志](#审计日志)
-         * [快速使用](#快速使用-1)
-            * [注解式审计](#注解式审计)
-   * [其他](#其他)
-      * [excel](#excel)
-      * [desensitization](#desensitization)
-      * [redis](#redis)
-         * [lock](#lock)
-         * [cache](#cache)
-         * [token](#token)
-      * [nogen](#nogen)
       * [jasypt](#jasypt)
+      * [api](#api)
+   * [compliance（合规）](#compliance合规)
+      * [audit-log（审计日志）](#audit-log审计日志)
+      * [desensitization](#desensitization)
+   * [data（数据）](#data数据)
+      * [redis](#redis)
+      * [nogen](#nogen)
+      * [excel](#excel)
+   * [integration（集成）](#integration集成)
       * [okhttp](#okhttp)
-      * [api](#api-1)
+      * [rocketmq](#rocketmq)
+      * [workflow](#workflow)
 
 <!-- Created by https://github.com/ekalinin/github-markdown-toc -->
 
-# Spring Boot Kit
+# jevokit-spring-boot
 
 ![Release](https://img.shields.io/badge/release-v3.5.0.0-SNAPSHOT-blue.svg)
 ![JDK](https://img.shields.io/badge/jdk-17+-green.svg)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.x-6DB33F.svg)
+
+
 
 版本支持说明：
 
@@ -149,9 +147,104 @@ spkit:
 #### SecureRandomUtil
 基于hutool和SecureRandom实现的随机类工具，用于解决Random类安全强度低的问题。
 
-## 审计
-### 审计日志
-#### 快速使用
+### jasypt
+系统配置值加解密
+#### 引入
+```xml
+        <dependency>
+            <groupId>io.github.jevonsnotes</groupId>
+            <artifactId>jevokit-jasypt-spring-boot-starter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+```
+#### 配置
+通过指定加密器实现密文解密，不配置盐值则使用代码中的固定盐值
+```yaml
+jasypt:
+  encryptor:
+    property:
+      resolver-bean: JevokitEncryptPropertyResolver
+```
+
+也可以指定盐值，支持属性名识别
+```yaml
+jasypt:
+  encryptor:
+    property:
+      jep: xxxxxxx # 同jasypt.encryptor.password
+      resolver-bean: JevokitEncryptPropertyResolver
+```
+
+配置识别优先级
+```
+jasypt.encryptor.password > jasypt.encryptor.jep > 代码固定值
+```
+
+快捷加解密工具
+```java
+JasyptUtil.encrypt() //加密
+JasyptUtil.decrypt() //解密
+```
+
+### api
+
+解决API安全访问场景。
+- 支持请求头定制token实现简单访问控制；
+- 支持MD5/SHA256+SM2+SM4自动混合加解密、加签验签、防重放。
+- 规范请求体和返回体，统一处理异常
+- 规范接口文档，统一对接模板
+
+[接口文档规范模板](https://doc.weixin.qq.com/doc/w3_ABAAAAbBAD8CNXjwPXxFaRMSEsnAt?scode=ALwAHAe_AAs4OxCsYQABAAAAbBAD8)（内部文档，需替换为实际链接） 
+
+```yaml
+spkit:
+  api:
+    client:
+      - id: gd_default_default_v1 # 定义终端识别码
+        secret-key: demo-sm4-secret # 密钥
+        private-key: <demo-sm2-private-key>
+        public-key: <demo-sm2-public-key>
+        secret-key-sm4: demo-sm4-secret # sm4密钥，默认读取secret-key的值
+        decrypt: true #启用请求解密，默认true，启用时需同步配置public-key
+        encrypt: true # 启用返回加密，默认true，启用时需同步配置private-key
+        verify: true # 启用验签默认true，默认true，启用时需同步配置secret-key、secret-key-sm4
+        prevent-replay: true # 开启接口防重放，默认true
+        allow-path: # 默认允许所有，存在个性配置时则进行访问路径鉴权
+          - /xxapi/**
+        header:
+          - prefix: x-api # 默认 x-api
+            signature-name: signature # 默认 signature
+            timestamp-name: timestamp # 默认 timestamp
+            nonce-name: nonce # 默认 nonce
+            client-id-name: client-id # 默认 client-id
+            sign-alg: MD5 # 默认MD5.可选 MD5/SHA256
+```
+
+使用@JSecureApi注解在接口方法上标注，则启用安全接口
+
+```java
+@Slf4j
+@RestController
+@RequestMapping("/secure")
+public class SecureApi {
+
+    @JSecureApi
+    @RequestMapping("/test")
+    @ResponseBody
+    public JSecureResponse<TestVo> test(@RequestBody @Valid JSecureRequest<TestVo> testVo){
+        TestVo target = testVo.getTarget();
+        TestVo res = new TestVo();
+        res.setName(target.getName());
+        return JSecureResponse.ok(res);
+    }
+}
+
+```
+
+## compliance（合规）
+
+### audit-log（审计日志）
+#### 引入依赖
 引入依赖
 
 ```
@@ -211,41 +304,9 @@ spkit:
 
 数据已封装在AuditLogDto对象，可通过实现`AuditLogProcessor`接口自定义存储审计日志逻辑。
 
-##### 注解式审计
+#### 注解式审计
 支持在`Controller`层的方法上使用@AuditLog注解标注审计(前提：`spkit.audit.log.enabled=true`)
 
-## 其他
-### excel
-在controller层方法参数上使用@Excel注解可实现excel数据自动封装。
-
-- 支持json数据、excel文件上传自动解析。
-- 支持@BeanField声明字段顺序
-
-```
-            <dependency>
-                <groupId>io.github.jevonsnotes</groupId>
-                <artifactId>jevokit-excel-spring-boot-starter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-```
-
-在controller层入参声明
-
-```
-@RestController
-@RequestMapping("excel")
-public class ExcelApi {
-
-
-    @RequestMapping("importExcel")
-    public ApiResponse importExcel(
-            @Excel(ignoreRows = 1) List<ExcelVo> file1,
-            @Excel(ignoreRows = 1,sheet = 1) List<ExcelVo> file2){
-        return ApiResponse.ok("success");
-    }
-
-}
-```
 ### desensitization
 脱敏组件主要应用于客户敏感信息场景，原理是通过拦截方法返回对象，针对数据对象标有`@Desensitization`注解的`字符串类型`属性进行脱敏处理.
 
@@ -421,8 +482,7 @@ log.info("request log {}", xmlContent)
 log.error("something excetion： {}", xmlContent, e)
 ```
 
-
-
+## data（数据）
 
 ### redis
 jevokit-spring-boot 基于 Spring Boot 3.5.x + JDK 17，使用 Redisson 3.49+，无需额外适配。
@@ -508,7 +568,7 @@ public class RedisService {
 >
 > 通过实现TokenStrategy策略自定义业务逻辑，参见样例`DefaultTokenStrategy`。
 
-#### nogen
+### nogen
 基于redis+db的分布式单号生成组件，目前支持mysql、pg库，实测约40000tps。
 
 压测情况（6c 8g）：
@@ -517,7 +577,7 @@ public class RedisService {
 ---|---|---|---
 200ms|2.3s|23s|3.5m
 
-##### 快速使用
+#### 引入依赖
 ```xml
         <dependency>
             <groupId>io.github.jevonsnotes</groupId>
@@ -528,7 +588,7 @@ public class RedisService {
 
 可以利用`BzNoHelper.getNo()`生成单号，也可以通过`API（io.github.jevonsnotes.jevokit.nogen.api.JevokitNoGenApi）`的形式生成。
 
-##### API
+#### API
 - /nogen/view/tags 获取配置信息
 - /nogen/getNo?bizTag=test 获取单号
 - /nogen/getNos?bizTag=test&size=3000 批量获取单号
@@ -536,7 +596,7 @@ public class RedisService {
 
 更多参考：io.github.jevonsnotes.jevokit.nogen.api.JevokitNoGenApi
 
-##### 数据源配置
+#### 数据源配置
 配置数据库数据源，在启动服务时会自动初始化配置表`biz_no`，无需手动创建。
 
 ```yaml
@@ -566,46 +626,41 @@ spring:
       minimum-idle: 5
 ```
 
-#### jasypt
-系统配置值加解密
-##### 引入
-```xml
-        <dependency>
-            <groupId>io.github.jevonsnotes</groupId>
-            <artifactId>jevokit-jasypt-spring-boot-starter</artifactId>
-            <version>${project.version}</version>
-        </dependency>
+### excel
+在controller层方法参数上使用@Excel注解可实现excel数据自动封装。
+
+- 支持json数据、excel文件上传自动解析。
+- 支持@BeanField声明字段顺序
+
 ```
-##### 配置
-通过指定加密器实现密文解密，不配置盐值则使用代码中的固定盐值
-```yaml
-jasypt:
-  encryptor:
-    property:
-      resolver-bean: JevokitEncryptPropertyResolver
+            <dependency>
+                <groupId>io.github.jevonsnotes</groupId>
+                <artifactId>jevokit-excel-spring-boot-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 ```
 
-也可以指定盐值，支持属性名识别
-```yaml
-jasypt:
-  encryptor:
-    property:
-      jep: xxxxxxx # 同jasypt.encryptor.password
-      resolver-bean: JevokitEncryptPropertyResolver
+在controller层入参声明
+
+```
+@RestController
+@RequestMapping("excel")
+public class ExcelApi {
+
+
+    @RequestMapping("importExcel")
+    public ApiResponse importExcel(
+            @Excel(ignoreRows = 1) List<ExcelVo> file1,
+            @Excel(ignoreRows = 1,sheet = 1) List<ExcelVo> file2){
+        return ApiResponse.ok("success");
+    }
+
+}
 ```
 
-配置识别优先级
-```
-jasypt.encryptor.password > jasypt.encryptor.jep > 代码固定值
-```
+## integration（集成）
 
-快捷加解密工具
-```java
-JasyptUtil.encrypt() //加密
-JasyptUtil.decrypt() //解密
-```
-
-#### okhttp
+### okhttp
 用于解决需要正向代理的场景,本组件默认禁用重试机制,以避免超时请求导致的重复请求问题.
 参考配置文件
 
@@ -626,57 +681,11 @@ spkit:
         - 192.0.2.33:16666
 ```
 
-#### api
+### rocketmq
 
-解决API安全访问场景。
-- 支持请求头定制token实现简单访问控制；
-- 支持MD5/SHA256+SM2+SM4自动混合加解密、加签验签、防重放。
-- 规范请求体和返回体，统一处理异常
-- 规范接口文档，统一对接模板
+> RocketMQ 收发封装：`RocketMqHelper`、统一消息结构与配置装配。详细配置待补充，参见示例应用 `jevokit-sample`。
 
-[接口文档规范模板](https://doc.weixin.qq.com/doc/w3_ABAAAAbBAD8CNXjwPXxFaRMSEsnAt?scode=ALwAHAe_AAs4OxCsYQABAAAAbBAD8)（内部文档，需替换为实际链接） 
+### workflow
 
-```yaml
-spkit:
-  api:
-    client:
-      - id: gd_default_default_v1 # 定义终端识别码
-        secret-key: demo-sm4-secret # 密钥
-        private-key: <demo-sm2-private-key>
-        public-key: <demo-sm2-public-key>
-        secret-key-sm4: demo-sm4-secret # sm4密钥，默认读取secret-key的值
-        decrypt: true #启用请求解密，默认true，启用时需同步配置public-key
-        encrypt: true # 启用返回加密，默认true，启用时需同步配置private-key
-        verify: true # 启用验签默认true，默认true，启用时需同步配置secret-key、secret-key-sm4
-        prevent-replay: true # 开启接口防重放，默认true
-        allow-path: # 默认允许所有，存在个性配置时则进行访问路径鉴权
-          - /xxapi/**
-        header:
-          - prefix: x-api # 默认 x-api
-            signature-name: signature # 默认 signature
-            timestamp-name: timestamp # 默认 timestamp
-            nonce-name: nonce # 默认 nonce
-            client-id-name: client-id # 默认 client-id
-            sign-alg: MD5 # 默认MD5.可选 MD5/SHA256
-```
+> Camunda 7 工作流集成。详细配置待补充，参见示例应用 `jevokit-sample`。
 
-使用@JSecureApi注解在接口方法上标注，则启用安全接口
-
-```java
-@Slf4j
-@RestController
-@RequestMapping("/secure")
-public class SecureApi {
-
-    @JSecureApi
-    @RequestMapping("/test")
-    @ResponseBody
-    public JSecureResponse<TestVo> test(@RequestBody @Valid JSecureRequest<TestVo> testVo){
-        TestVo target = testVo.getTarget();
-        TestVo res = new TestVo();
-        res.setName(target.getName());
-        return JSecureResponse.ok(res);
-    }
-}
-
-```
