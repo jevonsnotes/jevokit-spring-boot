@@ -8,7 +8,7 @@ Table of Contents
       * [path-traversal](#path-traversal)
       * [sql-inject](#sql-inject)
       * [code-inject](#code-inject)
-      * [工具](#工具)
+         * [CodeInjectUtil](#codeinjectutil)
       * [jasypt](#jasypt)
       * [api](#api)
    * [compliance（合规）](#compliance合规)
@@ -140,12 +140,10 @@ spkit:
           - .* #安全规则匹配表达式，配合CodeInjectUtil.isSafe(...)使用，匹配则返回true
 ```
 
-### 工具
 #### CodeInjectUtil
 结合配置利用`CodeInjectUtil.isSafe(...)`判断动态内容是否安全
 
-#### SecureRandomUtil
-基于hutool和SecureRandom实现的随机类工具，用于解决Random类安全强度低的问题。
+> 另有 `SecureRandomUtil`（jevokit-core 通用工具）：基于 hutool 和 SecureRandom 实现的随机类工具，用于解决 Random 类安全强度低的问题。
 
 ### jasypt
 系统配置值加解密
