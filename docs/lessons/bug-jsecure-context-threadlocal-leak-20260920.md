@@ -34,8 +34,8 @@
 | `ConfigHolder` TL_PT/TL_XSS/TL_SQL_INJECT（jevokit-autoconfigure） | PathTraversal/XssClean/SqlInject 三个拦截器均在 afterCompletion + afterConcurrentHandlingStarted 清理 | 无隐患 |
 | `DesUtil.PROCESS_TYPE`（jevokit-desensitization） | 两个 wrap 方法内 try/finally 成对 set/remove，自包含 | 无隐患 |
 | `SecurityUtil.FILTER_CACHE`（jevokit-core） | add/remove 在 try/finally 栈式成对，集合清空时顺带 remove ThreadLocal | 无隐患 |
-| `AuditLogUtils` SRC_SERVLET_PATH/EVENTS（jevokit-audit-log） | `afterHandle` finally 调 `clear()`，但 `AuditLogFilter#doFilter` 的 `chain.doFilter` **未包 try/finally**：下游抛异常时 afterHandle 不执行，EVENTS/SRC_SERVLET_PATH 残留 | **同类隐患，待决策**（本次不修改） |
-| `AuditLogAspect`（jevokit-audit-log） | @Around 内调 afterHandle，异常路径是否覆盖未深查 | 待跟进 |
+| `AuditLogUtils` SRC_SERVLET_PATH/EVENTS（jevokit-audit-log） | 已修复（2026-09-20）：`AuditLogFilter#doFilter` 的 `chain.doFilter` 包入 try/finally，finally 执行 afterHandle（其内部 finally 必调 `clear()`），下游抛受检/非受检异常时事件链与源路径均不再残留，异常原样透传；回归测试 `jevokit-audit-log/src/test/.../filter/AuditLogFilterThreadLocalLeakTest.java`（修复前 3 红 / 修复后全绿） | 已闭环 |
+| `AuditLogAspect`（jevokit-audit-log） | 已核查（2026-09-20）：`doAround` 中 `jp.proceed()` 已包 try/finally，finally 调 afterHandle（其内部 finally 必调 `clear()`），异常路径已覆盖，无需修改 | 已闭环（核查通过） |
 
 ## 修复要点
 
@@ -51,6 +51,10 @@
   - 用例 1（怀疑 A）：成功请求后三个 ThreadLocal 应为 null；
   - 用例 2（怀疑 B）：同线程 A 后 B，B 应以自己密钥成功且 servedClientId=B；
   - 用例 3（怀疑 C）：成功 JSecure 请求后非 JSecure 端点异常应正常传播（含手动清理的因果对照）。
+- `jevokit-spring-boot/starter/compliance/jevokit-audit-log/src/test/java/io/github/jevonsnotes/jevokit/audit/log/filter/AuditLogFilterThreadLocalLeakTest.java`（同类隐患 audit-log 条目闭环的回归测试）
+  - 用例 1/2：下游抛 ServletException / RuntimeException，异常透传且 EVENTS/SRC_SERVLET_PATH 清理为空；
+  - 用例 3：同线程复用，异常请求残留的事件不得被下一请求继承（globalKey 不得相同）；
+  - 用例 4：正常路径回归——around 关闭仍恰好落一次审计且清理（修复不引入重复清理）。
 
 ## 防范措施
 

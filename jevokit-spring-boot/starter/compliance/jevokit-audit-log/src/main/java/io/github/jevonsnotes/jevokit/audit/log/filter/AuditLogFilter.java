@@ -40,9 +40,12 @@ public class AuditLogFilter implements Filter {
     /**
      * URL 驱动的审计入口：命中事件规则的请求包装请求/响应体，preHandle/afterHandle 两个时机落审计
      * （around 开启时两次、否则仅完成后一次）；未命中/未开启直通。
+     * <p>清理兜底：{@code chain.doFilter} 包于 try/finally，afterHandle 在 finally 执行——
+     * 下游抛异常（IOException/ServletException/RuntimeException 等）时事件链（EVENTS）与
+     * 源路径（SRC_SERVLET_PATH）ThreadLocal 仍被清理（不随线程池复用串到下一请求），异常原样向上透传。
      *
-     * @throws IOException 由后续过滤链透传（审计本身不产生异常）
-     * @throws ServletException 由后续过滤链透传（审计本身不产生异常）
+     * @throws IOException 由后续过滤链透传（审计本身不产生异常；透传前 finally 已完成 ThreadLocal 清理）
+     * @throws ServletException 由后续过滤链透传（审计本身不产生异常；透传前 finally 已完成 ThreadLocal 清理）
      */
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
@@ -59,10 +62,14 @@ public class AuditLogFilter implements Filter {
                     AuditLogUtils.preHandle(()->{
                         AuditLogUtils.save(eventType,eventType,requestWrapper, responseWrapper,ipConfig, processor,properties,null);
                     },properties);
-                    chain.doFilter(requestWrapper, responseWrapper);
-                    AuditLogUtils.afterHandle(()->{
-                        AuditLogUtils.save(eventType,eventType,requestWrapper, responseWrapper,ipConfig, processor,properties,null);
-                    },properties);
+                    try {
+                        chain.doFilter(requestWrapper, responseWrapper);
+                    } finally {
+                        //下游异常时也必须走到 afterHandle：其内部 finally 的 clear() 负责回退事件链/清理源路径
+                        AuditLogUtils.afterHandle(()->{
+                            AuditLogUtils.save(eventType,eventType,requestWrapper, responseWrapper,ipConfig, processor,properties,null);
+                        },properties);
+                    }
                 }
             } else {
                 chain.doFilter(requestWrapper, response);
