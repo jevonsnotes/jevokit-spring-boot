@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <version>3.5.0.0-SNAPSHOT</version>
+    <version>3.5.0.0</version>
     <groupId>io.github.jevonsnotes</groupId>
     <artifactId>jevokit-parent</artifactId>
     <packaging>pom</packaging>
@@ -295,7 +295,9 @@
                     <plugin>
                         <groupId>org.sonatype.central</groupId>
                         <artifactId>central-publishing-maven-plugin</artifactId>
-                        <version>0.7.0</version>
+                        <version>0.8.0</version>
+                        <!-- extensions=true：接管 deploy 生命周期（官方要求），否则 publish 目标不绑定、上传静默跳过 -->
+                        <extensions>true</extensions>
                         <configuration>
                             <publishingServerId>central</publishingServerId>
                         </configuration>

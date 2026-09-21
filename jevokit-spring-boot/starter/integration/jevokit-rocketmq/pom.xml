@@ -4,12 +4,13 @@
     <parent>
         <groupId>io.github.jevonsnotes</groupId>
         <artifactId>jevokit-parent</artifactId>
-        <version>3.5.0.0-SNAPSHOT</version>
+        <version>3.5.0.0</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
 
     <groupId>io.github.jevonsnotes</groupId>
     <artifactId>jevokit-rocketmq-spring-boot-starter</artifactId>
+    <name>jevokit-rocketmq-spring-boot-starter</name>
     <packaging>jar</packaging>
 
 

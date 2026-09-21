@@ -11,7 +11,7 @@
     <groupId>io.github.jevonsnotes</groupId>
     <artifactId>jevokit-dependencies</artifactId>
     <name>jevokit-dependencies</name>
-    <version>3.5.0.0-SNAPSHOT</version>
+    <version>3.5.0.0</version>
     <packaging>pom</packaging>
 
     <!-- Central 发布元数据：BOM 的 parent 是 spring-boot-starter-parent，继承的是 Spring 官方
@@ -397,7 +397,9 @@
                     <plugin>
                         <groupId>org.sonatype.central</groupId>
                         <artifactId>central-publishing-maven-plugin</artifactId>
-                        <version>0.7.0</version>
+                        <version>0.8.0</version>
+                        <!-- extensions=true：接管 deploy 生命周期（官方要求），否则 publish 目标不绑定、上传静默跳过 -->
+                        <extensions>true</extensions>
                         <configuration>
                             <publishingServerId>central</publishingServerId>
                         </configuration>
