@@ -7,9 +7,7 @@ A Spring Boot starter kit covering security hardening, data desensitization, aud
 ![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)
 ![JDK](https://img.shields.io/badge/JDK-17-orange.svg)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.x-6DB33F.svg)
-<!-- TODO: 首发 3.5.0.0 发布到 Maven Central 后取消注释
-![Maven Central](https://img.shields.io/maven-central/v/io.github.jevonsnotes/jevokit-dependencies.svg)
--->
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.jevonsnotes/jevokit-dependencies.svg)](https://central.sonatype.com/artifact/io.github.jevonsnotes/jevokit-dependencies)
 
 ## 仓库结构
 
@@ -91,7 +89,7 @@ LICENSE                                  # Apache-2.0
 ```xml
 <dependencyManagement>
     <dependencies>
-        <!-- 首发版本 3.5.0.0，发布到 Maven Central 后可用；当前主干为 3.5.0.0-SNAPSHOT（可源码构建后本地引用） -->
+        <!-- 3.5.0.0 已发布 Maven Central；当前主干开发版为 3.5.0.1-SNAPSHOT -->
         <dependency>
             <groupId>io.github.jevonsnotes</groupId>
             <artifactId>jevokit-dependencies</artifactId>
