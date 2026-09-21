@@ -29,7 +29,7 @@ import java.util.Map;
 
  /**
  * 脱敏演示端点（/desensitization/*）：/test 走 @Desensitization 切面 + LogBuilder 结构化
- * 日志脱敏；/test2 演示 @DstProperty 属性级声明。请求体同时被 spkit.api.access 的
+ * 日志脱敏；/test2 演示 @DstProperty 属性级声明。请求体同时被 jevokit.api.access 的
  * token 访问控制覆盖（见 application.yml tokens 段）。
  */
 @Slf4j

@@ -27,7 +27,7 @@ import java.util.Set;
 
 /**
  * 加解密与对象字符串过滤工具（AES/SM4/RSA/SM2 + 递归字符串清洗）。
- * <p>使用方式：启动阶段先经 {@link #init(String, String, String, String)} 注入密钥（通常由装配层读 spkit.crypto.* 配置后调用），
+ * <p>使用方式：启动阶段先经 {@link #init(String, String, String, String)} 注入密钥（通常由装配层读 jevokit.crypto.* 配置后调用），
  * 之后直接使用各无参重载（如 {@link #aesEncrypt(String)}、{@link #sm4cbcDecrypt(String)}、{@link #rsaEncrypt(String)}）；
  * 显式传密钥的重载免配置，适合多租户等密钥不固定的场景。
  * <p>关键约束：未注入密钥的算法调用无参重载会抛 IllegalStateException（消息含具体配置键）；
@@ -39,7 +39,7 @@ public class SecurityUtil {
     private static SecureRandom random;
 
     /** 配置键前缀：未注入密钥的算法，其无参方法抛出 IllegalStateException 并在消息中给出具体配置键 */
-    private static final String CFG_PREFIX = "spkit.crypto.";
+    private static final String CFG_PREFIX = "jevokit.crypto.";
 
     private static volatile String rsaPublicKey;
     private static volatile String rsaPrivateKey;
@@ -57,13 +57,13 @@ public class SecurityUtil {
 
     /**
      * 注入加解密密钥，替代已移除的内置默认密钥（原内置密钥随源码泄露，视为不可信，禁止再用于新数据）。
-     * 通常由装配层读取 spkit.crypto.* 配置后调用，也可在应用启动阶段自行调用；重复调用以最后一次为准。
+     * 通常由装配层读取 jevokit.crypto.* 配置后调用，也可在应用启动阶段自行调用；重复调用以最后一次为准。
      * 各参数独立生效：仅注入所需算法的密钥即可，未注入算法对应的无参方法将抛出 IllegalStateException。
      *
-     * @param rsaPublicKey  RSA 公钥（Base64），对应配置 spkit.crypto.rsa-public-key
-     * @param rsaPrivateKey RSA 私钥（Base64），对应配置 spkit.crypto.rsa-private-key
-     * @param aesKey        AES 密钥（16/24/32 字节），对应配置 spkit.crypto.aes-key
-     * @param sm4Key        SM4 密钥（16 字节），对应配置 spkit.crypto.sm4-key
+     * @param rsaPublicKey  RSA 公钥（Base64），对应配置 jevokit.crypto.rsa-public-key
+     * @param rsaPrivateKey RSA 私钥（Base64），对应配置 jevokit.crypto.rsa-private-key
+     * @param aesKey        AES 密钥（16/24/32 字节），对应配置 jevokit.crypto.aes-key
+     * @param sm4Key        SM4 密钥（16 字节），对应配置 jevokit.crypto.sm4-key
      */
     public static void init(String rsaPublicKey, String rsaPrivateKey, String aesKey, String sm4Key) {
         if (StrUtil.isNotBlank(rsaPublicKey)) {
@@ -159,7 +159,7 @@ public class SecurityUtil {
     }
 
     /**
-     * sm4cbc解密，使用注入密钥（spkit.crypto.sm4-key），未注入抛 IllegalStateException
+     * sm4cbc解密，使用注入密钥（jevokit.crypto.sm4-key），未注入抛 IllegalStateException
      * @param val 密文
      * @return 明文
      */

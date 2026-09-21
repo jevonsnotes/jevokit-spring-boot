@@ -84,7 +84,7 @@ public class XxStringPropertiesEditChain implements StringPropertiesSupportChain
 
 
 ```yaml
-spkit:
+jevokit:
   xss:
     enabled: true
     mode: clear
@@ -98,7 +98,7 @@ spkit:
 ```
 ### path-traversal
 ```yaml
-spkit:
+jevokit:
   security:
     path-traversal:
       enabled: true
@@ -113,7 +113,7 @@ spkit:
 ```
 ### sql-inject
 ```yaml
-spkit:
+jevokit:
   security:
     sql-inject:
       enabled: true
@@ -130,7 +130,7 @@ spkit:
 > 代码注入
 
 ```yaml
-spkit:
+jevokit:
   security:
     code-inject: #代码注入
       enabled: true
@@ -195,7 +195,7 @@ JasyptUtil.decrypt() //解密
 [接口文档规范模板](https://doc.weixin.qq.com/doc/w3_ABAAAAbBAD8CNXjwPXxFaRMSEsnAt?scode=ALwAHAe_AAs4OxCsYQABAAAAbBAD8)（内部文档，需替换为实际链接） 
 
 ```yaml
-spkit:
+jevokit:
   api:
     client:
       - id: gd_default_default_v1 # 定义终端识别码
@@ -303,7 +303,7 @@ public class SecureApi {
 数据已封装在AuditLogDto对象，可通过实现`AuditLogProcessor`接口自定义存储审计日志逻辑。
 
 #### 注解式审计
-支持在`Controller`层的方法上使用@AuditLog注解标注审计(前提：`spkit.audit.log.enabled=true`)
+支持在`Controller`层的方法上使用@AuditLog注解标注审计(前提：`jevokit.audit.log.enabled=true`)
 
 ### desensitization
 脱敏组件主要应用于客户敏感信息场景，原理是通过拦截方法返回对象，针对数据对象标有`@Desensitization`注解的`字符串类型`属性进行脱敏处理.
@@ -318,7 +318,7 @@ public class SecureApi {
 #### 配置参考
 
 ```
-spkit:
+jevokit:
   desensitization:
     power-check-period: decrypt # 权限校验时机，decrypt 解密时；encrypt 加密时
     algorithm:
@@ -598,7 +598,7 @@ public class RedisService {
 配置数据库数据源，在启动服务时会自动初始化配置表`biz_no`，无需手动创建。
 
 ```yaml
-spkit:
+jevokit:
   nogen:
     enable-api: false # 启用api，默认false 
     access-token: 123456 #配置访问API密钥，请求时带上accessToken请求头
@@ -663,7 +663,7 @@ public class ExcelApi {
 参考配置文件
 
 ```yaml
-spkit:
+jevokit:
   ok:
     http:
       proxy-username: xxx # 代理用户名

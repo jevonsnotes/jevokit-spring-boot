@@ -19,8 +19,8 @@ import io.github.jevonsnotes.jevokit.security.xss.cleaner.XssCleaner;
  * {@link io.github.jevonsnotes.jevokit.security.xss.cleaner.XssCleaner} 实现定义（默认实现见
  * {@link io.github.jevonsnotes.jevokit.security.xss.cleaner.DefaultXssCleaner}）；本链只负责开关判断与
  * trim 预处理——当前请求未开启防护（ConfigHolder 的 ThreadLocal 由 XssCleanInterceptor 依
- * spkit.security.xss.enabled 与 @XssClean 注解写入）时仍执行 trim 但不清洗，行为与未引入防护一致（防御性降级）。
- * <p>关键约束：入站单向清洗（getTextEdit 原样返回）；spkit.security.xss.trim-text 对开启/关闭态均生效。
+ * jevokit.security.xss.enabled 与 @XssClean 注解写入）时仍执行 trim 但不清洗，行为与未引入防护一致（防御性降级）。
+ * <p>关键约束：入站单向清洗（getTextEdit 原样返回）；jevokit.security.xss.trim-text 对开启/关闭态均生效。
  */
 @Slf4j
 @RequiredArgsConstructor

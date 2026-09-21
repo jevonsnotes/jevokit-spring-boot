@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
  /**
  * okhttp 自动装配：构建直连/代理双客户端 + 连接池 + OkHttpUtil 门面 Bean。
  *
- * <p>用法：按 spkit.ok.http.* 配置装配；个性化定制注册 CustomOkhttpConfiguration Bean
+ * <p>用法：按 jevokit.ok.http.* 配置装配；个性化定制注册 CustomOkhttpConfiguration Bean
  * （缺省提供空实现占位， @ConditionalOnMissingBean 兜底）。
  *
  * <p>关键约束与取舍：
@@ -77,7 +77,7 @@ public class JevokitOkhttpConfiguration {
     @Bean
     /**
     * 配置 Bean（@RefreshScope 支持热更新）。
-    * @return spkit.ok.http.* 绑定实例
+    * @return jevokit.ok.http.* 绑定实例
     */
     public OkhttpProperties okhttpProperties(){
         return new OkhttpProperties();

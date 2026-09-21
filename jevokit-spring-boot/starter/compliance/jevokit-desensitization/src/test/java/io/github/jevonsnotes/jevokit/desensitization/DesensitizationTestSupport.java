@@ -54,10 +54,10 @@ public final class DesensitizationTestSupport {
         return properties;
     }
 
-    /** 满足 DesUtil 静态依赖的最小上下文（SM4 密钥走 spkit.crypto.sm4-key 配置键） */
+    /** 满足 DesUtil 静态依赖的最小上下文（SM4 密钥走 jevokit.crypto.sm4-key 配置键） */
     public static ApplicationContextRunner minimalRunner(JevokitDesensitizationProperties properties) {
         return new ApplicationContextRunner()
-                .withPropertyValues("spkit.crypto.sm4-key=" + TEST_SM4_KEY)
+                .withPropertyValues("jevokit.crypto.sm4-key=" + TEST_SM4_KEY)
                 .withBean(SpringUtil.class)
                 .withBean(JevokitDesensitizationProperties.class, () -> properties)
                 .withBean(DesHelper.class,

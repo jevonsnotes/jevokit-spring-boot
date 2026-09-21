@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * SQL 注入防护配置（spkit.security.sql-inject）：
+ * SQL 注入防护配置（jevokit.security.sql-inject）：
  * enabled 总开关；urlPatterns/urlExcludePatterns 以 Ant 风格路径圈定拦截与豁免范围；
  * mode 处置模式（clear 清除命中片段，默认 / reject 拒绝整条请求）；
  * additionTaintedPatterns 在默认污染表（{@link SqlTaintedList}，刻意保守仅 4 条）之上追加识别正则，详见字段注释。
@@ -19,7 +19,7 @@ import java.util.List;
 @RefreshScope
 @ConfigurationProperties(SqlInjectProperties.CONFIG_PREFIX)
 public class SqlInjectProperties {
-    public static final String CONFIG_PREFIX = "spkit.security.sql-inject";
+    public static final String CONFIG_PREFIX = "jevokit.security.sql-inject";
     /** 总开关，默认关闭 */
     private boolean enabled;
     /** 拦截的 URL 范围（Ant 风格），空则不圈定 */
@@ -35,7 +35,7 @@ public class SqlInjectProperties {
      * <p>默认污染表保持保守（仅 4 条：UPDATE..SET / INSERT INTO / DELETE FROM / (AND|OR|WHERE) 等式，
      * 见 {@link SqlTaintedList}）；union select、注释截断等激进规则不进默认表，需要时按下例 opt-in：
      * <pre>
-     * spkit:
+     * jevokit:
      *   security:
      *     sql-inject:
      *       addition-tainted-patterns: # 激进防护 opt-in（默认不启用；示例正则均有单测背书）

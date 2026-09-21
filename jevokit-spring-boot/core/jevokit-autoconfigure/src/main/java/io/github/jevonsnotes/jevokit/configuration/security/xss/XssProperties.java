@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * XSS 防护配置（spkit.security.xss）：
+ * XSS 防护配置（jevokit.security.xss）：
  * enabled 总开关；urlPatterns/urlExcludePatterns 以 Ant 风格路径圈定拦截与豁免范围；
  * mode 三态处置——clear 清除命中片段（默认）/ escape 转义 / reject 拒绝；
  * ignoreResponse 默认 true（只处理请求方向，响应方向跳过）；trimText 控制文本首尾去空白；
@@ -20,7 +20,7 @@ import java.util.List;
 @RefreshScope
 @ConfigurationProperties(XssProperties.XSS_CONFIG_PREFIX)
 public class XssProperties {
-    public static final String XSS_CONFIG_PREFIX = "spkit.security.xss";
+    public static final String XSS_CONFIG_PREFIX = "jevokit.security.xss";
     /** 总开关，默认关闭 */
     private boolean enabled;
     /** 文本首尾去空白 */

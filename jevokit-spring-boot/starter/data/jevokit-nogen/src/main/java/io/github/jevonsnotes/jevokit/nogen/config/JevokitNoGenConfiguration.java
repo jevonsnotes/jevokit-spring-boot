@@ -30,7 +30,7 @@ public class JevokitNoGenConfiguration{
     @Bean
     /**
     * 配置 Bean。
-    * @return spkit.nogen 绑定实例
+    * @return jevokit.nogen 绑定实例
     */
     public JevokitNoGenProperties jevokitNoGenProperties(){
         return new JevokitNoGenProperties();

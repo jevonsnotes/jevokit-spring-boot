@@ -2,7 +2,7 @@ package io.github.jevonsnotes.jevokit.desensitization.builder.log;
 
 /**
  * 结构化日志构建器：以"标题 + 键值元数据"组织日志内容，build() 时对全部元数据值
- * 走日志链路脱敏（DesHelper.desensitizeLog，算法取 spkit.desensitization.algorithm.log）。
+ * 走日志链路脱敏（DesHelper.desensitizeLog，算法取 jevokit.desensitization.algorithm.log）。
  * 使用方式：{@code LogBuilder.create().title("下单").meta("手机号",mobile).metaJson("订单",order).build()}
  * ——脱敏只发生在 build()，构建阶段可安全持有明文；metaJson 自动序列化对象后参与脱敏。
  * <p>关键约束：build() 只脱敏一次（重复调用直接复用首次结果）；脱敏异常仅记 ERROR 不上抛，

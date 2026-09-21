@@ -2,7 +2,7 @@
 
 A Spring Boot starter kit covering security hardening, data desensitization, audit logging, distributed locks, idempotent number generation and encrypted configuration.
 
-一套面向 Spring Boot 3.5.x / JDK 17 的后端增强组件库：安全加固（XSS / SQL 注入 / 路径遍历 / 代码注入 / 接口签名防重放）、数据脱敏、审计日志、分布式锁、幂等单号生成、配置加密、Excel 导入，以及 RocketMQ / OkHttp / Camunda 工作流集成。按需引入 starter，统一配置前缀 `spkit.*`，即插即用。
+一套面向 Spring Boot 3.5.x / JDK 17 的后端增强组件库：安全加固（XSS / SQL 注入 / 路径遍历 / 代码注入 / 接口签名防重放）、数据脱敏、审计日志、分布式锁、幂等单号生成、配置加密、Excel 导入，以及 RocketMQ / OkHttp / Camunda 工作流集成。按需引入 starter，统一配置前缀 `jevokit.*`，即插即用。
 
 ![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)
 ![JDK](https://img.shields.io/badge/JDK-17-orange.svg)
@@ -17,7 +17,7 @@ A Spring Boot starter kit covering security hardening, data desensitization, aud
 jevokit-spring-boot/                     # 主 reactor（jevokit-parent）：18 个库模块 + 示例应用
 ├── core/
 │   ├── jevokit-core/                    # 纯工具库（非 starter）：通用工具 + 加解密
-│   └── jevokit-autoconfigure/           # 自动装配基座 + spkit.* 配置约定
+│   └── jevokit-autoconfigure/           # 自动装配基座 + jevokit.* 配置约定
 ├── starter/
 │   ├── security/                        # 安全加固（8 个模块）
 │   ├── compliance/                      # 合规：脱敏 / 审计
@@ -40,7 +40,7 @@ LICENSE                                  # Apache-2.0
 | 模块 | 职责 |
 |---|---|
 | `jevokit-core` | 纯工具库（非 starter）：通用工具类 + 加解密能力 |
-| `jevokit-autoconfigure` | 自动装配基座：starter 公共装配逻辑与 `spkit.*` 配置基础设施 |
+| `jevokit-autoconfigure` | 自动装配基座：starter 公共装配逻辑与 `jevokit.*` 配置基础设施 |
 
 ### 安全加固（starter/security）
 
@@ -112,10 +112,10 @@ LICENSE                                  # Apache-2.0
 </dependency>
 ```
 
-**3. 最小配置**（`application.yml`，配置前缀 `spkit.*`）：
+**3. 最小配置**（`application.yml`，配置前缀 `jevokit.*`）：
 
 ```yaml
-spkit:
+jevokit:
   xss:
     enabled: true          # 开启 XSS 防护
     mode: clear            # 处理模式：clear 清洗 / escape 转义 / reject 拒绝访问
@@ -158,6 +158,12 @@ mvn test -DexcludedGroups=
 ```
 
 说明：默认构建通过 surefire `excludedGroups=mq` 排除唯一真依赖 MQ 的用例（`@Tag("mq")`）；`-DexcludedGroups=` 传空串即不排除。
+
+## 版本号与变更日志
+
+版本号四段式 `A.B.C.D`：前两段对齐 Spring Boot 版本线（`3.5` ⇔ Spring Boot 3.5.x）；第三位为本项目**破坏性变更位**（不兼容改动时 +1，第四位归 0，如 3.5.0.0 → 3.5.1.0）；第四位为常规迭代位（兼容性变更 +1）。
+
+各版本变更明细见 [CHANGELOG.md](CHANGELOG.md)；GitHub Releases 与 tag 对应发布版本。
 
 ## License
 

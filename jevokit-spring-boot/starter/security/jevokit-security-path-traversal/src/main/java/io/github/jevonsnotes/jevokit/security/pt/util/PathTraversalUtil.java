@@ -10,7 +10,7 @@ import java.util.List;
 
 /**
  * 路径穿越（Path Traversal）检测/清洗工具：按当前请求线程的防护模式
- * （spkit.security.path-traversal.mode）处理入参字符串。
+ * （jevokit.security.path-traversal.mode）处理入参字符串。
  * 由 {@link io.github.jevonsnotes.jevokit.security.pt.chain.PtStringPropertiesEditChain}
  * 在表单/请求体字符串属性绑定时调用；也可在业务代码中显式调用本工具做同规则校验。
  * <p>命中语义：规则表 = 默认污染表 + addition-tainted-patterns 追加表（见

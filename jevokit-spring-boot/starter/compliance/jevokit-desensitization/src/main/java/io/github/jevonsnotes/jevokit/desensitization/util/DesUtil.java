@@ -26,14 +26,14 @@ import java.util.regex.Pattern;
  * 脱敏核心工具：脱敏执行（BASIC 掩码 / SM4 密文 / MIXED 混合）、属性名规则匹配、
  * 密文解密还原，以及 JSON/XML 报文的正则级脱敏。
  * 使用方式：注解链路（@DstProperty → DesensitizationAspect）与属性名规则链路
- * （{@link #desByProperties(String, String)}，规则源 spkit.desensitization.prop-pattern）最终都收敛到
+ * （{@link #desByProperties(String, String)}，规则源 jevokit.desensitization.prop-pattern）最终都收敛到
  * {@link #des(String, DstContext)}；JSON/XML 原文脱敏用 {@link #desensitizeJson(String)} /
  * {@link #desensitizeXml(String)}；密文还原用 {@link #decrypt(String, boolean)}。
  * <p>命中与输出语义（关键约束）：
  * <ul>
  *   <li>幂等：已带 {@code @DST} 密文前缀的值直接跳过，不二次脱敏；</li>
  *   <li>算法选择：视图/日志两条链路独立取配置（{@link #desByProcessTypeWrap} 切换 LOG 档），
- *       未配置时降级 BASIC；SM4 密钥取 spkit.crypto.sm4-key，缺失 fail-fast；</li>
+ *       未配置时降级 BASIC；SM4 密钥取 jevokit.crypto.sm4-key，缺失 fail-fast；</li>
  *   <li>权限：DECRYPT 档（默认）在 {@link #decrypt(String, boolean)} 按密文内嵌级别校验
  *       （DesHelper.checkPower），无权限抛异常拒绝还原；ENCRYPT 档在脱敏出口校验，有权限直接放行明文；</li>
  *   <li>容错：BASIC 掩码对不识别的格式（如非三地手机号）原样返回——宁漏脱敏不阻断业务；
@@ -212,13 +212,13 @@ public class DesUtil {
     }
 
     /**
-     * 脱敏 SM4 密钥（显式 key 化：库级内置密钥已移除，见 spkit.crypto.sm4-key）
+     * 脱敏 SM4 密钥（显式 key 化：库级内置密钥已移除，见 jevokit.crypto.sm4-key）
      * @return SM4 密钥
      */
     private static String sm4Key() {
-        String key = SpringUtil.getProperty("spkit.crypto.sm4-key");
+        String key = SpringUtil.getProperty("jevokit.crypto.sm4-key");
         if (StrUtil.isBlank(key)) {
-            throw new IllegalStateException("crypto keys not configured: spkit.crypto.sm4-key");
+            throw new IllegalStateException("crypto keys not configured: jevokit.crypto.sm4-key");
         }
         return key;
     }
@@ -260,7 +260,7 @@ public class DesUtil {
      *
      * @param value      明文
      * @param dstContext 脱敏上下文（级别为空时按 LV9 内嵌，解密还原时依档位校验权限）
-     * @return 形如 {@code @DST([LV*]密文)} 的信封串；密钥取 spkit.crypto.sm4-key
+     * @return 形如 {@code @DST([LV*]密文)} 的信封串；密钥取 jevokit.crypto.sm4-key
      * @throws IllegalStateException SM4 密钥未配置时 fail-fast（密文无密钥不可解，宁失败不产出坏数据）
      */
     public static String processSM4(String value, DstContext dstContext) {

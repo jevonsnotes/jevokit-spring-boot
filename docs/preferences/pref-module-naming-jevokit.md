@@ -15,7 +15,7 @@
 - 聚合"一引全装"壳也走标准形：`jevokit-security-all-spring-boot-starter`
 - 模块目录名 = artifactId 去掉 `-spring-boot-starter` 尾缀（目录不重复 starter 字样）
 - 家族令牌 `jevokit` 于 2026-09-16 经 Central 检索实测零占用后由用户终定（经历 kit-/spkit-/jevokit- 三轮择枝）
-- 注意：四层命名各司其职——Maven 坐标令牌（`jevokit-*`）/ 配置前缀（`spkit.*`）/ Java 包名（`io.github.jevonsnotes.jevokit.*`）/ 公开类名（`Jevokit*` 前缀）。2026-09-17 首发前终定：包名与类名由旧 kit 形态统一迁移至 jevokit 命名空间（标准 groupId 反演），"包名与坐标有意不同名"的旧表述就此作废；配置前缀 `spkit.*` 维持不变，不随包名走
+- 注意：四层命名各司其职——Maven 坐标令牌（`jevokit-*`）/ 配置前缀（`jevokit.*`）/ Java 包名（`io.github.jevonsnotes.jevokit.*`）/ 公开类名（`Jevokit*` 前缀）。2026-09-17 首发前终定包名与类名迁移至 jevokit 命名空间；**2026-09-21 用户决策更新：配置前缀由 `spkit.*` 全量更名为 `jevokit.*`**（四层统一 jevokit 系），随 3.5.1.0（破坏性变更，第三位 +1）发布，旧前缀由 JevokitPrefixGuardTest 防线拦截回退
 
 ## 认可场景
 

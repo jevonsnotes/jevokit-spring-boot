@@ -16,7 +16,7 @@ import io.github.jevonsnotes.jevokit.security.xss.handler.XmlXssHandler;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * XssConfiguration 装配条件：spkit.security.xss.enabled 开关切换 bean 存在性（SERVLET web 环境下）。
+ * XssConfiguration 装配条件：jevokit.security.xss.enabled 开关切换 bean 存在性（SERVLET web 环境下）。
  */
 class XssConfigurationTest {
 
@@ -40,18 +40,18 @@ class XssConfigurationTest {
     }
 
     @Test
-    @DisplayName("spkit.security.xss.enabled=true：全部 xss bean 装配")
+    @DisplayName("jevokit.security.xss.enabled=true：全部 xss bean 装配")
     void beansExistWhenEnabled() {
-        runner.withPropertyValues("spkit.security.xss.enabled=true").run(context -> {
+        runner.withPropertyValues("jevokit.security.xss.enabled=true").run(context -> {
             assertThat(context).as("显式开启应装配 XssCleaner").hasSingleBean(XssCleaner.class);
             assertThat(context).as("显式开启应装配 FormXssHandler").hasSingleBean(FormXssHandler.class);
         });
     }
 
     @Test
-    @DisplayName("spkit.security.xss.enabled=false：全部 xss bean 不装配")
+    @DisplayName("jevokit.security.xss.enabled=false：全部 xss bean 不装配")
     void beansAbsentWhenDisabled() {
-        runner.withPropertyValues("spkit.security.xss.enabled=false").run(context -> {
+        runner.withPropertyValues("jevokit.security.xss.enabled=false").run(context -> {
             assertThat(context).as("关闭后不得装配 XssCleaner").doesNotHaveBean(XssCleaner.class);
             assertThat(context).as("关闭后不得装配 FormXssHandler").doesNotHaveBean(FormXssHandler.class);
             assertThat(context).as("关闭后不得装配 XssStringPropertiesEditChain").doesNotHaveBean(XssStringPropertiesEditChain.class);

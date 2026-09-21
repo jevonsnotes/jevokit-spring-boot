@@ -4,7 +4,7 @@ import lombok.Data;
 import io.github.jevonsnotes.jevokit.core.consts.AuditLogPersistentMode;
 
 /**
- * 审计日志持久化配置（spkit.audit.log.persistent.*）：
+ * 审计日志持久化配置（jevokit.audit.log.persistent.*）：
  * mode 选择落盘去向（LOG 日志 / DB 数据库 / MIXED 双写，默认 LOG，语义见 {@link AuditLogPersistentMode}）；
  * dbMigratePeriod 仅 DB 模式生效，决定审计表按什么粒度分表转储（默认按天）。
  */

@@ -58,7 +58,7 @@ public class JSecureApiUtil {
     /**
      * 按终端识别码精确匹配终端配置。
      *
-     * @param clientId 终端识别码（spkit.api.client[].id，区分大小写全等比较）
+     * @param clientId 终端识别码（jevokit.api.client[].id，区分大小写全等比较）
      * @return 对应终端配置
      * @throws RuntimeException 无此终端时抛出（fail-fast，密钥配置缺失属部署错误）
      */

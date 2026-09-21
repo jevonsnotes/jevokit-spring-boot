@@ -10,7 +10,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * SpringWebFixedConfiguration 装配：无 enabled 开关（该防护默认无条件开启），
- * 与其余 security 模块的 spkit.security.*.enabled 条件装配不同，本类固化"始终装配"语义。
+ * 与其余 security 模块的 jevokit.security.*.enabled 条件装配不同，本类固化"始终装配"语义。
  */
 class SpringWebFixedConfigurationTest {
 
@@ -25,9 +25,9 @@ class SpringWebFixedConfigurationTest {
     }
 
     @Test
-    @DisplayName("无 spkit.security.web-fixed.enabled 开关（始终装配语义固化）")
+    @DisplayName("无 jevokit.security.web-fixed.enabled 开关（始终装配语义固化）")
     void aspectBeanExistsRegardlessOfProperties() {
-        runner.withPropertyValues("spkit.security.web-fixed.enabled=false").run(context ->
+        runner.withPropertyValues("jevokit.security.web-fixed.enabled=false").run(context ->
                 assertThat(context)
                         .as("该模块不提供关闭开关：即使误配 enabled=false 也保持装配（防护不被误关）")
                         .hasSingleBean(SpringWebFixedAspect.class));

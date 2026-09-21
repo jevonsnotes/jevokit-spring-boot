@@ -55,7 +55,7 @@ class SecureApiE2ETest {
                 .filter(c -> "client-demo-1".equals(c.getId()))
                 .findFirst()
                 .orElseThrow();
-        client.setSecretKeySm4("DemoSm4Key123456"); // 16 字节演示密钥（与 spkit.crypto.sm4-key 同源）
+        client.setSecretKeySm4("DemoSm4Key123456"); // 16 字节演示密钥（与 jevokit.crypto.sm4-key 同源）
         client.setSecretKey("DemoSm4Key123456");    // 头签名 MD5 同步换钥，保证自洽
         // MockMvc 下 getRemoteIp 解析的是本机回环 127.0.0.1，非演示白名单 192.0.2.*——
         // 放行列表临时并入回环（E2E 关注的是签名/加解密链路而非 IP 门本身）

@@ -42,6 +42,7 @@
 | 提交信息不加 AI 署名（无 Co-Authored-By 行） | 沟通/流程 | 已认可 | [pref-commit-no-ai-signature.md](pref-commit-no-ai-signature.md) |
 | commit 信息除专业术语和代码外，要用中文 | 沟通/流程 | 已认可 | [pref-commit-message-chinese.md](pref-commit-message-chinese.md) |
 | 模块坐标命名规范：jevokit- 令牌 + starter 标准形后缀 | 代码风格 | 已认可 | [pref-module-naming-jevokit.md](pref-module-naming-jevokit.md) |
+| 版本号语义：前两段对齐 Spring Boot，第三位承载破坏性变更 | 沟通/流程 | 已认可 | [pref-version-scheme.md](pref-version-scheme.md) |
 
 > **状态**：`已认可`（用户明确表达过）/ `待确认`（团队推测但用户尚未明确）。只记录用户真实表达过的偏好，不臆断用户的审美。
 

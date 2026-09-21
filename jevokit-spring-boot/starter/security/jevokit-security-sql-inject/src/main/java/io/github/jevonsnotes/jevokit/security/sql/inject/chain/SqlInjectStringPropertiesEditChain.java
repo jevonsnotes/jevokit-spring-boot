@@ -13,7 +13,7 @@ import io.github.jevonsnotes.jevokit.security.sql.inject.util.SqlInjectUtil;
  * 使用方式：由 jevokit 核心装配为 {@code StringPropertiesEditor}（java.beans PropertyEditor）的一环，
  * 请求参数 → Bean 属性时经 {@link #setTextEdit}，Bean 属性 → 文本输出时经 {@link #getTextEdit}。
  * <p>检测语义：仅在当前请求开关开启（ConfigHolder 的 ThreadLocal 由 SqlInjectInterceptor 依
- * spkit.security.sql-inject.enabled 与 @SIClean 注解写入）时清洗，否则原样透传——保证关闭态/被 @SIClean
+ * jevokit.security.sql-inject.enabled 与 @SIClean 注解写入）时清洗，否则原样透传——保证关闭态/被 @SIClean
  * 忽略的接口行为与未引入本模块完全一致（防御性降级，不吞参数也不报错）。
  * <p>关键约束：入站单向清洗（getTextEdit 原样返回），出站内容不做二次处理，避免响应数据被误剥离；
  * 清洗规则与模式语义见 {@link io.github.jevonsnotes.jevokit.security.sql.inject.util.SqlInjectUtil}。

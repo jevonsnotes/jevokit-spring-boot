@@ -9,7 +9,7 @@ import io.github.jevonsnotes.jevokit.api.interceptor.JevokitApiAccessInterceptor
 
 /**
  * JSecure API 的 MVC 装配器：向 Spring MVC 注册简单接口 token 准入拦截器
- * {@link JevokitApiAccessInterceptor}（Ant 风格路径 → 访问令牌，spkit.api.access.* 配置）。
+ * {@link JevokitApiAccessInterceptor}（Ant 风格路径 → 访问令牌，jevokit.api.access.* 配置）。
  * 使用方式：引入本 starter 自动生效，无路径配置时拦截器直通（未配置 tokens 即不拦截）。
  * <p>关键约束：拦截器以 LOWEST_PRECEDENCE 挂载到 {@code /**}，保证不与业务拦截器争抢执行顺序；
  * 校验失败直接返回 403，不进入 Controller。

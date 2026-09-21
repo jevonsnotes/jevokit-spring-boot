@@ -23,7 +23,7 @@ import java.util.Map;
 
 /**
  * 审计日志过滤器：URL 驱动的自动审计入口——按 HTTP 方法 + Ant 路径规则
- * （spkit.audit-log.event-types.patterns）识别需审计的请求，包装请求/响应以捕获报文体并落审计。
+ * （jevokit.audit-log.event-types.patterns）识别需审计的请求，包装请求/响应以捕获报文体并落审计。
  * 使用方式：由 JevokitAuditLogConfiguration 以 {@code /*}、order=200 注册，无需手工配置；
  * 匹配到的请求经 preHandle/afterHandle 两次回调（around 开启时落两条，否则仅完成后一条）。
  * <p>关键约束：未命中规则的请求只做请求包装直通（不捕获响应体，零开销降级）；

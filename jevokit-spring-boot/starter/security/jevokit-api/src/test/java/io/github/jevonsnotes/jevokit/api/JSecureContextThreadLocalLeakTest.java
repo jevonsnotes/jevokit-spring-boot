@@ -67,25 +67,25 @@ import static org.assertj.core.api.SoftAssertions.assertSoftly;
         JSecureContextThreadLocalLeakTest.LeakProbeController.class})
 @TestPropertySource(properties = {
         // ---- 终端 A：演示 SM2 密钥对（与 sample application.yml 同源，仅用于测试）----
-        "spkit.api.client[0].id=leak-client-a",
-        "spkit.api.client[0].secret-key=aaaabbbbccccdddd",
-        "spkit.api.client[0].secret-key-sm4=aaaabbbbccccdddd",
-        "spkit.api.client[0].private-key=MIGTAgEAMBMGByqGSM49AgEGCCqBHM9VAYItBHkwdwIBAQQgk5B6bcSXNwvtfd6nufsDHEPOu8N2hHKJMBW5blZP2eSgCgYIKoEcz1UBgi2hRANCAASxO58/zvEseRlMZtRlojzn7m4jAaZPTDSOalPCSk3nnGW0GmEu2ZhfWDNH+Nq8wA6BLodb2gwI9NF+F1Mp3p9R",
-        "spkit.api.client[0].public-key=MFkwEwYHKoZIzj0CAQYIKoEcz1UBgi0DQgAEsTufP87xLHkZTGbUZaI85+5uIwGmT0w0jmpTwkpN55xltBphLtmYX1gzR/javMAOgS6HW9oMCPTRfhdTKd6fUQ==",
-        "spkit.api.client[0].verify=true",
-        "spkit.api.client[0].decrypt=true",
-        "spkit.api.client[0].encrypt=true",
-        "spkit.api.client[0].prevent-replay=false",
+        "jevokit.api.client[0].id=leak-client-a",
+        "jevokit.api.client[0].secret-key=aaaabbbbccccdddd",
+        "jevokit.api.client[0].secret-key-sm4=aaaabbbbccccdddd",
+        "jevokit.api.client[0].private-key=MIGTAgEAMBMGByqGSM49AgEGCCqBHM9VAYItBHkwdwIBAQQgk5B6bcSXNwvtfd6nufsDHEPOu8N2hHKJMBW5blZP2eSgCgYIKoEcz1UBgi2hRANCAASxO58/zvEseRlMZtRlojzn7m4jAaZPTDSOalPCSk3nnGW0GmEu2ZhfWDNH+Nq8wA6BLodb2gwI9NF+F1Mp3p9R",
+        "jevokit.api.client[0].public-key=MFkwEwYHKoZIzj0CAQYIKoEcz1UBgi0DQgAEsTufP87xLHkZTGbUZaI85+5uIwGmT0w0jmpTwkpN55xltBphLtmYX1gzR/javMAOgS6HW9oMCPTRfhdTKd6fUQ==",
+        "jevokit.api.client[0].verify=true",
+        "jevokit.api.client[0].decrypt=true",
+        "jevokit.api.client[0].encrypt=true",
+        "jevokit.api.client[0].prevent-replay=false",
         // ---- 终端 B：secretKey/SM4/SM2 密钥对均与 A 不同（SM2 为离线独立生成的测试密钥对）----
-        "spkit.api.client[1].id=leak-client-b",
-        "spkit.api.client[1].secret-key=ddddccccbbbbaaaa",
-        "spkit.api.client[1].secret-key-sm4=ddddccccbbbbaaaa",
-        "spkit.api.client[1].private-key=MIGTAgEAMBMGByqGSM49AgEGCCqBHM9VAYItBHkwdwIBAQQgRXeF941AVfKIFM4Ua4cyCsKCTgtUdYRjLr2yftmA5aqgCgYIKoEcz1UBgi2hRANCAASRu0AJMFKxU/Cs+Zb9dgSV3E+uaLHd+OpmzqYCB4Qgd4vc/guwAuCsp0rYfgND3mrCRpVPsJrc38pR8nnube6a",
-        "spkit.api.client[1].public-key=MFkwEwYHKoZIzj0CAQYIKoEcz1UBgi0DQgAEkbtACTBSsVPwrPmW/XYEldxPrmix3fjqZs6mAgeEIHeL3P4LsALgrKdK2H4DQ95qwkaVT7Ca3N/KUfJ57m3umg==",
-        "spkit.api.client[1].verify=true",
-        "spkit.api.client[1].decrypt=true",
-        "spkit.api.client[1].encrypt=true",
-        "spkit.api.client[1].prevent-replay=false",
+        "jevokit.api.client[1].id=leak-client-b",
+        "jevokit.api.client[1].secret-key=ddddccccbbbbaaaa",
+        "jevokit.api.client[1].secret-key-sm4=ddddccccbbbbaaaa",
+        "jevokit.api.client[1].private-key=MIGTAgEAMBMGByqGSM49AgEGCCqBHM9VAYItBHkwdwIBAQQgRXeF941AVfKIFM4Ua4cyCsKCTgtUdYRjLr2yftmA5aqgCgYIKoEcz1UBgi2hRANCAASRu0AJMFKxU/Cs+Zb9dgSV3E+uaLHd+OpmzqYCB4Qgd4vc/guwAuCsp0rYfgND3mrCRpVPsJrc38pR8nnube6a",
+        "jevokit.api.client[1].public-key=MFkwEwYHKoZIzj0CAQYIKoEcz1UBgi0DQgAEkbtACTBSsVPwrPmW/XYEldxPrmix3fjqZs6mAgeEIHeL3P4LsALgrKdK2H4DQ95qwkaVT7Ca3N/KUfJ57m3umg==",
+        "jevokit.api.client[1].verify=true",
+        "jevokit.api.client[1].decrypt=true",
+        "jevokit.api.client[1].encrypt=true",
+        "jevokit.api.client[1].prevent-replay=false",
 })
 @DisplayName("JSecureContext ThreadLocal 泄漏实证")
 class JSecureContextThreadLocalLeakTest {

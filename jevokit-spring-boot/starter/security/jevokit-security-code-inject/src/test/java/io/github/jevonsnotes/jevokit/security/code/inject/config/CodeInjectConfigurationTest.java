@@ -10,7 +10,7 @@ import io.github.jevonsnotes.jevokit.security.code.inject.util.CodeInjectUtil;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * CodeInjectConfiguration 装配条件：spkit.security.code-inject.enabled 开关切换 bean 存在性；
+ * CodeInjectConfiguration 装配条件：jevokit.security.code-inject.enabled 开关切换 bean 存在性；
  * 并验证 @Autowired initProperties 在容器内完成静态规则注入。
  */
 class CodeInjectConfigurationTest {
@@ -30,24 +30,24 @@ class CodeInjectConfigurationTest {
     }
 
     @Test
-    @DisplayName("spkit.security.code-inject.enabled=true：bean 装配")
+    @DisplayName("jevokit.security.code-inject.enabled=true：bean 装配")
     void beanExistsWhenEnabled() {
-        runner.withPropertyValues("spkit.security.code-inject.enabled=true").run(context ->
+        runner.withPropertyValues("jevokit.security.code-inject.enabled=true").run(context ->
                 assertThat(context).as("显式开启应装配 CodeInjectUtil").hasSingleBean(CodeInjectUtil.class));
     }
 
     @Test
-    @DisplayName("spkit.security.code-inject.enabled=false：bean 不装配")
+    @DisplayName("jevokit.security.code-inject.enabled=false：bean 不装配")
     void beanAbsentWhenDisabled() {
-        runner.withPropertyValues("spkit.security.code-inject.enabled=false").run(context ->
+        runner.withPropertyValues("jevokit.security.code-inject.enabled=false").run(context ->
                 assertThat(context).as("关闭后不得装配 CodeInjectUtil").doesNotHaveBean(CodeInjectUtil.class));
     }
 
     @Test
-    @DisplayName("容器内注入 spkit.security.code-inject.namespaces 后 isSafe 生效")
+    @DisplayName("容器内注入 jevokit.security.code-inject.namespaces 后 isSafe 生效")
     void namespacesBoundAndEffective() {
         runner.withPropertyValues(
-                        "spkit.security.code-inject.namespaces.default[0]=[a-z0-9_]+")
+                        "jevokit.security.code-inject.namespaces.default[0]=[a-z0-9_]+")
                 .run(context -> {
                     assertThat(context).hasSingleBean(CodeInjectUtil.class);
                     assertThat(CodeInjectUtil.isSafe("order_no_1"))

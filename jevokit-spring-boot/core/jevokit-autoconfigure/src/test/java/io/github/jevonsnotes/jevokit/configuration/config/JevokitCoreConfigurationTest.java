@@ -89,13 +89,13 @@ class JevokitCoreConfigurationTest {
     }
 
     @Test
-    @DisplayName("crypto 链路：绑定 spkit.crypto 四键后 SecurityUtil 无参方法全部可用")
+    @DisplayName("crypto 链路：绑定 jevokit.crypto 四键后 SecurityUtil 无参方法全部可用")
     void cryptoKeysInjectedIntoSecurityUtil() {
         runner.withPropertyValues(
-                        "spkit.crypto.rsa-public-key=" + RSA_PUBLIC_KEY,
-                        "spkit.crypto.rsa-private-key=" + RSA_PRIVATE_KEY,
-                        "spkit.crypto.aes-key=" + AES_KEY,
-                        "spkit.crypto.sm4-key=" + SM4_KEY)
+                        "jevokit.crypto.rsa-public-key=" + RSA_PUBLIC_KEY,
+                        "jevokit.crypto.rsa-private-key=" + RSA_PRIVATE_KEY,
+                        "jevokit.crypto.aes-key=" + AES_KEY,
+                        "jevokit.crypto.sm4-key=" + SM4_KEY)
                 .run(context -> {
                     // given：上下文启动完成时 cryptoKeyInitializer（InitializingBean）已执行
                     assertThat(context).hasNotFailed();
@@ -117,17 +117,17 @@ class JevokitCoreConfigurationTest {
             assertThat(context).hasNotFailed();
             // then
             assertThatThrownBy(() -> SecurityUtil.aesEncrypt(PLAIN))
-                    .as("未绑定 spkit.crypto.aes-key 时应快速失败")
+                    .as("未绑定 jevokit.crypto.aes-key 时应快速失败")
                     .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("spkit.crypto.aes-key");
+                    .hasMessageContaining("jevokit.crypto.aes-key");
             assertThatThrownBy(() -> SecurityUtil.sm4cbcEncrypt(PLAIN))
-                    .as("未绑定 spkit.crypto.sm4-key 时应快速失败")
+                    .as("未绑定 jevokit.crypto.sm4-key 时应快速失败")
                     .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("spkit.crypto.sm4-key");
+                    .hasMessageContaining("jevokit.crypto.sm4-key");
             assertThatThrownBy(() -> SecurityUtil.rsaEncrypt(PLAIN))
-                    .as("未绑定 spkit.crypto.rsa-private-key 时应快速失败")
+                    .as("未绑定 jevokit.crypto.rsa-private-key 时应快速失败")
                     .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("spkit.crypto.rsa-private-key");
+                    .hasMessageContaining("jevokit.crypto.rsa-private-key");
         });
     }
 
@@ -135,7 +135,7 @@ class JevokitCoreConfigurationTest {
     @DisplayName("crypto 链路：部分绑定时各算法独立生效")
     void partialCryptoConfigOnlyEnablesBoundAlgorithms() {
         runner.withPropertyValues(
-                        "spkit.crypto.aes-key=" + AES_KEY)
+                        "jevokit.crypto.aes-key=" + AES_KEY)
                 .run(context -> {
                     // then：aes 可用
                     assertThat(SecurityUtil.aesDecrypt(SecurityUtil.aesEncrypt(PLAIN)))
@@ -144,7 +144,7 @@ class JevokitCoreConfigurationTest {
                     assertThatThrownBy(() -> SecurityUtil.sm4cbcEncrypt(PLAIN))
                             .as("未绑定的 sm4 应保持快速失败")
                             .isInstanceOf(IllegalStateException.class)
-                            .hasMessageContaining("spkit.crypto.sm4-key");
+                            .hasMessageContaining("jevokit.crypto.sm4-key");
                 });
     }
 
@@ -152,8 +152,8 @@ class JevokitCoreConfigurationTest {
     @DisplayName("宽松键名绑定：camelCase 键名回退到 kebab-case 规范属性")
     void relaxedCamelCaseKeyBinding() {
         runner.withPropertyValues(
-                        "spkit.crypto.rsaPublicKey=" + RSA_PUBLIC_KEY,
-                        "spkit.crypto.rsaPrivateKey=" + RSA_PRIVATE_KEY)
+                        "jevokit.crypto.rsaPublicKey=" + RSA_PUBLIC_KEY,
+                        "jevokit.crypto.rsaPrivateKey=" + RSA_PRIVATE_KEY)
                 .run(context -> {
                     // then：camelCase 源键应绑定到 kebab 规范属性（Spring Boot relaxed binding）
                     CryptoProperties props = context.getBean(CryptoProperties.class);

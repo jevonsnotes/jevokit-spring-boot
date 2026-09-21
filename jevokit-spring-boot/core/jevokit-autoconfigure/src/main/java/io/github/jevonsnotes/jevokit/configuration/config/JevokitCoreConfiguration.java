@@ -20,7 +20,7 @@ import java.util.List;
  * stringPropertiesEditor——收集容器内全部 {@link StringPropertiesSupportChain} 实现（各安全 starter 提供的清洗链）
  * 组成 StringPropertiesEditor，作用于 Spring 属性绑定的字符串进出方向；
  * springUtil——hutool 的静态 Bean 获取器（@ConditionalOnMissingBean 允许应用自备）；
- * cryptoKeyInitializer——容器就绪后把 spkit.crypto.* 配置灌入 SecurityUtil（详见方法注释）。
+ * cryptoKeyInitializer——容器就绪后把 jevokit.crypto.* 配置灌入 SecurityUtil（详见方法注释）。
  */
 @Slf4j
 @Configuration
@@ -50,7 +50,7 @@ public class JevokitCoreConfiguration {
     }
 
     /**
-     * 将 spkit.crypto.* 配置注入 SecurityUtil（原内置默认密钥已移除）。
+     * 将 jevokit.crypto.* 配置注入 SecurityUtil（原内置默认密钥已移除）。
      * 各算法独立生效：未配置的算法对应无参方法在使用时抛 IllegalStateException。
      */
     @Bean

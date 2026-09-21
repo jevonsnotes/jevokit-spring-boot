@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 路径穿越防护配置（spkit.security.path-traversal）：
+ * 路径穿越防护配置（jevokit.security.path-traversal）：
  * enabled 总开关；urlPatterns/urlExcludePatterns 以 Ant 风格路径圈定拦截与豁免的 URL 范围；
  * additionTaintedPatterns 在默认污染表（{@link PathTraversalTaintedList}）之上追加识别正则。
  * <p>注意默认处置模式为 <b>reject</b>（命中即拒绝整条请求），与 SQL 注入/XSS 默认的 clear 相反——
@@ -19,7 +19,7 @@ import java.util.List;
 @RefreshScope
 @ConfigurationProperties(PathTraversalProperties.PT_CONFIG_PREFIX)
 public class PathTraversalProperties {
-    public static final String PT_CONFIG_PREFIX = "spkit.security.path-traversal";
+    public static final String PT_CONFIG_PREFIX = "jevokit.security.path-traversal";
     /** 总开关，默认关闭 */
     private boolean enabled;
     /** 拦截的 URL 范围（Ant 风格），空则不圈定 */

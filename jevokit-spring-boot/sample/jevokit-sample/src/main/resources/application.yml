@@ -9,7 +9,7 @@ jasypt:
     iv-generator-classname: org.jasypt.iv.NoIvGenerator
     bean: jevokitStringEncryptor
     password: ${jasypt.key}
-spkit:
+jevokit:
   # 加解密演示默认密钥（demo 应用开箱即用，非 starter 库内置密钥）
   # 仅用于快速体验，生产环境必须替换为自有密钥；库代码本身不内置任何密钥（未配置时无参 API 抛
   # IllegalStateException，见 SecurityUtil/CryptoProperties）。密钥对为本次演示新生成，与 api.client 那组无关联。

@@ -54,9 +54,9 @@ class JevokitAuditLogConfigurationTest {
     }
 
     @Test
-    @DisplayName("spkit.audit.log.enabled=false：整组装配关闭")
+    @DisplayName("jevokit.audit.log.enabled=false：整组装配关闭")
     void disabledByProperty() {
-        runner.withPropertyValues("spkit.audit.log.enabled=false")
+        runner.withPropertyValues("jevokit.audit.log.enabled=false")
                 .run(context -> {
                     assertThat(context).as("关闭开关后上下文仍应正常启动").hasNotFailed();
                     assertThat(context).as("处理器不应装配").doesNotHaveBean(AuditLogProcessor.class);

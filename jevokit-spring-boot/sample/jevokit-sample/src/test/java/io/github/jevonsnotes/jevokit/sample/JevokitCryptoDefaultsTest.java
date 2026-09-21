@@ -17,7 +17,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * 验证 application.yml 中 spkit.crypto.* 演示默认密钥（demo 应用开箱即用值）：
+ * 验证 application.yml 中 jevokit.crypto.* 演示默认密钥（demo 应用开箱即用值）：
  * <ol>
  *   <li>能被 Spring 配置绑定机制绑定到 {@link CryptoProperties}（Binder，与 @ConfigurationProperties 同机制）；</li>
  *   <li>{@link SecurityUtil} 无参加解密方法使用演示密钥不抛 IllegalStateException，且密文可往返还原。</li>
@@ -26,8 +26,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p>（终验 #6 自 JUnit4 迁 JUnit5 + AssertJ，断言语义逐条保留。）
  */
-@DisplayName("spkit.crypto 演示默认密钥绑定与可用性防线")
-class SpkitCryptoDefaultsTest {
+@DisplayName("jevokit.crypto 演示默认密钥绑定与可用性防线")
+class JevokitCryptoDefaultsTest {
 
     private static CryptoProperties properties;
 
@@ -36,7 +36,7 @@ class SpkitCryptoDefaultsTest {
         List<PropertySource<?>> sources = new YamlPropertySourceLoader()
                 .load("application.yml", new ClassPathResource("application.yml"));
         Binder binder = new Binder(ConfigurationPropertySources.from(sources));
-        properties = binder.bind("spkit.crypto", Bindable.of(CryptoProperties.class)).get();
+        properties = binder.bind("jevokit.crypto", Bindable.of(CryptoProperties.class)).get();
         SecurityUtil.init(properties.getRsaPublicKey(), properties.getRsaPrivateKey(),
                 properties.getAesKey(), properties.getSm4Key());
     }
@@ -44,8 +44,8 @@ class SpkitCryptoDefaultsTest {
     @Test
     @DisplayName("yml 演示密钥经 Spring Binder 绑定成功且长度合规")
     void cryptoDefaultsBoundFromYaml() {
-        assertThat(properties.getRsaPublicKey()).as("spkit.crypto.rsa-public-key 未绑定").isNotNull();
-        assertThat(properties.getRsaPrivateKey()).as("spkit.crypto.rsa-private-key 未绑定").isNotNull();
+        assertThat(properties.getRsaPublicKey()).as("jevokit.crypto.rsa-public-key 未绑定").isNotNull();
+        assertThat(properties.getRsaPrivateKey()).as("jevokit.crypto.rsa-private-key 未绑定").isNotNull();
         assertThat(properties.getAesKey().getBytes())
                 .as("aes-key 应为 16 字节演示密钥")
                 .hasSize(16);
@@ -57,7 +57,7 @@ class SpkitCryptoDefaultsTest {
     @Test
     @DisplayName("演示密钥 AES 往返还原")
     void aesRoundTripWithDefaults() {
-        String plain = "spkit-demo-plain";
+        String plain = "jevokit-demo-plain";
         assertThat(SecurityUtil.aesDecrypt(SecurityUtil.aesEncrypt(plain)))
                 .as("AES 演示密钥往返应还原明文")
                 .isEqualTo(plain);
@@ -66,7 +66,7 @@ class SpkitCryptoDefaultsTest {
     @Test
     @DisplayName("演示密钥 SM4-CBC 往返还原")
     void sm4RoundTripWithDefaults() {
-        String plain = "spkit-demo-plain";
+        String plain = "jevokit-demo-plain";
         assertThat(SecurityUtil.sm4cbcDecrypt(SecurityUtil.sm4cbcEncrypt(plain)))
                 .as("SM4 演示密钥往返应还原明文")
                 .isEqualTo(plain);
@@ -76,7 +76,7 @@ class SpkitCryptoDefaultsTest {
     @DisplayName("演示密钥 RSA 往返还原（私钥加密→公钥解密，证明密钥对真实配对）")
     void rsaRoundTripWithDefaults() {
         // 无参用法方向：私钥加密 → 公钥解密；往返成功证明 yml 中演示密钥对真实配对
-        String plain = "spkit-demo-plain";
+        String plain = "jevokit-demo-plain";
         assertThat(SecurityUtil.rsaDecrypt(SecurityUtil.rsaEncrypt(plain)))
                 .as("RSA 演示密钥对往返应还原明文")
                 .isEqualTo(plain);

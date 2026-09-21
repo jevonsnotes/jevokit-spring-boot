@@ -14,7 +14,7 @@ import java.util.Optional;
  * 动态代码（Groovy/SpEL/JS 脚本等）前做白/黑名单校验。
  * 使用方式：由 {@link io.github.jevonsnotes.jevokit.security.code.inject.config.CodeInjectConfiguration}
  * 注册为 bean 并注入 {@link io.github.jevonsnotes.jevokit.configuration.security.code.inject.CodeInjectProperties}
- * （规则表 spkit.security.code-inject.namespaces），业务侧静态调用 {@link #isSafe(String)} 判定或
+ * （规则表 jevokit.security.code-inject.namespaces），业务侧静态调用 {@link #isSafe(String)} 判定或
  * {@link #errorIfUnsafe(String)} 校验即返回/抛错。
  * <p>判定语义（关键约束）：
  * <ul>
@@ -24,7 +24,7 @@ import java.util.Optional;
  *   <li>命名空间无规则、namespaces 未配置或 val 为空串时视为安全（防御性默认放行——无规则即无校验依据，
  *       不阻断业务）。</li>
  * </ul>
- * 注意：静态方法依赖 Spring 容器完成属性注入后可用；bean 未装配（如 spkit.security.code-inject.enabled=false）
+ * 注意：静态方法依赖 Spring 容器完成属性注入后可用；bean 未装配（如 jevokit.security.code-inject.enabled=false）
  * 时调用会因配置对象为 null 而 NPE，请保持默认开启或确保容器初始化完成后再使用。
  */
 public class CodeInjectUtil {
@@ -34,7 +34,7 @@ public class CodeInjectUtil {
     /**
      * 判断字符串是否为安全形态（判定语义与白/黑名单规则见类注释）。
      *
-     * @param namespace 规则命名空间（spkit.security.code-inject.namespaces 下的键）
+     * @param namespace 规则命名空间（jevokit.security.code-inject.namespaces 下的键）
      * @param val       待判定字符串；空白（null/空串）视为安全（无内容可注入）
      * @return true 安全（含命名空间无规则/未配置 namespaces 的默认放行）；false 不安全
      */

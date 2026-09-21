@@ -26,7 +26,7 @@ import java.util.Map;
  * 组装逻辑——请求头签名、数据 SM2 签名、SM4 加密与响应解密验签。
  * 使用方式：{@code JSRequestExecutor.create(clientId,url,data,R.class).transNo(...).execute((u,b,h)-> http 调用)}；
  * 传输载体由 {@link IRequest} 回调注入（不绑死 HTTP 客户端），execute 前未调用 prepare() 会自动补做。
- * <p>判定与返回语义：终端配置按 clientId 从 spkit.api.client 列表匹配（缺失即抛错 fail-fast）；
+ * <p>判定与返回语义：终端配置按 clientId 从 jevokit.api.client 列表匹配（缺失即抛错 fail-fast）；
  * execute 返回的 {@code JSecureResponse<R>} 已完成解密（view）与反序列化（target），
  * 终端开启 verify 时对响应验签，失败抛 {@link JSecureApiException}——不返回未验签的数据。
  * <p>关键约束：请求头签名与数据签名的密钥均来自终端配置（secretKey/私钥），调用方与服务端须成对登记。

@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
  /**
- * okhttp 配置项（spkit.ok.http.*）。
+ * okhttp 配置项（jevokit.ok.http.*）。
  *
  * <p>除常规超时/连接池外，三个开关直接改变调用方可见行为（详见 OkHttpUtil 类注释）：
  * errorMode 决定异常"抛出还是吞掉返回空串"、httpStatusSensitive 决定非 2xx 是否算错误、
@@ -19,7 +19,7 @@ import java.util.List;
 @Data
 @ConfigurationProperties(prefix = OkhttpProperties.CONFIG_PREFIX)
 public class OkhttpProperties {
-    protected static final String CONFIG_PREFIX = "spkit.ok.http";
+    protected static final String CONFIG_PREFIX = "jevokit.ok.http";
     private Integer connectTimeout = 60;
     private Integer readTimeout = 60;
     private Integer writeTimeout = 60;

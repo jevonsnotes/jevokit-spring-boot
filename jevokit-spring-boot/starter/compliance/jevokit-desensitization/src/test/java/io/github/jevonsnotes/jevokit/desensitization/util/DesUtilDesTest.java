@@ -114,9 +114,9 @@ class DesUtilDesTest {
                 .withBean(JevokitDesensitizationProperties.class, () -> properties)
                 .run(context -> assertThatThrownBy(() ->
                                 DesUtil.des(MOBILE, DstContext.builder().type(DstType.MOBILE).build()))
-                        .as("未配置 spkit.crypto.sm4-key 必须 fail-fast")
+                        .as("未配置 jevokit.crypto.sm4-key 必须 fail-fast")
                         .isInstanceOf(IllegalStateException.class)
-                        .hasMessageContaining("spkit.crypto.sm4-key"));
+                        .hasMessageContaining("jevokit.crypto.sm4-key"));
     }
 
     // ------------------------- desByProperties -------------------------

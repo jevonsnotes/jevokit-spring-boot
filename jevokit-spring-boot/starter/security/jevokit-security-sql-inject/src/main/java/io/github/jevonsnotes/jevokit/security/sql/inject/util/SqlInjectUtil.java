@@ -10,7 +10,7 @@ import io.github.jevonsnotes.jevokit.security.sql.inject.exception.SqlInjectExce
 import java.util.List;
 
 /**
- * SQL 注入检测/清洗工具：按当前请求线程的防护模式（spkit.security.sql-inject.mode）处理入参字符串。
+ * SQL 注入检测/清洗工具：按当前请求线程的防护模式（jevokit.security.sql-inject.mode）处理入参字符串。
  * 由 {@link io.github.jevonsnotes.jevokit.security.sql.inject.chain.SqlInjectStringPropertiesEditChain}
  * 在表单/请求体字符串属性绑定时调用；也可在业务代码中显式调用本工具对任意字符串做同规则校验。
  * <p>命中语义：规则表 = 默认污染表 + addition-tainted-patterns 追加表（合并去重，见

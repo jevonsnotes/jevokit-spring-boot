@@ -3,7 +3,7 @@ package io.github.jevonsnotes.jevokit.configuration.crypto;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * 加解密密钥配置（spkit.crypto.*）。
+ * 加解密密钥配置（jevokit.crypto.*）。
  *
  * <p>替代 SecurityUtil 已移除的内置默认密钥（原内置密钥随源码泄露，视为不可信，禁止再用于新数据）。
  * 未配置的算法，其无参便捷方法（如 {@code SecurityUtil.aesEncrypt(val)}）将抛出
@@ -11,7 +11,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *
  * <p>密钥值请通过环境变量、外部配置文件（如不入库的 application-local.yml）等机制注入，避免提交进仓库。
  */
-@ConfigurationProperties("spkit.crypto")
+@ConfigurationProperties("jevokit.crypto")
 public class CryptoProperties {
 
     /** RSA 公钥（Base64）。建议密钥位数 &ge;2048；仅供演示/自测用途时也勿复用历史泄露密钥 */

@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 审计内容长度限制配置（spkit.audit.log.content-limit.*）：
+ * 审计内容长度限制配置（jevokit.audit.log.content-limit.*）：
  * queryString/requestBody/responseBody 分别约束三类报文的最大记录长度，-1 表示不限制（默认）；
  * 超限行为由 strategy 决定——TRUNC 截断保留前 N 字符（默认），ABORT 放弃记录该段内容。
  */

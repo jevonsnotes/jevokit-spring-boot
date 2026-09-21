@@ -36,7 +36,7 @@ import java.util.Map;
  * 由 jevokit-okhttp-spring-boot-starter 装配为单例 Bean 直接注入；个性化定制走 CustomOkhttpConfiguration
  * Bean 改写底层 Builder，或经 ofProxy(...) 克隆出携带自定义客户端的独立副本（CloneSupport 深拷贝）。
  *
- * <p>三类行为由 spkit.ok.http.* 配置驱动，语义边界务必区分：
+ * <p>三类行为由 jevokit.ok.http.* 配置驱动，语义边界务必区分：
  * <ul>
  *   <li><b>proxy-mode</b>：always 一律走代理客户端；manual 默认直连，需代理时调用 {@link #ofProxy()}
  *       或 {@link #ofProxy(CustomOkhttpProxyConfiguration)} 显式切换；</li>

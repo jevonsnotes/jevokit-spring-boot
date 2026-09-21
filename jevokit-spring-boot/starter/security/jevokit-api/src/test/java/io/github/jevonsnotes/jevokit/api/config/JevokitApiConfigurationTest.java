@@ -48,15 +48,15 @@ class JevokitApiConfigurationTest {
     }
 
     @Test
-    @DisplayName("spkit.api.* 配置绑定生效（access 门 + client 列表）")
+    @DisplayName("jevokit.api.* 配置绑定生效（access 门 + client 列表）")
     void propertiesBoundFromEnvironment() {
         runner.withPropertyValues(
-                        "spkit.api.access.header=X-Token",
-                        "spkit.api.access.tokens[0].path=/demo/**",
-                        "spkit.api.access.tokens[0].token=demo-token",
-                        "spkit.api.client[0].id=runner-client",
-                        "spkit.api.client[0].secret-key=0123456789abcdef",
-                        "spkit.api.client[0].verify=true")
+                        "jevokit.api.access.header=X-Token",
+                        "jevokit.api.access.tokens[0].path=/demo/**",
+                        "jevokit.api.access.tokens[0].token=demo-token",
+                        "jevokit.api.client[0].id=runner-client",
+                        "jevokit.api.client[0].secret-key=0123456789abcdef",
+                        "jevokit.api.client[0].verify=true")
                 .run(context -> {
                     JevokitApiProperties properties =
                             context.getBean(JevokitApiProperties.class);

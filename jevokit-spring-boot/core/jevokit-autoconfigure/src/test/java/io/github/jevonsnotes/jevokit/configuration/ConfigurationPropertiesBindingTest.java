@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>合并断言带阳性对照：先断言已知内建条目出现（证明合并链路活着），
  * 再断言用户新增条目——避免"零命中被当通过"（docs/lessons 检索类教训的同类思路）。
  */
-@DisplayName("spkit.* Properties 绑定")
+@DisplayName("jevokit.* Properties 绑定")
 class ConfigurationPropertiesBindingTest {
 
     @Configuration
@@ -48,7 +48,7 @@ class ConfigurationPropertiesBindingTest {
             .withUserConfiguration(AllPropsConfig.class);
 
     @Nested
-    @DisplayName("CryptoProperties（spkit.crypto）")
+    @DisplayName("CryptoProperties（jevokit.crypto）")
     class Crypto {
 
         @Test
@@ -67,8 +67,8 @@ class ConfigurationPropertiesBindingTest {
         @DisplayName("kebab-case 键绑定")
         void kebabBinding() {
             runner.withPropertyValues(
-                            "spkit.crypto.aes-key=aes-0123456789ab",
-                            "spkit.crypto.sm4-key=sm4-0123456789a")
+                            "jevokit.crypto.aes-key=aes-0123456789ab",
+                            "jevokit.crypto.sm4-key=sm4-0123456789a")
                     .run(context -> {
                         CryptoProperties props = context.getBean(CryptoProperties.class);
                         assertThat(props.getAesKey()).as("aes-key 应绑定").isEqualTo("aes-0123456789ab");
@@ -78,7 +78,7 @@ class ConfigurationPropertiesBindingTest {
     }
 
     @Nested
-    @DisplayName("AuditLogProperties（spkit.audit.log）")
+    @DisplayName("AuditLogProperties（jevokit.audit.log）")
     class AuditLog {
 
         @Test
@@ -105,14 +105,14 @@ class ConfigurationPropertiesBindingTest {
         @DisplayName("嵌套属性绑定：开关、持久化模式、限长、事件名映射、HTTP 方法维度的 pattern")
         void fullBinding() {
             runner.withPropertyValues(
-                            "spkit.audit.log.enabled=true",
-                            "spkit.audit.log.enabled-mdc=true",
-                            "spkit.audit.log.persistent.mode=DB",
-                            "spkit.audit.log.persistent.db-migrate-period=MONTH",
-                            "spkit.audit.log.content-limit.query-string=100",
-                            "spkit.audit.log.content-limit.strategy=ABORT",
-                            "spkit.audit.log.event-types.name-mapper.QUERY=查询",
-                            "spkit.audit.log.event-types.patterns[GET][/api/user/**]=id,name")
+                            "jevokit.audit.log.enabled=true",
+                            "jevokit.audit.log.enabled-mdc=true",
+                            "jevokit.audit.log.persistent.mode=DB",
+                            "jevokit.audit.log.persistent.db-migrate-period=MONTH",
+                            "jevokit.audit.log.content-limit.query-string=100",
+                            "jevokit.audit.log.content-limit.strategy=ABORT",
+                            "jevokit.audit.log.event-types.name-mapper.QUERY=查询",
+                            "jevokit.audit.log.event-types.patterns[GET][/api/user/**]=id,name")
                     .run(context -> {
                         AuditLogProperties props = context.getBean(AuditLogProperties.class);
                         assertThat(props.isEnabled()).as("enabled 应绑定").isTrue();
@@ -137,7 +137,7 @@ class ConfigurationPropertiesBindingTest {
     }
 
     @Nested
-    @DisplayName("XssProperties（spkit.security.xss）")
+    @DisplayName("XssProperties（jevokit.security.xss）")
     class Xss {
 
         @Test
@@ -158,12 +158,12 @@ class ConfigurationPropertiesBindingTest {
         @DisplayName("绑定：开关/模式/url 清单/追加正则，getAllTaintedPatterns 返回用户追加的并集副本")
         void bindingAndMergedPatterns() {
             runner.withPropertyValues(
-                            "spkit.security.xss.enabled=true",
-                            "spkit.security.xss.mode=escape",
-                            "spkit.security.xss.ignore-response=false",
-                            "spkit.security.xss.url-patterns[0]=/api/*",
-                            "spkit.security.xss.url-patterns[1]=/web/*",
-                            "spkit.security.xss.addition-tainted-patterns[0]=script-tag")
+                            "jevokit.security.xss.enabled=true",
+                            "jevokit.security.xss.mode=escape",
+                            "jevokit.security.xss.ignore-response=false",
+                            "jevokit.security.xss.url-patterns[0]=/api/*",
+                            "jevokit.security.xss.url-patterns[1]=/web/*",
+                            "jevokit.security.xss.addition-tainted-patterns[0]=script-tag")
                     .run(context -> {
                         XssProperties props = context.getBean(XssProperties.class);
                         assertThat(props.isEnabled()).as("enabled 应绑定").isTrue();
@@ -184,15 +184,15 @@ class ConfigurationPropertiesBindingTest {
     }
 
     @Nested
-    @DisplayName("SqlInjectProperties（spkit.security.sql-inject）")
+    @DisplayName("SqlInjectProperties（jevokit.security.sql-inject）")
     class SqlInject {
 
         @Test
         @DisplayName("宽松键名：camelCase 前缀回退到 kebab-case 规范前缀")
         void relaxedPrefixBinding() {
             runner.withPropertyValues(
-                            "spkit.security.sqlInject.enabled=true",
-                            "spkit.security.sqlInject.mode=reject")
+                            "jevokit.security.sqlInject.enabled=true",
+                            "jevokit.security.sqlInject.mode=reject")
                     .run(context -> {
                         SqlInjectProperties props = context.getBean(SqlInjectProperties.class);
                         assertThat(props.isEnabled())
@@ -205,7 +205,7 @@ class ConfigurationPropertiesBindingTest {
         @DisplayName("getAllTaintedPatterns：内建正则（阳性对照）+ 用户追加的并集")
         void mergedPatternsContainBuiltins() {
             runner.withPropertyValues(
-                            "spkit.security.sql-inject.addition-tainted-patterns[0]=my-extra-rule")
+                            "jevokit.security.sql-inject.addition-tainted-patterns[0]=my-extra-rule")
                     .run(context -> {
                         SqlInjectProperties props = context.getBean(SqlInjectProperties.class);
                         List<String> merged = props.getAllTaintedPatterns();
@@ -219,7 +219,7 @@ class ConfigurationPropertiesBindingTest {
     }
 
     @Nested
-    @DisplayName("PathTraversalProperties（spkit.security.path-traversal）")
+    @DisplayName("PathTraversalProperties（jevokit.security.path-traversal）")
     class PathTraversal {
 
         @Test
@@ -236,8 +236,8 @@ class ConfigurationPropertiesBindingTest {
         @DisplayName("绑定：宽松 camelCase 前缀 + 追加正则并入内建（阳性对照 ../）")
         void bindingAndMerge() {
             runner.withPropertyValues(
-                            "spkit.security.pathTraversal.enabled=true",
-                            "spkit.security.path-traversal.addition-tainted-patterns[0]=my-rule")
+                            "jevokit.security.pathTraversal.enabled=true",
+                            "jevokit.security.path-traversal.addition-tainted-patterns[0]=my-rule")
                     .run(context -> {
                         PathTraversalProperties props = context.getBean(PathTraversalProperties.class);
                         assertThat(props.isEnabled())
@@ -251,7 +251,7 @@ class ConfigurationPropertiesBindingTest {
     }
 
     @Nested
-    @DisplayName("CodeInjectProperties（spkit.security.code-inject）")
+    @DisplayName("CodeInjectProperties（jevokit.security.code-inject）")
     class CodeInject {
 
         @Test
@@ -269,10 +269,10 @@ class ConfigurationPropertiesBindingTest {
         @DisplayName("绑定：namespaces Map（default 命名空间的正则清单）与 negative 开关")
         void binding() {
             runner.withPropertyValues(
-                            "spkit.security.code-inject.enabled=true",
-                            "spkit.security.code-inject.negative=true",
-                            "spkit.security.code-inject.namespaces.default[0]=java.lang.Runtime",
-                            "spkit.security.code-inject.namespaces.default[1]=javax.script.*")
+                            "jevokit.security.code-inject.enabled=true",
+                            "jevokit.security.code-inject.negative=true",
+                            "jevokit.security.code-inject.namespaces.default[0]=java.lang.Runtime",
+                            "jevokit.security.code-inject.namespaces.default[1]=javax.script.*")
                     .run(context -> {
                         CodeInjectProperties props = context.getBean(CodeInjectProperties.class);
                         assertThat(props.isEnabled()).as("enabled 应绑定").isTrue();

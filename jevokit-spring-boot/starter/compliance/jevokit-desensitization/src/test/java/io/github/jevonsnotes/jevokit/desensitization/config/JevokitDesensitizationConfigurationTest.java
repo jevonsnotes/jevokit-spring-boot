@@ -44,15 +44,15 @@ class JevokitDesensitizationConfigurationTest {
     }
 
     @Test
-    @DisplayName("spkit.desensitization.* 配置经 @ConfigurationProperties 绑定生效")
+    @DisplayName("jevokit.desensitization.* 配置经 @ConfigurationProperties 绑定生效")
     void propertiesBoundFromEnvironment() {
         runner.withPropertyValues(
-                        "spkit.desensitization.algorithm.view=SM4",
-                        "spkit.desensitization.algorithm.log=MIXED",
-                        "spkit.desensitization.power-check-period=ENCRYPT",
-                        "spkit.desensitization.ignore-pattern[0]=secretField",
-                        "spkit.desensitization.prop-pattern.lv0.mobile[0]=mobile",
-                        "spkit.desensitization.prop-pattern.lv0.mobile[1]=phone")
+                        "jevokit.desensitization.algorithm.view=SM4",
+                        "jevokit.desensitization.algorithm.log=MIXED",
+                        "jevokit.desensitization.power-check-period=ENCRYPT",
+                        "jevokit.desensitization.ignore-pattern[0]=secretField",
+                        "jevokit.desensitization.prop-pattern.lv0.mobile[0]=mobile",
+                        "jevokit.desensitization.prop-pattern.lv0.mobile[1]=phone")
                 .run(context -> {
                     JevokitDesensitizationProperties properties =
                             context.getBean(JevokitDesensitizationProperties.class);

@@ -24,7 +24,7 @@ public class ResponseXssHandler implements ResponseBodyAdvice {
     private final XssCleaner xssCleaner;
 
     /**
-     * 当前请求防护开启且未忽略响应（spkit.security.xss.ignore-response=false）时启用响应清洗。
+     * 当前请求防护开启且未忽略响应（jevokit.security.xss.ignore-response=false）时启用响应清洗。
      *
      * @return true 表示响应体走本处理器的清洗逻辑
      */

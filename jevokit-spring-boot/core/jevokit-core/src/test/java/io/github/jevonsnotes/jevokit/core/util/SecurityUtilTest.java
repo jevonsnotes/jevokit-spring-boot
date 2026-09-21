@@ -103,11 +103,11 @@ class SecurityUtilTest {
             assertThatThrownBy(() -> SecurityUtil.aesEncrypt(PLAIN))
                     .as("未注入 aes-key 时加密应快速失败")
                     .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("spkit.crypto.aes-key");
+                    .hasMessageContaining("jevokit.crypto.aes-key");
             assertThatThrownBy(() -> SecurityUtil.aesDecrypt("any"))
                     .as("未注入 aes-key 时解密应快速失败")
                     .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("spkit.crypto.aes-key");
+                    .hasMessageContaining("jevokit.crypto.aes-key");
         }
 
         @Test
@@ -119,7 +119,7 @@ class SecurityUtilTest {
             assertThatThrownBy(() -> SecurityUtil.aesEncrypt(PLAIN))
                     .as("空白参数不应注入密钥")
                     .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("spkit.crypto.aes-key");
+                    .hasMessageContaining("jevokit.crypto.aes-key");
             // and：sm4 已注入可用
             String cipher = SecurityUtil.sm4cbcEncrypt(PLAIN);
             assertThat(SecurityUtil.sm4cbcDecrypt(cipher)).as("sm4 应已注入可用").isEqualTo(PLAIN);
@@ -185,11 +185,11 @@ class SecurityUtilTest {
             assertThatThrownBy(() -> SecurityUtil.sm4cbcEncrypt(PLAIN))
                     .as("未注入 sm4-key 时加密应快速失败")
                     .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("spkit.crypto.sm4-key");
+                    .hasMessageContaining("jevokit.crypto.sm4-key");
             assertThatThrownBy(() -> SecurityUtil.sm4cbcDecrypt("any"))
                     .as("未注入 sm4-key 时解密应快速失败")
                     .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("spkit.crypto.sm4-key");
+                    .hasMessageContaining("jevokit.crypto.sm4-key");
         }
 
         @Test
@@ -258,7 +258,7 @@ class SecurityUtilTest {
             assertThatThrownBy(() -> SecurityUtil.rsaEncrypt(PLAIN))
                     .as("未注入 rsa-private-key 时加密应快速失败")
                     .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("spkit.crypto.rsa-private-key");
+                    .hasMessageContaining("jevokit.crypto.rsa-private-key");
 
             // given：重置后仅注入私钥（公钥残留需一并清除）
             setStaticField("rsaPublicKey", null);
@@ -268,7 +268,7 @@ class SecurityUtilTest {
             assertThatThrownBy(() -> SecurityUtil.rsaDecrypt("any"))
                     .as("未注入 rsa-public-key 时解密应快速失败")
                     .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("spkit.crypto.rsa-public-key");
+                    .hasMessageContaining("jevokit.crypto.rsa-public-key");
         }
 
         @Test

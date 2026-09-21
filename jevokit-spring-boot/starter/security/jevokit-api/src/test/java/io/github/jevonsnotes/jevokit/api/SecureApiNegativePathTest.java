@@ -53,19 +53,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Import({JevokitApiConfiguration.class, RefreshAutoConfiguration.class, SecureApiNegativePathTest.EchoController.class})
 @TestPropertySource(properties = {
         // ---- 访问令牌门（拦截器路径级）----
-        "spkit.api.access.header=X-Access-Token",
-        "spkit.api.access.tokens[0].path=/token-protected/**",
-        "spkit.api.access.tokens[0].token=valid-token",
+        "jevokit.api.access.header=X-Access-Token",
+        "jevokit.api.access.tokens[0].path=/token-protected/**",
+        "jevokit.api.access.tokens[0].token=valid-token",
         // ---- 签名管线客户端（verify/prevent-replay 全开，负路径才可达）----
-        "spkit.api.client[0].id=neg-test-client",
-        "spkit.api.client[0].secret-key=0123456789abcdef",
+        "jevokit.api.client[0].id=neg-test-client",
+        "jevokit.api.client[0].secret-key=0123456789abcdef",
         // 演示 SM2 密钥对（与 sample application.yml 同源，仅用于测试）
-        "spkit.api.client[0].private-key=MIGTAgEAMBMGByqGSM49AgEGCCqBHM9VAYItBHkwdwIBAQQgk5B6bcSXNwvtfd6nufsDHEPOu8N2hHKJMBW5blZP2eSgCgYIKoEcz1UBgi2hRANCAASxO58/zvEseRlMZtRlojzn7m4jAaZPTDSOalPCSk3nnGW0GmEu2ZhfWDNH+Nq8wA6BLodb2gwI9NF+F1Mp3p9R",
-        "spkit.api.client[0].public-key=MFkwEwYHKoZIzj0CAQYIKoEcz1UBgi0DQgAEsTufP87xLHkZTGbUZaI85+5uIwGmT0w0jmpTwkpN55xltBphLtmYX1gzR/javMAOgS6HW9oMCPTRfhdTKd6fUQ==",
-        "spkit.api.client[0].verify=true",
-        "spkit.api.client[0].prevent-replay=true",
-        "spkit.api.client[0].decrypt=true",
-        "spkit.api.client[0].encrypt=true",
+        "jevokit.api.client[0].private-key=MIGTAgEAMBMGByqGSM49AgEGCCqBHM9VAYItBHkwdwIBAQQgk5B6bcSXNwvtfd6nufsDHEPOu8N2hHKJMBW5blZP2eSgCgYIKoEcz1UBgi2hRANCAASxO58/zvEseRlMZtRlojzn7m4jAaZPTDSOalPCSk3nnGW0GmEu2ZhfWDNH+Nq8wA6BLodb2gwI9NF+F1Mp3p9R",
+        "jevokit.api.client[0].public-key=MFkwEwYHKoZIzj0CAQYIKoEcz1UBgi0DQgAEsTufP87xLHkZTGbUZaI85+5uIwGmT0w0jmpTwkpN55xltBphLtmYX1gzR/javMAOgS6HW9oMCPTRfhdTKd6fUQ==",
+        "jevokit.api.client[0].verify=true",
+        "jevokit.api.client[0].prevent-replay=true",
+        "jevokit.api.client[0].decrypt=true",
+        "jevokit.api.client[0].encrypt=true",
 })
 @DisplayName("JSecureApi 负路径切片")
 class SecureApiNegativePathTest {

@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 代码注入识别配置（spkit.security.code-inject）：按命名空间组织的正则规则集，供 CodeInjectUtil 判定内容安全性。
+ * 代码注入识别配置（jevokit.security.code-inject）：按命名空间组织的正则规则集，供 CodeInjectUtil 判定内容安全性。
  * <p>namespaces 为"命名空间 → 正则列表"的映射，名为 default 的命名空间（{@link #DEFAULT_PATTERNS_NAMESPACE}）
  * 为缺省规则集；enabled 总开关；negative 反转判定极性（见字段注释）。
  * <p>@RefreshScope 支持配置中心热刷新规则。
@@ -17,7 +17,7 @@ import java.util.Map;
 @RefreshScope
 @ConfigurationProperties(CodeInjectProperties.CONFIG_PREFIX)
 public class CodeInjectProperties {
-    public static final String CONFIG_PREFIX = "spkit.security.code-inject";
+    public static final String CONFIG_PREFIX = "jevokit.security.code-inject";
     public static final String DEFAULT_PATTERNS_NAMESPACE = "default";
     /** 命名空间到正则规则集的映射，default 为缺省命名空间 */
     private Map<String,List<String>> namespaces;

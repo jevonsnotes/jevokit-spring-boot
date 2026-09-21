@@ -8,7 +8,7 @@ import java.util.List;
  * 脱敏权限判定 SPI：决定"当前用户 + 敏感级别"能否查看明文（脱敏体系唯一的放行闸门）。
  * 使用方式：由 {@code JevokitDesensitizationConfiguration} 以 @ConditionalOnMissingBean 注册默认实现，
  * 业务实现本接口注册为 bean 即可替换；典型实现从安全上下文取当前用户权限代码，与
- * spkit.desensitization.level-power-key 映射出的 powerKey 比对。
+ * jevokit.desensitization.level-power-key 映射出的 powerKey 比对。
  * <p>判定与返回语义：true = 允许查看该级别明文（ENCRYPT 档出口放行原文 / DECRYPT 档解密还原）；
  * false = 保持脱敏。默认实现恒返回 false——不放行任何明文（安全默认，宁严勿漏）。
  */

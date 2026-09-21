@@ -57,7 +57,7 @@ public class JevokitNoGenAutoInitDB implements ApplicationRunner {
     */
     private void checkAccessToken(){
         if(properties.isEnableApi() && StrUtil.isEmpty(properties.getAccessToken())){
-            log.warn("单号服务API访问密钥未配置,建议配置 spkit.nogen.access-token！");
+            log.warn("单号服务API访问密钥未配置,建议配置 jevokit.nogen.access-token！");
         }
     }
 

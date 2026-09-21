@@ -13,7 +13,7 @@ import io.github.jevonsnotes.jevokit.security.sql.inject.handler.RequestBodySqlI
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * SqlInjectConfiguration 装配条件：spkit.security.sql-inject.enabled 开关切换 bean 存在性。
+ * SqlInjectConfiguration 装配条件：jevokit.security.sql-inject.enabled 开关切换 bean 存在性。
  */
 class SqlInjectConfigurationTest {
 
@@ -34,16 +34,16 @@ class SqlInjectConfigurationTest {
     }
 
     @Test
-    @DisplayName("spkit.security.sql-inject.enabled=true：全部 bean 装配")
+    @DisplayName("jevokit.security.sql-inject.enabled=true：全部 bean 装配")
     void beansExistWhenEnabled() {
-        runner.withPropertyValues("spkit.security.sql-inject.enabled=true").run(context ->
+        runner.withPropertyValues("jevokit.security.sql-inject.enabled=true").run(context ->
                 assertThat(context).as("显式开启应装配 RequestBodySqlInjectHandler").hasSingleBean(RequestBodySqlInjectHandler.class));
     }
 
     @Test
-    @DisplayName("spkit.security.sql-inject.enabled=false：全部 bean 不装配")
+    @DisplayName("jevokit.security.sql-inject.enabled=false：全部 bean 不装配")
     void beansAbsentWhenDisabled() {
-        runner.withPropertyValues("spkit.security.sql-inject.enabled=false").run(context -> {
+        runner.withPropertyValues("jevokit.security.sql-inject.enabled=false").run(context -> {
             assertThat(context).as("关闭后不得装配 RequestBodySqlInjectHandler").doesNotHaveBean(RequestBodySqlInjectHandler.class);
             assertThat(context).as("关闭后不得装配 FormSqlInjectHandler").doesNotHaveBean(FormSqlInjectHandler.class);
             assertThat(context).as("关闭后不得装配 SqlInjectStringPropertiesEditChain").doesNotHaveBean(SqlInjectStringPropertiesEditChain.class);
