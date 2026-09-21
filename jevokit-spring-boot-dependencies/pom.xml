@@ -11,7 +11,7 @@
     <groupId>io.github.jevonsnotes</groupId>
     <artifactId>jevokit-dependencies</artifactId>
     <name>jevokit-dependencies</name>
-    <version>3.5.1.0</version>
+    <version>3.5.1.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <!-- Central 发布元数据：BOM 的 parent 是 spring-boot-starter-parent，继承的是 Spring 官方
