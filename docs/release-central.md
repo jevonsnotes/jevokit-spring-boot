@@ -20,16 +20,24 @@
 # 第一步：BOM（独立 reactor，先 install 到本地再发布）
 cd jevokit-spring-boot-dependencies
 mvn -Prelease clean install            # 干跑校验：pom 签名产出即可
-mvn -Prelease clean deploy             # 真发布（发布到 Central 门户，需在 portal 手动或自动 publish）
+mvn -Prelease clean deploy             # 真发布（上传 deployment，等 VALIDATED）
+
+# 【必等半步】去 Portal 对该 deployment 点 Publish，并确认 repo1 可解析（HTTP 200）后才能走第二步：
+curl -s -o /dev/null -w "%{http_code}" https://repo1.maven.org/maven2/io/github/jevonsnotes/jevokit-dependencies/<版本>/jevokit-dependencies-<版本>.pom
+# 主 bundle 校验时会在线解析 parent 的 BOM import，BOM 未真正入仓 → 整包 FAILED（2026-09-21 实测踩坑）
 
 # 第二步：parent + 全部库模块（在 jevokit-spring-boot 聚合根）
 cd ../jevokit-spring-boot
-mvn -Prelease clean deploy
+mvn -Prelease clean deploy -pl '!sample/jevokit-sample'   # sample 的 E2E 依赖本机 Redis，发布时直接排除（其本就不入 bundle）
 ```
 
 注意：
 - `-Prelease` 才激活 gpg 签名 + central-publishing 插件；日常构建（无 profile）零签名零发布开销
-- sample 模块 `maven.deploy.skip=true`，deploy 时自动跳过（central-publishing 同样尊重该跳过）
+- central-publishing 插件必须配 `<extensions>true</extensions>`（两 reactor 已配）：缺了它 publish 目标不绑定 deploy 生命周期，**BUILD SUCCESS 但静默零上传**
+- 日志必须出现 `publish (injected-central-publishing)` 字样，才算真的走了发布；deploy 结束时应有 `Uploaded bundle successfully ... deploymentId: ...`
+- 校验失败时 CLI 只有 `failed while publishing` 一句话，**具体错误清单只在 Portal deployment 页面**（如 `Project name is missing`），先看页面再对症修，别盲试
+- sample 模块 `maven.deploy.skip=true`，deploy 时自动跳过（central-publishing 同样尊重该跳过）；但它的测试依赖本机 Redis，发布机无 Redis 时用 `-pl '!sample/jevokit-sample'` 排除
+- 失败重试会产生多个 deployment：不完整/失败的记得在 Portal Drop，只 Publish 最终完整的那个
 - 首次发布若 Central 校验慢，去 https://central.sonatype.com 的 Publishing Portal 看构件状态
 
 ## 版本翻转（每次发版）

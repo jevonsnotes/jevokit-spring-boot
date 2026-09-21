@@ -48,6 +48,7 @@
 | 包名迁移翻转 FQCN 字母序——@ConditionalOnBean 跨第三方 Bean 静默不装配 | 其他（装配顺序的隐式依赖） | 已修复·已沉淀 | [bug-package-rename-fqcn-sort-flip-20260917.md](bug-package-rename-fqcn-sort-flip-20260917.md) |
 | 测试报告编码不一致：Surefire XML UTF-8 声明与 JVM 平台默认 GBK 冲突（Windows + JDK17） | 契约不一致 | 已修复·已沉淀 | [bug-surefire-report-encoding-gbk-mismatch-20260918.md](bug-surefire-report-encoding-gbk-mismatch-20260918.md) |
 | JSecureContext 三个 ThreadLocal 请求结束后不清理——线程池复用串终端/串交易号 | 异常路径未处理 | 已修复·已沉淀 | [bug-jsecure-context-threadlocal-leak-20260920.md](bug-jsecure-context-threadlocal-leak-20260920.md) |
+| Maven Central 首发五连障：插件静默跳过/token 失效/两步序少半步/模块缺 name/旧 BOM 假绿 | 契约不一致 | 已修复·已沉淀 | [bug-central-release-pipeline-20260921.md](bug-central-release-pipeline-20260921.md) |
 
 ## 单条目骨架
 
