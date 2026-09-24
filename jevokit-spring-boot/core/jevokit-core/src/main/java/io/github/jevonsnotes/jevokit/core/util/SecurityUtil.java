@@ -30,7 +30,8 @@ import java.util.Set;
  * <p>使用方式：启动阶段先经 {@link #init(String, String, String, String)} 注入密钥（通常由装配层读 jevokit.crypto.* 配置后调用），
  * 之后直接使用各无参重载（如 {@link #aesEncrypt(String)}、{@link #sm4cbcDecrypt(String)}、{@link #rsaEncrypt(String)}）；
  * 显式传密钥的重载免配置，适合多租户等密钥不固定的场景。
- * <p>关键约束：未注入密钥的算法调用无参重载会抛 IllegalStateException（消息含具体配置键）；
+ * <p>关键约束：未注入密钥的算法调用无参重载会抛 IllegalStateException（消息含具体配置键），
+ * 外部模块读取注入密钥须走 {@link #getSm4Key()} 等统一入口（同为 requireKey 语义，勿直读 Spring 配置）；
  * RSA 无参方向为"私钥加密、公钥解密"（保持既有签名语义，非标准方向），显式密钥重载则是标准方向；
  * {@link #filterStr(Object, CallBackP3R)} 会原地递归修改对象树，遇到不可变集合/Map 时告警跳过该字段而非中断。
  */
@@ -78,6 +79,19 @@ public class SecurityUtil {
         if (StrUtil.isNotBlank(sm4Key)) {
             SecurityUtil.sm4Key = sm4Key.trim();
         }
+    }
+
+    /**
+     * 获取注入的 SM4 密钥（统一密钥读取入口）。
+     * <p>密钥体系唯一入口语义：外部模块（如脱敏 DesUtil）需要读取 jevokit.crypto.sm4-key 时，
+     * 不应绕开本类直读 Spring 配置，而应经本方法取值——保证"缺失即抛 ISE（消息含配置键）"的行为与
+     * 各无参重载一致，避免出现"直读返回 null、入口抛 ISE"的双轨行为。
+     *
+     * @return 注入的 SM4 密钥（经 init trim 后的原值）
+     * @throws IllegalStateException 密钥未注入（未配置 jevokit.crypto.sm4-key）时抛出，消息含该配置键
+     */
+    public static String getSm4Key() {
+        return requireKey(sm4Key, CFG_PREFIX + "sm4-key");
     }
 
     /**

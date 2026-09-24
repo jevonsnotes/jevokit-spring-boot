@@ -33,7 +33,8 @@ import java.util.regex.Pattern;
  * <ul>
  *   <li>幂等：已带 {@code @DST} 密文前缀的值直接跳过，不二次脱敏；</li>
  *   <li>算法选择：视图/日志两条链路独立取配置（{@link #desByProcessTypeWrap} 切换 LOG 档），
- *       未配置时降级 BASIC；SM4 密钥取 jevokit.crypto.sm4-key，缺失 fail-fast；</li>
+ *       未配置时降级 BASIC；SM4 密钥经统一入口 {@link SecurityUtil#getSm4Key()} 取
+ *       jevokit.crypto.sm4-key（缺失 fail-fast，与其他 crypto API 行为一致）；</li>
  *   <li>权限：DECRYPT 档（默认）在 {@link #decrypt(String, boolean)} 按密文内嵌级别校验
  *       （DesHelper.checkPower），无权限抛异常拒绝还原；ENCRYPT 档在脱敏出口校验，有权限直接放行明文；</li>
  *   <li>容错：BASIC 掩码对不识别的格式（如非三地手机号）原样返回——宁漏脱敏不阻断业务；
@@ -212,15 +213,13 @@ public class DesUtil {
     }
 
     /**
-     * 脱敏 SM4 密钥（显式 key 化：库级内置密钥已移除，见 jevokit.crypto.sm4-key）
+     * 取 SM4 密钥（统一密钥入口：SecurityUtil.getSm4Key，与各无参 API 同为 requireKey 语义，
+     * 不再绕开 SecurityUtil 直读 jevokit.crypto.sm4-key 配置）
      * @return SM4 密钥
+     * @throws IllegalStateException jevokit.crypto.sm4-key 未注入时抛出（消息含该配置键）
      */
     private static String sm4Key() {
-        String key = SpringUtil.getProperty("jevokit.crypto.sm4-key");
-        if (StrUtil.isBlank(key)) {
-            throw new IllegalStateException("crypto keys not configured: jevokit.crypto.sm4-key");
-        }
-        return key;
+        return SecurityUtil.getSm4Key();
     }
 
     /**

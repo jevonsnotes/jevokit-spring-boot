@@ -21,8 +21,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * {@link JevokitCoreConfiguration} 装配测试（ApplicationContextRunner，starter 项目惯例）：
- * crypto 属性绑定 → {@link SecurityUtil} 注入链路、无绑定时快速失败、宽松键名绑定、
- * SpringUtil 的 ConditionalOnMissingBean 回退、StringPropertiesEditor 装配。
+ * crypto 属性绑定 → {@link SecurityUtil} 注入链路、startup-check 启动校验（默认拦缺失键/关闭后延迟失败）、
+ * 宽松键名绑定、SpringUtil 的 ConditionalOnMissingBean 回退、StringPropertiesEditor 装配。
  *
  * <p>SecurityUtil 为静态有状态：每条用例前后反射重置密钥字段，
  * 避免"先跑绑定用例再跑未绑定用例"时被污染（上下文关闭不会回收已注入的静态密钥）。
@@ -71,11 +71,11 @@ class JevokitCoreConfigurationTest {
     }
 
     @Test
-    @DisplayName("装配基础：三个 Bean 均注册，CryptoProperties 未配置时字段为 null")
+    @DisplayName("装配基础：三个 Bean 均注册；startup-check=false 时未配置密钥不拦启动（字段为 null）")
     void registersCoreBeans() {
-        runner.run(context -> {
+        runner.withPropertyValues("jevokit.crypto.startup-check=false").run(context -> {
             // then
-            assertThat(context).as("上下文应正常启动").hasNotFailed();
+            assertThat(context).as("startup-check 关闭时上下文应正常启动").hasNotFailed();
             assertThat(context).as("应注册 StringPropertiesEditor")
                     .hasSingleBean(StringPropertiesEditor.class);
             assertThat(context).as("应注册 SpringUtil")
@@ -110,10 +110,10 @@ class JevokitCoreConfigurationTest {
     }
 
     @Test
-    @DisplayName("crypto 链路：不绑定任何配置时无参方法抛 IllegalStateException 并指明配置键")
+    @DisplayName("crypto 链路：startup-check=false 时不拦启动，无参方法抛 ISE 并指明配置键（延迟失败）")
     void withoutCryptoConfigSecurityUtilFailsFast() {
-        runner.run(context -> {
-            // given：上下文正常启动（InitializingBean 对全 null 配置是安全的）
+        runner.withPropertyValues("jevokit.crypto.startup-check=false").run(context -> {
+            // given：关闭启动校验后上下文正常启动（与开关引入前的现状一致）
             assertThat(context).hasNotFailed();
             // then
             assertThatThrownBy(() -> SecurityUtil.aesEncrypt(PLAIN))
@@ -132,9 +132,10 @@ class JevokitCoreConfigurationTest {
     }
 
     @Test
-    @DisplayName("crypto 链路：部分绑定时各算法独立生效")
+    @DisplayName("crypto 链路：startup-check=false 下部分绑定时各算法独立生效")
     void partialCryptoConfigOnlyEnablesBoundAlgorithms() {
         runner.withPropertyValues(
+                        "jevokit.crypto.startup-check=false",
                         "jevokit.crypto.aes-key=" + AES_KEY)
                 .run(context -> {
                     // then：aes 可用
@@ -152,6 +153,7 @@ class JevokitCoreConfigurationTest {
     @DisplayName("宽松键名绑定：camelCase 键名回退到 kebab-case 规范属性")
     void relaxedCamelCaseKeyBinding() {
         runner.withPropertyValues(
+                        "jevokit.crypto.startup-check=false",
                         "jevokit.crypto.rsaPublicKey=" + RSA_PUBLIC_KEY,
                         "jevokit.crypto.rsaPrivateKey=" + RSA_PRIVATE_KEY)
                 .run(context -> {
@@ -165,11 +167,78 @@ class JevokitCoreConfigurationTest {
                 });
     }
 
+    // ------------------------- startup-check 启动校验 -------------------------
+
+    @Test
+    @DisplayName("startup-check 默认开启：四密钥全缺 → 启动失败，消息一次性列出全部缺失键与关闭方式")
+    void startupCheckFailsWhenAllKeysMissing() {
+        runner.run(context -> {
+            // then：默认 startup-check=true，无任何密钥 → 启动失败
+            assertThat(context).as("缺全部密钥时默认应启动失败").hasFailed();
+            String trace = stackTraceOf(context.getStartupFailure());
+            assertThat(context.getStartupFailure())
+                    .as("根因应为启动校验的 IllegalStateException")
+                    .hasRootCauseInstanceOf(IllegalStateException.class);
+            // 异常消息含全部四个缺失键（一次报全，不挤牙膏）并提示关闭方式
+            assertThat(trace)
+                    .contains("jevokit.crypto.rsa-public-key")
+                    .contains("jevokit.crypto.rsa-private-key")
+                    .contains("jevokit.crypto.aes-key")
+                    .contains("jevokit.crypto.sm4-key")
+                    .contains("jevokit.crypto.startup-check=false");
+        });
+    }
+
+    @Test
+    @DisplayName("startup-check 部分缺键：消息只列缺失的键，已配置的键不出现")
+    void startupCheckListsOnlyMissingKeys() {
+        runner.withPropertyValues(
+                        "jevokit.crypto.rsa-public-key=" + RSA_PUBLIC_KEY,
+                        "jevokit.crypto.rsa-private-key=" + RSA_PRIVATE_KEY)
+                .run(context -> {
+                    // then
+                    assertThat(context).as("部分缺键时默认应启动失败").hasFailed();
+                    assertThat(context.getStartupFailure())
+                            .as("根因应为启动校验的 IllegalStateException")
+                            .hasRootCauseInstanceOf(IllegalStateException.class);
+                    assertThat(stackTraceOf(context.getStartupFailure()))
+                            .as("缺失的 aes/sm4 键应一次报全，已配置的 rsa 键不出现在缺失清单")
+                            .contains("jevokit.crypto.aes-key", "jevokit.crypto.sm4-key")
+                            .doesNotContain("rsa-public-key", "rsa-private-key");
+                });
+    }
+
+    @Test
+    @DisplayName("startup-check=false：缺密钥不拦启动，保持延迟失败（现状行为）")
+    void startupCheckDisabledSkipsStartupFailure() {
+        runner.withPropertyValues("jevokit.crypto.startup-check=false").run(context -> {
+            // then：开关关闭，任一密钥缺失都不拦启动
+            assertThat(context).as("关闭校验后应正常启动").hasNotFailed();
+            // and：失败延迟到首次使用（requireKey 语义）
+            assertThatThrownBy(() -> SecurityUtil.sm4cbcEncrypt(PLAIN))
+                    .as("延迟失败应与开关引入前一致")
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("jevokit.crypto.sm4-key");
+        });
+    }
+
+    @Test
+    @DisplayName("startup-check 开启且四密钥齐全：启动通过（cryptoKeysInjectedIntoSecurityUtil 同证）")
+    void startupCheckPassesWithAllKeysConfigured() {
+        runner.withPropertyValues(
+                        "jevokit.crypto.rsa-public-key=" + RSA_PUBLIC_KEY,
+                        "jevokit.crypto.rsa-private-key=" + RSA_PRIVATE_KEY,
+                        "jevokit.crypto.aes-key=" + AES_KEY,
+                        "jevokit.crypto.sm4-key=" + SM4_KEY)
+                .run(context -> assertThat(context).as("四密钥齐全时校验应通过").hasNotFailed());
+    }
+
     @Test
     @DisplayName("springUtil：用户自定义同名 Bean 时 ConditionalOnMissingBean 回退")
     void springUtilBacksOffWhenUserDefinesOwn() {
         // given：用户自定义配置提供自己的 SpringUtil
         new ApplicationContextRunner()
+                .withPropertyValues("jevokit.crypto.startup-check=false")
                 .withUserConfiguration(UserSpringUtilConfig.class)
                 .withConfiguration(AutoConfigurations.of(JevokitCoreConfiguration.class))
                 .run(context -> {
@@ -192,7 +261,7 @@ class JevokitCoreConfigurationTest {
     @Test
     @DisplayName("stringPropertiesEditor：注册的编辑链在 set/get 两个方向生效")
     void stringPropertiesEditorAppliesChains() {
-        runner.run(context -> {
+        runner.withPropertyValues("jevokit.crypto.startup-check=false").run(context -> {
             // given
             StringPropertiesEditor editor = context.getBean(StringPropertiesEditor.class);
             // when
@@ -217,5 +286,12 @@ class JevokitCoreConfigurationTest {
                 throw new IllegalStateException("重置 SecurityUtil 静态字段失败：" + fieldName, e);
             }
         }
+    }
+
+    /** 启动失败异常的完整栈文本（含 cause 链消息）——InitializingBean 抛出的 ISE 会被 Spring 包一层 */
+    private static String stackTraceOf(Throwable failure) {
+        java.io.StringWriter sw = new java.io.StringWriter();
+        failure.printStackTrace(new java.io.PrintWriter(sw));
+        return sw.toString();
     }
 }

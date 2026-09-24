@@ -193,6 +193,20 @@ class SecurityUtilTest {
         }
 
         @Test
+        @DisplayName("getSm4Key 统一入口：未注入抛 ISE 指明配置键；注入后返回密钥（与其他无参 API 语义一致）")
+        void sm4KeyEntryRequiresInjection() {
+            // given：密钥字段已被 @BeforeEach 重置为未注入状态
+            assertThatThrownBy(() -> SecurityUtil.getSm4Key())
+                    .as("未注入 sm4-key 时统一密钥入口应快速失败")
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("jevokit.crypto.sm4-key");
+            // when：注入后再取
+            SecurityUtil.init(null, null, null, SM4_KEY);
+            // then
+            assertThat(SecurityUtil.getSm4Key()).as("注入后应返回注入的密钥").isEqualTo(SM4_KEY);
+        }
+
+        @Test
         @DisplayName("篡改密文后解密应失败或还原不出原文")
         void sm4TamperedCipherDetected() {
             // given

@@ -20,7 +20,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class XssConfigurationTest {
 
+    // jevokit.crypto.startup-check 默认 true：本测试聚焦 xss 装配条件，不配 crypto 密钥，关掉启动校验免拦
     private final WebApplicationContextRunner runner = new WebApplicationContextRunner()
+            .withPropertyValues("jevokit.crypto.startup-check=false")
             .withConfiguration(AutoConfigurations.of(
                     JevokitCoreConfiguration.class,
                     ConfigurationPropertiesAutoConfiguration.class,

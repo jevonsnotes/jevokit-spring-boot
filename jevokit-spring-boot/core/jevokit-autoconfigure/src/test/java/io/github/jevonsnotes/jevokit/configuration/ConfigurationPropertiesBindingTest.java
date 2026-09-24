@@ -52,7 +52,7 @@ class ConfigurationPropertiesBindingTest {
     class Crypto {
 
         @Test
-        @DisplayName("默认不配置任何密钥（替代历史内置默认密钥的安全语义）")
+        @DisplayName("默认不配置任何密钥（替代历史内置默认密钥的安全语义），startup-check 默认 true")
         void defaultsAreNull() {
             runner.run(context -> {
                 CryptoProperties props = context.getBean(CryptoProperties.class);
@@ -60,6 +60,7 @@ class ConfigurationPropertiesBindingTest {
                 assertThat(props.getRsaPrivateKey()).as("rsa-private-key 默认 null").isNull();
                 assertThat(props.getAesKey()).as("aes-key 默认 null").isNull();
                 assertThat(props.getSm4Key()).as("sm4-key 默认 null").isNull();
+                assertThat(props.isStartupCheck()).as("startup-check 默认 true（启动校验从严）").isTrue();
             });
         }
 
@@ -68,11 +69,13 @@ class ConfigurationPropertiesBindingTest {
         void kebabBinding() {
             runner.withPropertyValues(
                             "jevokit.crypto.aes-key=aes-0123456789ab",
-                            "jevokit.crypto.sm4-key=sm4-0123456789a")
+                            "jevokit.crypto.sm4-key=sm4-0123456789a",
+                            "jevokit.crypto.startup-check=false")
                     .run(context -> {
                         CryptoProperties props = context.getBean(CryptoProperties.class);
                         assertThat(props.getAesKey()).as("aes-key 应绑定").isEqualTo("aes-0123456789ab");
                         assertThat(props.getSm4Key()).as("sm4-key 应绑定").isEqualTo("sm4-0123456789a");
+                        assertThat(props.isStartupCheck()).as("startup-check=false 应绑定").isFalse();
                     });
         }
     }

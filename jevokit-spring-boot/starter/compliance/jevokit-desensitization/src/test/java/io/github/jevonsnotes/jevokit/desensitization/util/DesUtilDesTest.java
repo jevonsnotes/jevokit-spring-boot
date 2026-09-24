@@ -1,5 +1,7 @@
 package io.github.jevonsnotes.jevokit.desensitization.util;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import io.github.jevonsnotes.jevokit.desensitization.DesensitizationTestSupport;
@@ -27,6 +29,17 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class DesUtilDesTest {
 
     private static final String MOBILE = "13800138000";
+
+    /** DesUtil 走 SecurityUtil 统一密钥入口（静态有状态）：用例前后重置，防先注入的密钥污染缺失语义用例 */
+    @BeforeEach
+    void resetKeys() {
+        DesensitizationTestSupport.resetSecurityUtilKeys();
+    }
+
+    @AfterEach
+    void cleanUp() {
+        DesensitizationTestSupport.resetSecurityUtilKeys();
+    }
 
     private static JevokitDesensitizationProperties mobileNameProps() {
         return DesensitizationTestSupport.properties(
@@ -102,13 +115,14 @@ class DesUtilDesTest {
     }
 
     @Test
-    @DisplayName("des：未配置 sm4-key 时抛 IllegalStateException（密钥显式化语义）")
+    @DisplayName("des：未配置 sm4-key 时抛 IllegalStateException（与 SecurityUtil requireKey 行为一致）")
     void desSm4WithoutKeyFails() {
         JevokitDesensitizationProperties properties = mobileNameProps();
         AlgorithmProperties algorithm = new AlgorithmProperties();
         algorithm.setView(DstAlgorithm.SM4);
         properties.setAlgorithm(algorithm);
 
+        // given：上下文不注入 SM4 密钥（SecurityUtil 未 init，BeforeEach 已清残留静态密钥）
         new org.springframework.boot.test.context.runner.ApplicationContextRunner()
                 .withBean(cn.hutool.extra.spring.SpringUtil.class)
                 .withBean(JevokitDesensitizationProperties.class, () -> properties)

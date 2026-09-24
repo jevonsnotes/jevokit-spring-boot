@@ -1,7 +1,9 @@
 package io.github.jevonsnotes.jevokit.desensitization;
 
 import cn.hutool.extra.spring.SpringUtil;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import io.github.jevonsnotes.jevokit.core.util.SecurityUtil;
 import io.github.jevonsnotes.jevokit.desensitization.config.JevokitDesensitizationProperties;
 import io.github.jevonsnotes.jevokit.desensitization.consts.DstLevel;
 import io.github.jevonsnotes.jevokit.desensitization.consts.DstType;
@@ -11,6 +13,7 @@ import io.github.jevonsnotes.jevokit.desensitization.interceptor.impl.DefaultSen
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
@@ -18,7 +21,7 @@ import java.util.Map;
 /**
  * desensitization 测试公共基座：
  * 1. fixtures 从 classpath 读取（src/test/resources/fixtures/desensitization/）；
- * 2. DesUtil 的静态依赖（SpringUtil/JevokitDesensitizationProperties/DesHelper）
+ * 2. DesUtil 的静态依赖（SpringUtil/JevokitDesensitizationProperties/DesHelper/SecurityUtil SM4 密钥）
  *    经 ApplicationContextRunner 装配真实上下文，测试运行期与生产同通路。
  */
 public final class DesensitizationTestSupport {
@@ -54,13 +57,32 @@ public final class DesensitizationTestSupport {
         return properties;
     }
 
-    /** 满足 DesUtil 静态依赖的最小上下文（SM4 密钥走 jevokit.crypto.sm4-key 配置键） */
+    /**
+     * 满足 DesUtil 静态依赖的最小上下文（SM4 密钥与生产同通路：经 InitializingBean 灌入 SecurityUtil，
+     * 等价 JevokitCoreConfiguration#cryptoKeyInitializer 读 jevokit.crypto.sm4-key 后 init 的效果）。
+     * <p>注意：SecurityUtil 为静态有状态且上下文关闭不回收，依赖密钥缺失语义的用例须在
+     * BeforeEach/AfterEach 调 {@link #resetSecurityUtilKeys()} 隔离残留。
+     */
     public static ApplicationContextRunner minimalRunner(JevokitDesensitizationProperties properties) {
         return new ApplicationContextRunner()
-                .withPropertyValues("jevokit.crypto.sm4-key=" + TEST_SM4_KEY)
+                .withBean("cryptoKeyInitializer", InitializingBean.class,
+                        () -> () -> SecurityUtil.init(null, null, null, TEST_SM4_KEY))
                 .withBean(SpringUtil.class)
                 .withBean(JevokitDesensitizationProperties.class, () -> properties)
                 .withBean(DesHelper.class,
                         () -> new DesHelper(properties, new DefaultSensitizationPowerInterceptor()));
+    }
+
+    /** 反射重置 SecurityUtil 静态密钥字段（init 注入后无公开清除入口，须如此隔离用例间状态） */
+    public static void resetSecurityUtilKeys() {
+        for (String fieldName : new String[]{"rsaPublicKey", "rsaPrivateKey", "aesKey", "sm4Key"}) {
+            try {
+                Field field = SecurityUtil.class.getDeclaredField(fieldName);
+                field.setAccessible(true);
+                field.set(null, null);
+            } catch (ReflectiveOperationException e) {
+                throw new IllegalStateException("重置 SecurityUtil 静态字段失败：" + fieldName, e);
+            }
+        }
     }
 }
