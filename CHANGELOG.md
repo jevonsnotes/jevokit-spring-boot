@@ -2,6 +2,17 @@
 
 本仓库遵循[四段式版本号](docs/preferences/pref-version-scheme.md)：前两段对齐 Spring Boot 版本线，第三位为本项目破坏性变更位（递增时第四位归 0），第四位为常规迭代位。
 
+## [3.5.2.0] — 2026-09-24
+
+### 破坏性变更（Breaking）
+
+- **jevokit.crypto 启动校验默认开启**：新增 jevokit.crypto.startup-check（默认 true），四密钥任一缺失时启动即失败（异常一次性列出全部缺失键）；不配置密钥也能启动的旧行为需显式配 startup-check=false 退回
+- 密钥读取入口统一：SecurityUtil.getSm4Key() 等统一入口（requireKey 语义），DesUtil 不再直读配置
+
+### 修复
+
+- **jevokit-core 容器中立**：两个 request wrapper 去除对 Tomcat 内部类（B2CConverter / coyote.Constants）的依赖，pom 删 tomcat-embed-core 换显式 jakarta.servlet-api（provided）——Jetty/Undertow 项目不再有 NoClassDefFoundError 风险
+
 ## [3.5.1.0] — 2026-09-21
 
 ### 破坏性变更（Breaking）
