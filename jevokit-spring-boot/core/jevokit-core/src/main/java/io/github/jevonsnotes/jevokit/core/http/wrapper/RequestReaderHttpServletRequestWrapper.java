@@ -5,7 +5,6 @@ import cn.hutool.core.util.StrUtil;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
-import org.apache.tomcat.util.buf.B2CConverter;
 import io.github.jevonsnotes.jevokit.core.consts.HttpMethod;
 import io.github.jevonsnotes.jevokit.core.util.CollectionUtil;
 import io.github.jevonsnotes.jevokit.core.util.RequestUtil;
@@ -18,7 +17,9 @@ import jakarta.servlet.http.HttpServletRequestWrapper;
 import java.io.*;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
+import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.StandardCharsets;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -218,7 +219,7 @@ public class RequestReaderHttpServletRequestWrapper extends HttpServletRequestWr
     }
 
     /**
-     * 取请求字符集（未声明时兜底 Tomcat 默认请求体字符集）
+     * 取请求字符集（未声明或解析失败时兜底 UTF-8，不会返回 null）
      *
      * @return 解析出的 Charset
      */
@@ -228,16 +229,17 @@ public class RequestReaderHttpServletRequestWrapper extends HttpServletRequestWr
             if (charset == null) {
                 String characterEncoding = getCharacterEncoding();
                 if (characterEncoding != null) {
-                    charset = B2CConverter.getCharset(characterEncoding);
+                    charset = Charset.forName(characterEncoding);
                 }
             }
-        } catch (UnsupportedEncodingException e) {
-            // Ignore
+        } catch (IllegalCharsetNameException | UnsupportedCharsetException e) {
+            // 非法或未知字符集名：忽略，charset 保持 null 走下方兜底
         }
         if (charset != null) {
             return charset;
         }
-        return org.apache.coyote.Constants.DEFAULT_BODY_CHARSET;
+        // 按 UTF-8 兜底系 Tomcat 10.1（Servlet 6.0）DEFAULT_BODY_CHARSET 语义延续
+        return StandardCharsets.UTF_8;
     }
 
 

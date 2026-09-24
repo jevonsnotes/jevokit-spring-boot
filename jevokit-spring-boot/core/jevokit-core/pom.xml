@@ -4,7 +4,7 @@
     <parent>
         <groupId>io.github.jevonsnotes</groupId>
         <artifactId>jevokit-parent</artifactId>
-        <version>3.5.2.0-SNAPSHOT</version>
+        <version>3.5.2.0</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -41,10 +41,13 @@
             <groupId>com.alibaba.fastjson2</groupId>
             <artifactId>fastjson2</artifactId>
         </dependency>
+        <!-- jakarta.servlet API：原由 tomcat-embed-core 传递提供；为去除对容器实现类的依赖
+             （非 Tomcat 容器项目 NoClassDefFoundError）改为显式声明标准 API，provided 由
+             容器/WEB 模块在运行期提供。版本经 jevokit-dependencies 导入的 spring-boot-dependencies 管理。 -->
         <dependency>
-            <groupId>org.apache.tomcat.embed</groupId>
-            <artifactId>tomcat-embed-core</artifactId>
-            <scope>compile</scope>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>

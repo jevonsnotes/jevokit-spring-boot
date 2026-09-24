@@ -8,7 +8,6 @@ import jakarta.servlet.ReadListener;
 import jakarta.servlet.ServletInputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.tomcat.util.buf.B2CConverter;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 import io.github.jevonsnotes.jevokit.core.consts.HttpMethod;
 import io.github.jevonsnotes.jevokit.core.util.CollectionUtil;
@@ -17,7 +16,9 @@ import io.github.jevonsnotes.jevokit.core.util.RequestUtil;
 import java.io.*;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
+import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.StandardCharsets;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -293,10 +294,10 @@ public class RequestContentCachingRequestWrapper extends ContentCachingRequestWr
             if (charset == null) {
                 String enc = getRequest().getCharacterEncoding();
                 enc = enc == null ? "UTF-8" : enc;
-                charset = B2CConverter.getCharset(enc);
+                charset = Charset.forName(enc);
             }
-        } catch (UnsupportedEncodingException e) {
-            // Ignore
+        } catch (IllegalCharsetNameException | UnsupportedCharsetException e) {
+            // 非法或未知字符集名：忽略，charset 保持 null 由调用方兜底
         }
         return charset;
     }
