@@ -11,10 +11,11 @@ A Spring Boot starter kit covering security hardening, data desensitization, aud
 
 ## 仓库结构
 
-仓库根下有两个独立的 Maven reactor（根目录没有聚合 pom，分别构建）：
+仓库根下是单个 Maven reactor（jevokit-parent，直接继承 Spring Boot 官方 parent）：
 
 ```text
-jevokit-spring-boot/                     # 主 reactor（jevokit-parent）：18 个库模块 + 示例应用
+jevokit-spring-boot/                     # 单 reactor（jevokit-parent）
+├── jevokit-dependencies/                # BOM 薄壳：保留 jevokit-dependencies 坐标，版本管理继承自 parent
 ├── core/
 │   ├── jevokit-core/                    # 纯工具库（非 starter）：通用工具 + 加解密
 │   └── jevokit-autoconfigure/           # 自动装配基座 + jevokit.* 配置约定
@@ -25,11 +26,12 @@ jevokit-spring-boot/                     # 主 reactor（jevokit-parent）：18 
 │   └── integration/                     # 集成：rocketmq / okhttp / workflow
 └── sample/
     └── jevokit-sample/                  # 示例应用（不发布到仓库）
-jevokit-spring-boot-dependencies/        # BOM reactor（jevokit-dependencies）：全家版本管理
 docs/                                    # 工程经验沉淀（lessons / preferences）
 openspec/                                # 变更管理
 LICENSE                                  # Apache-2.0
 ```
+
+> 版本管理集中在 reactor 根 `jevokit-parent`：jevokit 第三方版本表 + 全家坐标内嵌于其 `dependencyManagement`（Boot 官方条目经 parent 继承获得）。`jevokit-dependencies` 为兼容已发布版本的 BOM 薄壳，import 它与 import `jevokit-parent` 等效。
 
 ## 模块清单
 
@@ -101,7 +103,7 @@ LICENSE                                  # Apache-2.0
 </dependencyManagement>
 ```
 
-> BOM 继承自 `spring-boot-starter-parent` 3.5.16：import 后同时获得 Spring Boot 官方与 jevokit 全家的版本管理，各 starter 引入时无需再写版本号。
+> BOM 的版本管理链：`jevokit-dependencies` → `jevokit-parent` → `spring-boot-starter-parent` 3.5.16。import 后同时获得 Spring Boot 官方与 jevokit 全家的版本管理，各 starter 引入时无需再写版本号。
 
 **2. 按需引入 starter**（版本随 BOM 统一对齐）：
 
@@ -144,16 +146,13 @@ mvn spring-boot:run -Dspring-boot.run.profiles=local
 
 ## 测试与构建
 
-源码构建顺序：先安装 BOM，再构建主 reactor（主 reactor 通过 import 解析 `jevokit-dependencies` 的版本管理）。
+单 reactor 一步构建（BOM 已并入主 reactor，无需先安装 BOM）：
 
 ```bash
-# 1) 安装 BOM 到本地仓库
-cd jevokit-spring-boot-dependencies && mvn install
+# 1) 默认测试集（冒烟 + 非 MQ E2E）——需本机 Redis，无需 RocketMQ
+cd jevokit-spring-boot && mvn test
 
-# 2) 主 reactor：默认测试集（冒烟 + 非 MQ E2E）——需本机 Redis，无需 RocketMQ
-cd ../jevokit-spring-boot && mvn test
-
-# 3) 全量测试（含 RocketMQ E2E）——另需 RocketMQ nameserver localhost:9876
+# 2) 全量测试（含 RocketMQ E2E）——另需 RocketMQ nameserver localhost:9876
 mvn test -DexcludedGroups=
 ```
 

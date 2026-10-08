@@ -112,17 +112,17 @@
 
     <build>
         <plugins>
+            <!-- BOM 合并改造配套：Boot parent 的 pluginManagement 已绑定 repackage execution
+                 （无需本处再声明 executions，重复声明不同 id 会导致 repackage 双执行）；
+                 同时其默认 mainClass=${spring-boot.run.main-class}→${start-class} 在本模块未定义
+                 start-class 属性时会以未解析字面量写入 MANIFEST，java -jar 直接失败
+                 （原无 Boot parent 时 mainClass 留空、插件自动扫描唯一 main 方法——行为需显式回归）。
+                 故显式钉定主类。 -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>repackage</goal>
-                        </goals>
-                    </execution>
-                </executions>
                 <configuration>
+                    <mainClass>io.github.jevonsnotes.jevokit.sample.JevokitSampleApplication</mainClass>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>

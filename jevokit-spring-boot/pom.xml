@@ -1,12 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/POM/4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <version>3.5.2.1-SNAPSHOT</version>
+
+    <!-- BOM 合并改造：本 reactor 直接继承 Boot 官方 parent，原先独立 BOM reactor
+         （jevokit-spring-boot-dependencies/jevokit-dependencies）的版本管理整体上移至本 pom。
+         jevokit-dependencies 降级为 reactor 内薄壳 module（仅保留坐标兼容已发布版本的 import）。 -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.5.16</version>
+        <relativePath /> <!-- lookup parent from repository -->
+    </parent>
+
     <groupId>io.github.jevonsnotes</groupId>
     <artifactId>jevokit-parent</artifactId>
+    <version>3.5.2.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <!-- Central 发布元数据（模块经继承全覆盖；BOM 因 parent 为 Boot 官方需独立配同套） -->
+    <!-- Central 发布元数据：经 Maven parent 继承链全覆盖（BOM 壳 jevokit-dependencies 同样继承本套，
+         不再需要独立配置）。 -->
     <name>Spring Boot Kit</name>
     <description>A Spring Boot starter kit covering security hardening, data desensitization, audit logging, distributed locks, idempotent number generation and encrypted configuration.</description>
     <url>https://github.com/jevonsnotes/jevokit-spring-boot</url>
@@ -29,26 +41,56 @@
         <url>https://github.com/jevonsnotes/jevokit-spring-boot</url>
     </scm>
 
-    <!--    <parent>-->
-    <!--        <groupId>io.github.jevonsnotes</groupId>-->
-    <!--        <artifactId>jevokit-dependencies</artifactId>-->
-    <!--        <version>2.7.1.1.XC-SNAPSHOT</version>-->
-    <!--        <relativePath /> &lt;!&ndash; lookup parent from repository &ndash;&gt;-->
-    <!--    </parent>-->
-
     <properties>
-        <!-- 统一编码声明：compiler/javadoc/source 等插件默认读取（javadoc fork 场景下比插件参数更稳） -->
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <!-- jevokit 第三方版本表（自 jevokit-dependencies 独立 BOM 原样上移，条目顺序与注释保持不变）。
+             与 Boot 官方同名属性（netty/okhttp/h2/mysql/postgresql/bouncycastle 等）时本处声明覆盖
+             Boot 默认——与旧 BOM 时代（BOM parent 即 Boot parent，同样覆盖）语义一致。 -->
+        <java.version>17</java.version>
+        <hutool.version>5.8.46</hutool.version>
+        <jsoup.version>1.23.2</jsoup.version>
+        <spring.could.version>2025.0.3</spring.could.version>
+        <fastjson.version>2.0.53</fastjson.version>
+        <apache.common.version>2.18.0</apache.common.version>
+        <poi.version>5.4.1</poi.version>
+        <redisson.version>3.50.0</redisson.version>
+        <transmittable.thread.local>2.12.0</transmittable.thread.local>
+        <tablesaw.version>0.43.1</tablesaw.version>
+        <camunda.spring-boot.version>7.23.0</camunda.spring-boot.version>
+<!--        <jackson-bom.version>2.15.3</jackson-bom.version>-->
+        <rocketmq.spring.version>2.3.0</rocketmq.spring.version>
+<!--        <rocketmq.spring.client.version>5.0.7</rocketmq.spring.client.version>-->
+        <rocketmq.version>5.2.0</rocketmq.version>
+        <h2.version>2.2.220</h2.version>
+        <classgraph.version>4.8.174</classgraph.version>
+        <!-- SnakeYAML 由 Spring Boot 3.5.16 管理 (2.4)，无需手动声明 -->
+        <commons-text.version>1.12.0</commons-text.version>
+        <postgresql.version>42.6.0</postgresql.version>
+<!--        <tomcat.version>9.0.102</tomcat.version>-->
+<!--        <logback.version>1.2.13</logback.version>-->
+        <mysql.version>8.2.0</mysql.version>
+        <guava.version>33.2.1-jre</guava.version>
+        <xstream.version>1.4.21</xstream.version>
+        <woodstox.version>6.5.1</woodstox.version>
+<!--        <spring-framework.version>5.3.39</spring-framework.version>-->
+        <xmlunit2.version>2.10.0</xmlunit2.version>
+        <json-path.version>2.9.0</json-path.version>
+        <commons-compress.version>1.26.0</commons-compress.version>
+        <netty.version>4.1.119.Final</netty.version>
+        <bouncycastle.version>1.86</bouncycastle.version>
+        <okhttp.version>4.12.0</okhttp.version>
+        <commons-beanutils.version>1.11.0</commons-beanutils.version>
+        <!-- 统一编码声明已删除：spring-boot-starter-parent 默认
+             project.build.sourceEncoding / project.reporting.outputEncoding = UTF-8，
+             compiler/javadoc/source 等插件经继承获得同值。 -->
         <!-- argLine 空默认值：jacoco prepare-agent 会设置 argLine 传 javaagent 给 surefire；
-             此处空默认确保 jacoco 未激活时 @{argLine} 延迟替换不出字面量错误 -->
+             此处空默认确保 jacoco 未激活时 @{argLine} 延迟替换不出字面量错误
+             （Boot parent 不定义 argLine 属性，此声明仍必要）。 -->
         <argLine></argLine>
-<!--        <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>-->
-<!--        <maven-deploy-plugin.version>2.8.2</maven-deploy-plugin.version>-->
-<!--        <versions-maven-plugin.version>2.8.1</versions-maven-plugin.version>-->
-<!--        <spring-boot-maven-plugin.version>2.7.18</spring-boot-maven-plugin.version>-->
     </properties>
     <modules>
+        <!-- BOM 薄壳（BOM 合并改造）：仅保留 jevokit-dependencies 坐标，版本管理靠继承本 pom，
+             import 它与 import jevokit-parent 等效——兼容已发布版本的使用方。 -->
+        <module>jevokit-dependencies</module>
         <!-- 聚合器扁平化（#12）：原 common/others/security/audit 三层聚合器已删，19 模块直挂 -->
         <module>core/jevokit-core</module>
         <module>core/jevokit-autoconfigure</module>
@@ -72,13 +114,278 @@
     </modules>
     <dependencyManagement>
         <dependencies>
+            <!-- 版本管理（自 jevokit-dependencies 独立 BOM 整体上移）：第三方坐标 + 19 个自家坐标。
+                 旧 BOM 用 ${project.version}（=BOM 版本），上移后仍 ${project.version}（=本 parent 版本），
+                 单 reactor 内全家同版本，语义联动一致。Boot 官方条目经 parent 继承获得，
+                 同 GA 冲突时本处直接声明优先——与旧 BOM（其 parent 即 Boot 官方）解析结果一致。 -->
             <dependency>
-                <groupId>io.github.jevonsnotes</groupId>
-                <artifactId>jevokit-dependencies</artifactId>
-                <version>${project.version}</version>
+                <groupId>cn.hutool</groupId>
+                <artifactId>hutool-all</artifactId>
+                <version>${hutool.version}</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/org.jsoup/jsoup -->
+            <dependency>
+                <groupId>org.jsoup</groupId>
+                <artifactId>jsoup</artifactId>
+                <version>${jsoup.version}</version>
+            </dependency>
+            <!-- springCloud -->
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring.could.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <dependency>
+                <groupId>com.h2database</groupId>
+                <artifactId>h2</artifactId>
+                <version>${h2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>okhttp</artifactId>
+                <version>${okhttp.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-beanutils</groupId>
+                <artifactId>commons-beanutils</artifactId>
+                <version>${commons-beanutils.version}</version>
+            </dependency>
+            <!-- 国密使用算法库 -->
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcpkix-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
+<!--            <dependency>-->
+<!--                <groupId>org.camunda.bpm</groupId>-->
+<!--                <artifactId>camunda-bom</artifactId>-->
+<!--                <version>7.19.0</version>-->
+<!--                <scope>import</scope>-->
+<!--                <type>pom</type>-->
+<!--            </dependency>-->
+            <!-- https://mvnrepository.com/artifact/org.camunda.bpm.springboot/camunda-bpm-spring-boot-starter -->
+            <dependency>
+                <groupId>org.camunda.bpm.springboot</groupId>
+                <artifactId>camunda-bpm-spring-boot-starter-webapp</artifactId>
+                <version>${camunda.spring-boot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.camunda.bpm.springboot</groupId>
+                <artifactId>camunda-bpm-spring-boot-starter</artifactId>
+                <version>${camunda.spring-boot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.camunda.bpm.springboot</groupId>
+                <artifactId>camunda-bpm-spring-boot-starter-rest</artifactId>
+                <version>${camunda.spring-boot.version}</version>
+            </dependency>
+<!--            <dependency>-->
+<!--                <groupId>org.apache.rocketmq</groupId>-->
+<!--                <artifactId>rocketmq-v5-client-spring-boot-starter</artifactId>-->
+<!--                <version>${rocketmq.spring.version}</version>-->
+<!--            </dependency>-->
+            <!-- https://mvnrepository.com/artifact/org.apache.rocketmq/rocketmq-spring-boot-starter -->
+            <dependency>
+                <groupId>org.apache.rocketmq</groupId>
+                <artifactId>rocketmq-spring-boot-starter</artifactId>
+                <version>${rocketmq.spring.version}</version>
+            </dependency>
+
+            <!-- https://mvnrepository.com/artifact/org.apache.rocketmq/rocketmq-common -->
+            <dependency>
+                <groupId>org.apache.rocketmq</groupId>
+                <artifactId>rocketmq-common</artifactId>
+                <version>${rocketmq.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.rocketmq</groupId>
+                <artifactId>rocketmq-client</artifactId>
+                <version>${rocketmq.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.rocketmq</groupId>
+                <artifactId>rocketmq-acl</artifactId>
+                <version>${rocketmq.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${guava.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.jevonsnotes</groupId>
+                <artifactId>jevokit-security-xss-spring-boot-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.jevonsnotes</groupId>
+                <artifactId>jevokit-security-web-fixed-spring-boot-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.jevonsnotes</groupId>
+                <artifactId>jevokit-okhttp-spring-boot-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.jevonsnotes</groupId>
+                <artifactId>jevokit-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.jevonsnotes</groupId>
+                <artifactId>jevokit-rocketmq-spring-boot-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.jevonsnotes</groupId>
+                <artifactId>jevokit-security-path-traversal-spring-boot-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.jevonsnotes</groupId>
+                <artifactId>jevokit-security-sql-inject-spring-boot-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.jevonsnotes</groupId>
+                <artifactId>jevokit-security-code-inject-spring-boot-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.jevonsnotes</groupId>
+                <artifactId>jevokit-autoconfigure</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.jevonsnotes</groupId>
+                <artifactId>jevokit-security-all-spring-boot-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.jevonsnotes</groupId>
+                <artifactId>jevokit-audit-log-spring-boot-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.jevonsnotes</groupId>
+                <artifactId>jevokit-excel-spring-boot-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.jevonsnotes</groupId>
+                <artifactId>jevokit-desensitization-spring-boot-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.jevonsnotes</groupId>
+                <artifactId>jevokit-api-spring-boot-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.jevonsnotes</groupId>
+                <artifactId>jevokit-redis-spring-boot-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.jevonsnotes</groupId>
+                <artifactId>jevokit-nogen-spring-boot-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.jevonsnotes</groupId>
+                <artifactId>jevokit-jasypt-spring-boot-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.jevonsnotes</groupId>
+                <artifactId>jevokit-workflow-spring-boot-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba</groupId>
+                <artifactId>fastjson</artifactId>
+                <version>${fastjson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.fastjson2</groupId>
+                <artifactId>fastjson2</artifactId>
+                <version>${fastjson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${apache.common.version}</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/org.apache.poi/poi-ooxml -->
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi-ooxml</artifactId>
+                <version>${poi.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba</groupId>
+                <artifactId>transmittable-thread-local</artifactId>
+                <version>${transmittable.thread.local}</version>
+            </dependency>
+            <dependency>
+                <groupId>tech.tablesaw</groupId>
+                <artifactId>tablesaw-json</artifactId>
+                <version>${tablesaw.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>tech.tablesaw</groupId>
+                <artifactId>tablesaw-core</artifactId>
+                <version>${tablesaw.version}</version>
+                <!--            <scope>provided</scope>-->
+            </dependency>
+
+            <dependency>
+                <groupId>org.redisson</groupId>
+                <artifactId>redisson-spring-boot-starter</artifactId>
+                <version>${redisson.version}</version>
+            </dependency>
+<!--            <dependency>-->
+<!--                <groupId>org.redisson</groupId>-->
+<!--                <artifactId>redisson-spring-data-27</artifactId>-->
+<!--                <version>${redisson.version}</version>-->
+<!--            </dependency>-->
+            <dependency>
+                <groupId>io.github.classgraph</groupId>
+                <artifactId>classgraph</artifactId>
+                <version>${classgraph.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-text</artifactId>
+                <version>${commons-text.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.thoughtworks.xstream</groupId>
+                <artifactId>xstream</artifactId>
+                <version>${xstream.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.woodstox</groupId>
+                <artifactId>woodstox-core</artifactId>
+                <version>${woodstox.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-compress</artifactId>
+                <version>${commons-compress.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
     <dependencies>
@@ -102,36 +409,11 @@
     <build>
         <pluginManagement>
             <plugins>
-                <!-- 钉定 spring-boot-maven-plugin 版本，与 BOM（jevokit-dependencies）父级
-                     spring-boot-starter-parent 3.5.16 基线一致。
-                     本工程对 BOM 仅为 import scope（只传递 dependencyManagement，不传递 pluginManagement），
-                     且本 pom 无 Maven parent，插件若不钉版本，Maven 会解析仓库 metadata 的 <release>
-                     （当前为 4.2.0-M1 里程碑），导致 repackage 插件与依赖基线分叉、构建不可复现。
-                     存量缺陷修复，非重命名重构引入。 -->
-                <plugin>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-maven-plugin</artifactId>
-                    <version>3.5.16</version>
-                </plugin>
-                <!-- 钉定 maven-compiler-plugin 版本：本 pom 无 Maven parent，插件无版本声明时
-                     回落到 Maven 内置编译插件（3.1，过旧），<parameters>true</parameters> 被静默
-                     忽略，字节码不携带 MethodParameters 属性，Spring Boot 3.2+ 的隐式参数名
-                     绑定全部失效（运行期 500）。3.13.0 取自本 pom 原注释中的预留版本。
-                     存量缺陷修复，非重命名重构引入。 -->
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.13.0</version>
-                </plugin>
-                <!-- 钉定 maven-surefire-plugin 版本：与 spring-boot-starter-parent 3.5.16 管理的
-                     版本一致（其 maven-surefire-plugin.version=3.5.6）。BOM 仅 import scope 不传递
-                     pluginManagement，未钉版时 Maven 回落内置 surefire 2.12.4——不支持 JUnit5，
-                     jupiter 测试类被静默跳过（Running 行都不出现）；且 2.12.4 无法与 junit-platform
-                     混跑。测试基建（B 档测试重构阶段 0）统一入口。 -->
+                <!-- maven-surefire-plugin：版本由 spring-boot-starter-parent 3.5.16 管理（3.5.6，
+                     与原钉版一致，钉版已删），仅保留 jevokit 自定义 configuration。 -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.5.6</version>
                     <configuration>
                         <!-- 测试 JVM 统一 UTF-8（缺陷修复：Windows GBK 本机乱码）：
                              surefire fork 的测试 JVM 继承平台默认编码（本机 JDK17 file.encoding=GBK），
@@ -142,7 +424,7 @@
                                -Dstdout/stderr.encoding=UTF-8  JDK19+ 属性，JDK17 忽略，向前兼容
                              注意：直接写死 argLine 会覆盖 jacoco prepare-agent 设置的 @{argLine}
                              javaagent 行（覆盖率静默失效），必须用 @{argLine} 延迟替换保留；
-                             父 pom properties 已给 argLine 空默认值，jacoco 未激活时不出
+                             本 pom properties 已给 argLine 空默认值，jacoco 未激活时不出
                              "@{argLine}" 字面量 JVM 启动错误。
                              同根因家族（平台默认字符集依赖）见教训：
                              getBytes 默认编码跨平台。 -->
@@ -160,11 +442,6 @@
                 <configuration>
                     <generateBackupPoms>false</generateBackupPoms>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-<!--                <version>${spring-boot-maven-plugin.version}</version>-->
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -194,21 +471,6 @@
             <!--                    </execution>-->
             <!--                </executions>-->
             <!--            </plugin>-->
-            <plugin>
-                <artifactId>maven-compiler-plugin</artifactId>
-<!--                <version>${maven-compiler-plugin.version}</version>-->
-                <configuration>
-                    <source>17</source>
-                    <target>17</target>
-                    <!-- 指明编译源代码时使用的字符编码，
-                    maven编译的时候默认使用的GBK编码，
-                      通过encoding属性设置字符编码，
-                      告诉maven这个项目使用UTF-8来编译 -->
-                    <encoding>utf8</encoding>
-                    <!--        使用方法真实名称            -->
-                    <parameters>true</parameters>
-                </configuration>
-            </plugin>
             <!-- 测试覆盖率采集（B 档测试重构阶段 0）：prepare-agent 在初始化阶段挂 javaagent，
                  report 绑 verify 阶段出 target/site/jacoco/index.html。本阶段只出报告，
                  rule/limit 门槛留给终验阶段（避免补测中途被覆盖率闸门卡断）。 -->
@@ -233,7 +495,7 @@
                 </executions>
             </plugin>
             <!-- Central 发布配套（#11）：source/javadoc 附加构件，日常 package 即产出。
-                 版本钉定（本 pom 无 Maven parent，插件不钉版会回落仓库 metadata）；
+                 版本钉定（Boot parent 不管理此二插件，不钉版会回落仓库 metadata）；
                  javadoc doclint 关闭——存量注释不规整不拦发布，仅语法级硬错误会失败（需修）。 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -269,7 +531,8 @@
 
     <!-- Central 发布（#11）：签名与发布仅 release profile 激活（-Prelease），
          日常构建零签名零发布开销。gpg 口令取 settings.xml 的 gpg.passphrase server；
-         sample 模块 maven.deploy.skip=true 会同时抑制 central-publishing（不发布示例应用）。 -->
+         sample 模块 maven.deploy.skip=true 会同时抑制 central-publishing（不发布示例应用）；
+         BOM 薄壳（jevokit-dependencies）经本 profile 一并签名发布——单 reactor 单 deployment。 -->
     <profiles>
         <profile>
             <id>release</id>

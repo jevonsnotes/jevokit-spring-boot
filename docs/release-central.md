@@ -1,6 +1,6 @@
 # 发布 Maven Central 操作手册（jevokit-spring-boot）
 
-> 面向 `io.github.jevonsnotes` 命名空间首发（版本 `3.5.0.0`）。发布主体：jevokit-parent 下 18 个库模块 + sample（不发布）+ 独立 BOM（jevokit-dependencies）。sample 应用不发布（`maven.deploy.skip=true`）。
+> 面向 `io.github.jevonsnotes` 命名空间首发（版本 `3.5.0.0`）。发布主体：单 reactor（jevokit-spring-boot/，jevokit-parent）下的 18 个库模块 + BOM 薄壳（jevokit-dependencies）+ sample（不发布）。sample 应用不发布（`maven.deploy.skip=true`）。
 
 ## 前置条件（每次发布前逐项核对）
 
@@ -12,28 +12,21 @@
    - `<server><id>gpg.passphrase</id>` —— 私钥口令（passphrase）
 3. **公钥可检索**：`https://keys.openpgp.org` 或 keyserver.ubuntu.com 搜 `71080C224E332E21` 可查到（Central 校验签名时在线取公钥）
 
-## 两步发布序（顺序不能反）
+## 单 bundle 发布序（BOM 合并改造后）
 
-**为什么**：jevokit-parent 的 `<dependencyManagement>` 以 `import` 方式引用 BOM；BOM 的 parent 是 spring-boot-starter-parent（Boot 官方）。若 parent 先 publish，Central 端解析 parent 的 BOM import 会指向尚不存在的坐标，校验失败。
+**为什么**：BOM 已并入主 reactor（`jevokit-dependencies` 是 jevokit-parent 下的薄壳 module，不再有独立 reactor）。整个 reactor 一次 deploy 产出一个 deployment，不存在"BOM 先行、主包后至"的顺序依赖——原先两步半的根本原因是 parent 的 BOM import 指向尚未发布的坐标，合并后依赖全部在 bundle 内自洽。
 
 ```bash
-# 第一步：BOM（独立 reactor，先 install 到本地再发布）
-cd jevokit-spring-boot-dependencies
-mvn -Prelease clean install            # 干跑校验：pom 签名产出即可
-mvn -Prelease clean deploy             # 真发布（上传 deployment，等 VALIDATED）
-
-# 【必等半步】去 Portal 对该 deployment 点 Publish，并确认 repo1 可解析（HTTP 200）后才能走第二步：
-curl -s -o /dev/null -w "%{http_code}" https://repo1.maven.org/maven2/io/github/jevonsnotes/jevokit-dependencies/<版本>/jevokit-dependencies-<版本>.pom
-# 主 bundle 校验时会在线解析 parent 的 BOM import，BOM 未真正入仓 → 整包 FAILED（2026-09-21 实测踩坑）
-
-# 第二步：parent + 全部库模块（在 jevokit-spring-boot 聚合根）
-cd ../jevokit-spring-boot
-mvn -Prelease clean deploy -pl '!sample/jevokit-sample'   # sample 的 E2E 依赖本机 Redis，发布时直接排除（其本就不入 bundle）
+cd jevokit-spring-boot
+mvn -Prelease clean install -DskipTests   # 干跑校验：签名产物齐全即可（只 install 不 deploy）
+mvn -Prelease clean deploy -pl '!sample/jevokit-sample'   # 真发布（sample 的 E2E 依赖本机 Redis，发布时直接排除；其本就不入 bundle）
 ```
+
+deploy 结束后去 Portal 对该 deployment 点一次 **Publish** 即可（现在只有一个 deployment，无先后依赖）。
 
 注意：
 - `-Prelease` 才激活 gpg 签名 + central-publishing 插件；日常构建（无 profile）零签名零发布开销
-- central-publishing 插件必须配 `<extensions>true</extensions>`（两 reactor 已配）：缺了它 publish 目标不绑定 deploy 生命周期，**BUILD SUCCESS 但静默零上传**
+- central-publishing 插件必须配 `<extensions>true</extensions>`（jevokit-parent 已配，BOM 壳经继承同样生效）：缺了它 publish 目标不绑定 deploy 生命周期，**BUILD SUCCESS 但静默零上传**
 - 日志必须出现 `publish (injected-central-publishing)` 字样，才算真的走了发布；deploy 结束时应有 `Uploaded bundle successfully ... deploymentId: ...`
 - 校验失败时 CLI 只有 `failed while publishing` 一句话，**具体错误清单只在 Portal deployment 页面**（如 `Project name is missing`），先看页面再对症修，别盲试
 - sample 模块 `maven.deploy.skip=true`，deploy 时自动跳过（central-publishing 同样尊重该跳过）；但它的测试依赖本机 Redis，发布机无 Redis 时用 `-pl '!sample/jevokit-sample'` 排除
@@ -43,11 +36,12 @@ mvn -Prelease clean deploy -pl '!sample/jevokit-sample'   # sample 的 E2E 依�
 ## 版本翻转（每次发版）
 
 ```bash
-# 1. SNAPSHOT → 正式版（两个 reactor 都要翻）
-mvn versions:set -DnewVersion=3.5.0.0 -DgenerateBackupPoms=false    # 在 jevokit-spring-boot/ 与 jevokit-spring-boot-dependencies/ 各执行一次
-# 2. 走上面"两步发布序"完成 deploy
+# 1. SNAPSHOT → 正式版（单 reactor 一处即可，BOM 壳随 parent 联动）
+cd jevokit-spring-boot
+mvn versions:set -DnewVersion=3.5.0.0 -DgenerateBackupPoms=false
+# 2. 走上面"单 bundle 发布序"完成 deploy
 # 3. 发完立即翻回下一轮开发版（避免主干长期停正式版号）
-mvn versions:set -DnewVersion=3.5.0.1-SNAPSHOT -DgenerateBackupPoms=false   # 同样两处
+mvn versions:set -DnewVersion=3.5.0.1-SNAPSHOT -DgenerateBackupPoms=false
 ```
 
 ## 发布后动作
@@ -65,17 +59,16 @@ git push origin v3.5.0.0
 
 ## 构建产物核对单（发布前干跑即验）
 
-每次正式 deploy 前，先在本地跑一遍核对（产物数以 3.5.0.0-SNAPSHOT 期为基准：19 模块（18 库 + sample）+ parent + BOM）：
+每次正式 deploy 前，先在本地跑一遍核对（产物数基准：单 reactor 21 模块 = 18 库 + sample + BOM 薄壳 + parent；BOM 壳与 parent 为 pom 型构件，仅 pom + 签名，无 jar 附加件）：
 
 | 项 | 预期 | 核对命令 |
 |---|---|---|
 | sources jar | 18（security-all 无源码属正常） | `find . -path "*/target/*-sources.jar" \| wc -l` |
 | javadoc jar | 18（security-all 无源码自动跳过，不再产出空壳） | `find . -path "*/target/*-javadoc.jar" \| wc -l` |
-| jar 签名 | 55（18 主 + 18 sources + 18 javadoc + sample 主） | `find . -path "*/target/*.jar.asc" \| wc -l` |
-| pom 签名 | 20（19 模块 + parent） | `find . -path "*/target/*.pom.asc" \| wc -l` |
+| jar 签名 | 55（18 库主 + 18 sources + 18 javadoc + sample 主） | `find . -path "*/target/*.jar.asc" \| wc -l` |
+| pom 签名 | 21（20 模块 + parent，BOM 壳含在模块数内） | `find . -path "*/target/*.pom.asc" \| wc -l` |
+| BOM 壳签名 | pom 与 .pom.asc 各 1（在 jevokit-dependencies/target/） | `ls jevokit-dependencies/target/*.pom*` |
 | 抽验签名 | Good signature | `gpg --verify <x>.jar.asc <x>.jar` |
-
-BOM 独立核对：`mvn -Prelease clean verify` 后 `target/*.pom + *.pom.asc` 各 1，`gpg --verify` 通过。
 
 ## 已知事实（不必当问题处理）
 

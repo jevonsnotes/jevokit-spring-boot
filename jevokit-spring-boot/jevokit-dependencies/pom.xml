@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- BOM 薄壳（BOM 合并改造）：坐标 io.github.jevonsnotes:jevokit-dependencies 保留，
+         兼容已发布版本（3.5.2.0 及之前）使用方对 BOM 的 import。版本管理已上移至 jevokit-parent，
+         本模块无任何 dependencyManagement/dependencies，经 Maven 继承链透出同一套 depMgmt——
+         import 本 BOM 与 import jevokit-parent 等效。随主 reactor 一并签名发布（单 deployment）。 -->
+    <parent>
+        <groupId>io.github.jevonsnotes</groupId>
+        <artifactId>jevokit-parent</artifactId>
+        <version>3.5.2.1-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>jevokit-dependencies</artifactId>
+    <packaging>pom</packaging>
+
+    <name>jevokit-dependencies</name>
+    <description>Compatibility BOM shell for Spring Boot Kit: dependency management now lives in jevokit-parent and is re-exported here via inheritance.</description>
+
+    <!-- 无 dependencyManagement、无 dependencies、无 build：纯薄壳，一切继承自 jevokit-parent。 -->
+
+</project>
