@@ -91,11 +91,11 @@ LICENSE                                  # Apache-2.0
 ```xml
 <dependencyManagement>
     <dependencies>
-        <!-- 3.5.2.0 已发布 Maven Central；当前主干开发版为 3.5.2.1-SNAPSHOT -->
+        <!-- 3.5.2.1 已发布 Maven Central；当前主干开发版为 3.5.2.2-SNAPSHOT -->
         <dependency>
             <groupId>io.github.jevonsnotes</groupId>
             <artifactId>jevokit-dependencies</artifactId>
-            <version>3.5.2.0</version>
+            <version>3.5.2.1</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>

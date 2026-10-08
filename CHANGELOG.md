@@ -2,6 +2,13 @@
 
 本仓库遵循[四段式版本号](docs/preferences/pref-version-scheme.md)：前两段对齐 Spring Boot 版本线，第三位为本项目破坏性变更位（递增时第四位归 0），第四位为常规迭代位。
 
+## [3.5.2.1] — 2026-10-08
+
+### 构建（对使用方零影响）
+
+- **BOM 并入主 reactor，发布流程单 bundle 化**：jevokit-parent 直接继承 spring-boot-starter-parent，jevokit-dependencies 降级为兼容薄壳 module（坐标与版本管理语义不变，import 姿势不变）；发布由"BOM 先行 + 主包后至"两步半简化为一次 deploy 一次 Publish
+- 插件基线随 Boot parent 统一（compiler 3.14.1 等），删除手动钉版
+
 ## [3.5.2.0] — 2026-09-24
 
 ### 破坏性变更（Breaking）
