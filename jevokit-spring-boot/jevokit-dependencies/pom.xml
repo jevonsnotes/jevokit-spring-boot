@@ -9,7 +9,7 @@
     <parent>
         <groupId>io.github.jevonsnotes</groupId>
         <artifactId>jevokit-parent</artifactId>
-        <version>3.5.2.1-SNAPSHOT</version>
+        <version>3.5.2.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
