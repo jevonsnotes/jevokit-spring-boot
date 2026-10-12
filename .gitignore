@@ -2,7 +2,11 @@ target/
 .idea/
 *.iml
 *.log*
-.claude/
+.claude/*
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/team-creator/
+!/.claude/team-contract.md
 docs/*
 !docs/lessons/
 !docs/preferences/
