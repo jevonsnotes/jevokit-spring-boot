@@ -6,6 +6,7 @@ target/
 !.claude/skills/
 .claude/skills/*
 !.claude/skills/team-creator/
+!.claude/agents/
 !/.claude/team-contract.md
 docs/*
 !docs/lessons/
