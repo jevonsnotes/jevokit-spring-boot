@@ -173,15 +173,15 @@ public class JevokitOkhttpConfiguration {
                     */
                     @Override
                     public void connectFailed(@NotNull Call call, @NotNull InetSocketAddress inetSocketAddress, @NotNull Proxy proxy, @Nullable Protocol protocol, @NotNull IOException ioe) {
+                        URI target = call.request().url().uri();
                         if(properties.getProxyCheckLevel().equals(OkhttpProperties.CheckLevel.all)){
-                            log.error("connect failed, remove the proxy [{}] from the proxy-cache", proxy);
+                            log.error("connect failed [{}], remove the proxy [{}] from the proxy-cache, target [{}]", ioe, proxy, target, ioe);
                             PROXY_CACHE.remove(proxy);
                         } else {
-                            URI uri = call.request().url().uri();
-                            List<Proxy> proxies = PROXY_CACHE_URI.get(uri);
+                            List<Proxy> proxies = PROXY_CACHE_URI.get(target);
                             if(CollectionUtil.isNotEmpty(proxies)){
 
-                                log.error("connect failed, remove the proxy [{}] from the proxy-cache for uri [{}]", proxy, uri);
+                                log.error("connect failed [{}], remove the proxy [{}] from the proxy-cache for uri [{}]", ioe, proxy, target, ioe);
                                 proxies.remove(proxy);
 
                             }
@@ -210,7 +210,7 @@ public class JevokitOkhttpConfiguration {
                     */
                     @Override
                     public void connectFailed(URI uri, SocketAddress sa, IOException ioe) {
-                        log.error("connect failed, url [{}] , socket [{}]", uri,sa);
+                        log.error("connect failed, url [{}], socket [{}], cause [{}]", uri, sa, ioe, ioe);
                     }
                 })
         ;
