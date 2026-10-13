@@ -21,7 +21,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * jasypt 模块 E2E（原 MockTest.testJasypt 拆分）。
  *
- * <p>默认测试集（无需 MQ）：内建 @ActiveProfiles("local") 排除 RocketMQ 自动装配，环境仅需 Redis 在位 + H2 内存自给。
+ * <p>默认测试集（无需 MQ）：MQ 排除由主 application.yml 默认 import 的 application-ignore-mq.yml 承担
+ * （默认排除 RocketMQ 自动装配，无 MQ 环境可启动与测试），环境仅需 Redis 在位 + H2 内存自给。
  *
  * <p>密文自产自销：用例内经真实 encryptor bean 加密明文后走 HTTP 解密端点往返。
  * 曾硬编码旧 MockTest 时代的 ENC(...) 密文——该密文与当前演示密钥/算法配置不配套

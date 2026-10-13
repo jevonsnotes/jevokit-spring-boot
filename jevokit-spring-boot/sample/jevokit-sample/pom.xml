@@ -17,12 +17,15 @@
         <maven.deploy.skip>true</maven.deploy.skip>
         <!-- E2E 分层（surefire excludedGroups 参数绑定）：默认构建仅排除 @Tag("mq") 的
              RocketMqE2ETest（唯一真依赖 MQ 的用例——需 9876 nameserver）。
-             其余 8 个 E2E 类属默认测试集：内建 @ActiveProfiles("local") 排除 MQ 自动装配，
-             环境仅需 Redis 在位（H2 内存自给）——默认套件本就依赖 Redis（ApplicationTest
-             token 往返），故未抬高默认门槛，只是把"有 Redis 就能跑的 E2E"变为默认。
-             跑法：
+             其余 8 个 E2E 类属默认测试集：MQ 排除由主 application.yml 默认 import 的
+             application-ignore-mq.yml 承担（默认排除 RocketMQ 自动装配，无 MQ 环境可
+             启动与测试），环境仅需 Redis 在位（H2 内存自给）——默认套件本就依赖 Redis
+             （ApplicationTest token 往返），故未抬高默认门槛，只是把"有 Redis 就能跑的
+             E2E"变为默认。跑法：
                - 默认（Redis 在位即可）：mvn test            → 冒烟 + 8 个非 MQ E2E
-               - 全量（含 RocketMQ）：    mvn test -DexcludedGroups=
+               - 全量（含 RocketMQ）：    mvn test -DexcludedGroups=（需真 MQ 环境：
+                 先移除主 application.yml 中 spring.config.import 的
+                 application-ignore-mq.yml 行恢复 MQ 装配）
              （用户属性 -D 覆盖本处 project 属性；excludedGroups= 空串等于不排除） -->
         <excludedGroups>mq</excludedGroups>
     </properties>

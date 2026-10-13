@@ -38,8 +38,10 @@ import io.github.jevonsnotes.jevokit.sample.vo.TopicVo;
 public class RocketMqApi {
     /**
      * 可选注入：RocketMqHelper 由 kit 装配条件化提供（@ConditionalOnBean(RocketMQTemplate)）。
-     * 本机无 RocketMQ 环境时可用 local profile 排除 rocketmq 自动装配启动应用（见 resources/application-local.yml），
-     * 此时 helper 不存在，仅在真正调用发送接口时给出明确报错，不影响应用启动。有 MQ 环境时行为与直接注入完全一致。
+     * 本机无 RocketMQ 环境时应用可默认启动（主 application.yml 默认 import 的
+     * application-ignore-mq.yml 已排除 rocketmq 自动装配），
+     * 此时 helper 不存在，仅在真正调用发送接口时给出明确报错，不影响应用启动。
+     * 有 MQ 环境要演示收发时，移除主 application.yml 的该 import 行即可恢复装配，行为与直接注入完全一致。
      */
     private final ObjectProvider<RocketMqHelper> rocketMqHelperProvider;
 
@@ -49,7 +51,7 @@ public class RocketMqApi {
     private RocketMqHelper requireMqHelper() {
         RocketMqHelper helper = rocketMqHelperProvider.getIfAvailable();
         if (helper == null) {
-            throw new IllegalStateException("RocketMQ 未装配（local profile 已排除 rocketmq 自动装配，或 starter 未生效），/rocketmq/** 发送接口不可用");
+            throw new IllegalStateException("RocketMQ 未装配（主 application.yml 默认 import 的 application-ignore-mq.yml 已排除 rocketmq 自动装配，或 starter 未生效），/rocketmq/** 发送接口不可用");
         }
         return helper;
     }

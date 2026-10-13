@@ -21,8 +21,9 @@ import io.github.jevonsnotes.jevokit.sample.vo.TopicVo;
  *
  * <p>环境要求（@Tag("mq")）：默认构建不跑（surefire excludedGroups=mq）——本类是唯一默认排除项。
  * <b>本机无 RocketMQ 时该类必然连接失败（预期行为）</b>——需要 9876 nameserver +
- * broker 在位，执行：mvn test -DexcludedGroups=（不要激活 local profile，
- * local profile 排除了 RocketMQ 自动装配，生产者 bean 不会注册）。
+ * broker 在位，执行：mvn test -DexcludedGroups=（全量跑需真 MQ 装配：先移除主
+ * application.yml 中 spring.config.import 的 application-ignore-mq.yml 行，否则
+ * RocketMQ 自动装配被默认排除，生产者 bean 不会注册）。
  */
 @Slf4j
 @Tag("mq")

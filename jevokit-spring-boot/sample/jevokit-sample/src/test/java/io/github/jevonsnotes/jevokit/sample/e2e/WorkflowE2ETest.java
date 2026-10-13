@@ -40,7 +40,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * workflow（camunda）模块 E2E（原 MockTest.testWorkflow 拆分）。
  *
- * <p>默认测试集（无需 MQ）：内建 @ActiveProfiles("local") 排除 RocketMQ 自动装配，环境仅需 Redis 在位 + H2 内存自给。
+ * <p>默认测试集（无需 MQ）：MQ 排除由主 application.yml 默认 import 的 application-ignore-mq.yml 承担
+ * （默认排除 RocketMQ 自动装配，无 MQ 环境可启动与测试），环境仅需 Redis 在位 + H2 内存自给。
  * 需要 H2 + Redis；流程实例真实提交（Propagation.NEVER）。
  * 完整链路：部署 BPMN → 发起 → 起草人提交 → 地市审核认领+通过 → 省级查询，
  * 末尾断言流程实例 ID 前后一致。

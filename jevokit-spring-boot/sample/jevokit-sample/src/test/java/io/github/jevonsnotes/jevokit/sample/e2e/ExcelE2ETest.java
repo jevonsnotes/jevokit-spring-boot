@@ -23,7 +23,8 @@ import java.net.URL;
 /**
  * excel 模块 E2E（原 MockTest.testExcel 拆分）。
  *
- * <p>默认测试集（无需 MQ）：内建 @ActiveProfiles("local") 排除 RocketMQ 自动装配，环境仅需 Redis 在位 + H2 内存自给。
+ * <p>默认测试集（无需 MQ）：MQ 排除由主 application.yml 默认 import 的 application-ignore-mq.yml 承担
+ * （默认排除 RocketMQ 自动装配，无 MQ 环境可启动与测试），环境仅需 Redis 在位 + H2 内存自给。
  * 用 main resources 里的模板样例文件走 multipart 导入链路。
  */
 @Slf4j

@@ -28,7 +28,8 @@ import java.util.UUID;
 /**
  * api 模块（JSecureApi）E2E 正向链路（原 MockTest.testSecureApi 拆分）。
  *
- * <p>默认测试集（无需 MQ）：内建 @ActiveProfiles("local") 排除 RocketMQ 自动装配，环境仅需 Redis 在位 + H2 内存自给。
+ * <p>默认测试集（无需 MQ）：MQ 排除由主 application.yml 默认 import 的 application-ignore-mq.yml 承担
+ * （默认排除 RocketMQ 自动装配，无 MQ 环境可启动与测试），环境仅需 Redis 在位 + H2 内存自给。
  * 客户端签名/防重放/加解密由 JSecureApiUtil 构造，经 MockMvc 打到本应用
  * /secure/test，验证服务端拦截器-加解密-响应链路（负路径切片测试见 api 模块）。
  */
