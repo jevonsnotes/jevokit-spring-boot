@@ -184,16 +184,16 @@ jevokit:
         - '[\s\S]*'
 spring:
   config:
-    import: optional:file:./application-local.yml
+    import:
+      # 可选导入工作目录 application-local.yml（不入库）：本机调试覆盖演示值用
+      - optional:file:./application-local.yml
+      # 默认导入 MQ 排除配置（独立文件 application-ignore-mq.yml，随制品入库）：
+      # 默认排除 RocketMQ 官方自动装配，使示例应用在无 RocketMQ 环境的机器上也可启动
+      # （否则 @RocketMQMessageListener 监听容器启动即连 name-server，连接失败会中止上下文刷新）。
+      # 本机有 RocketMQ 且要演示收发（/rocketmq/test、7 个 MQ listener）时，移除/注释本行即可恢复装配。
+      - classpath:application-ignore-mq.yml
   application:
     name: jevokit-sample
-  # 默认排除 RocketMQ 官方自动装配，使示例应用在无 RocketMQ 环境的机器上也可启动
-  # （否则 @RocketMQMessageListener 监听容器启动即连 name-server，连接失败会中止上下文刷新）。
-  # 本机有 RocketMQ 且要演示收发（/rocketmq/test、7 个 MQ listener）时，移除/注释下方 exclude 列表项即可恢复装配
-  # （exclude 为 YML 列表，未来有多项时按同格式追加列表项）。
-  autoconfigure:
-    exclude:
-      - org.apache.rocketmq.spring.autoconfigure.RocketMQAutoConfiguration
   # 采用H2内存模式作为默认启动库，如有个性库请调整以下配置，并关闭H2控制台（h2-console）
   datasource:
     #url: jdbc:h2:file:./h2data/test # 文件存储方式
@@ -237,8 +237,8 @@ camunda.bpm:
 
 
 
-#rocketmq配置 v4（默认不生效：上方 spring.autoconfigure.exclude 已排除官方 RocketMQ 自动装配，
-# 本段仅供有 RocketMQ 环境的用户取消排除后直接使用，无需另行配置）
+#rocketmq配置 v4（默认不生效：已通过 spring.config.import 导入的 application-ignore-mq.yml 排除了
+# 官方 RocketMQ 自动装配，本段仅供有 RocketMQ 环境的用户取消排除后直接使用，无需另行配置）
 rocketmq:
   name-server: localhost:9876
   consumer:

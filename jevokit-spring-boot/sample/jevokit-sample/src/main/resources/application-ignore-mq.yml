@@ -1,0 +1,19 @@
+# ========================================================================
+# 默认排除 RocketMQ 官方自动装配（本文件由主 application.yml 通过
+# spring.config.import 默认导入，随制品入库）。
+#
+# 用途：使示例应用在无 RocketMQ 环境的机器上也可启动——否则
+# @RocketMQMessageListener 监听容器启动即连 name-server，连接失败会中止
+# 上下文刷新。
+#
+# 恢复方式：本机有 RocketMQ 且要演示收发（/rocketmq/test、7 个 MQ listener）
+# 时，移除/注释主 application.yml 中 spring.config.import 的本文件行即可
+# 恢复装配（连接参数见主 application.yml 的 rocketmq 段）。
+#
+# exclude 为 YML 列表，未来有多项时按同格式追加列表项。
+# ========================================================================
+spring:
+  autoconfigure:
+    exclude:
+      # RocketMQ 官方自动装配（producer + 监听容器注册器）：无 MQ 环境不装配任何连接 name-server 的组件
+      - org.apache.rocketmq.spring.autoconfigure.RocketMQAutoConfiguration
