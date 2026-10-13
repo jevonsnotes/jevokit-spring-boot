@@ -106,4 +106,97 @@ class HtmlSafeListTest {
                 .isInstanceOf(Safelist.class)
                 .isSameAs(HtmlSafeList.INSTANCE);
     }
+
+    // ------------------------- 实体/控制符混淆绕过修复回归 -------------------------
+
+    @ParameterizedTest(name = "[真] 实体/控制符混淆的 javascript 载荷被判不安全: {0}")
+    @ValueSource(strings = {
+            // 实体解码后残留控制符（浏览器剥 \t\n\r 后按 javascript: 执行）——修复前全部漏判
+            "<a href=\"java&#9;script:alert(1)\">x</a>",
+            "<a href=\"jav&#x0A;ascript:alert(1)\">x</a>",
+            "<a href=\"jav&#x0d;ascript:alert(1)\">x</a>",
+            "<a href=\"JAVA&#X9;SCRIPT:alert(1)\">x</a>",
+            // 实体解码后即为 javascript（jsoup 解码与浏览器一致，既有检查可命中，固化防回退）
+            "<a href=\"&#106;avascript:alert(1)\">x</a>",
+            "<a href=\"&#106;av&#97;script:alert(1)\">x</a>",
+            "<a href=\"jav&#x41;script:alert(1)\">x</a>",
+            // 首部空格（浏览器 URL 解析剥首尾空格/C0 后可执行）
+            "<a href=\" javascript:alert(1)\">x</a>",
+            "<a href=\"\tjavascript:alert(1)\">x</a>",
+            // src 属性同面
+            "<img src=\"java&#115;cript:alert(1)\">"
+    })
+    void entityObfuscatedJavascriptPayloadsAreInvalid(String payload) {
+        assertThat(Jsoup.isValid(payload, HtmlSafeList.INSTANCE))
+                .as("实体/控制符混淆的 javascript 载荷必须被判不安全: %s", payload)
+                .isFalse();
+    }
+
+    @Test
+    @DisplayName("[真] 实体混淆 javascript href 清洗后属性被剥离，链接文本保留")
+    void entityObfuscatedJavascriptHrefIsStrippedOnClean() {
+        String cleaned = Jsoup.clean("<a href=\"java&#9;script:alert(1)\">点我</a>", "",
+                HtmlSafeList.INSTANCE, OUTPUT_SETTINGS);
+        assertThat(cleaned)
+                .as("混淆形态 href 必须被剥离且不残留可执行形态: %s", cleaned)
+                .contains("点我")
+                .doesNotContain("href")
+                .doesNotContain("script:");
+    }
+
+    @ParameterizedTest(name = "[假] 相对路径/锚点/query 特殊字符/字面量实体零误伤: {0}")
+    @ValueSource(strings = {
+            "<a href=\"/list?page=1&size=10\">x</a>",
+            "<a href=\"./edit?id=9\">x</a>",
+            "<a href=\"../up?token=a&b=c\">x</a>",
+            "<a href=\"#frag\">x</a>",
+            "<a href=\"https://example.com/p?a=1&b=2\">x</a>",
+            // 双重转义字面量：DOM 值为 "java&#9;script:x"，浏览器不按 javascript scheme 执行，不得误拒
+            "<a href=\"java&amp;#9;script:notes\">x</a>",
+            // 锚点值内含实体解码出的制表符，属锚点导航非协议执行
+            "<a href=\"#frag&#9;x\">x</a>",
+            // 中部普通空格使 scheme 非法，浏览器不执行
+            "<a href=\"java script:alert(1)\">x</a>"
+    })
+    void benignLinkFormsAreNotBrokenByNormalization(String payload) {
+        assertThat(Jsoup.isValid(payload, HtmlSafeList.INSTANCE))
+                .as("相对路径/锚点/query/字面量形态必须零误伤: %s", payload)
+                .isTrue();
+    }
+
+    @Test
+    @DisplayName("[真] 疑似实体的 &# 字面量 query（&#b 形态）被 jsoup 校验拒绝——既有行为固化，非本次规范化引入")
+    void invalidNumericEntityLikeQueryStaysRejected() {
+        // jsoup 层既有行为：纯 Safelist（无任何覆写）下该输入在 1.15.3 与 1.23.2 均判不安全
+        //（&#b 为非法数字字符引用，jsoup 校验记为变更），与 HtmlSafeList 规范化判定无关。
+        String payload = "<a href=\"/s?q=a&#b=c&d=1\">x</a>";
+        assertThat(Jsoup.isValid(payload, HtmlSafeList.INSTANCE))
+                .as("非法实体形态 query 的既有拒绝行为保持不变")
+                .isFalse();
+    }
+
+    @Test
+    @DisplayName("规范化判定矩阵：混淆形态命中、正常值与字面量不命中")
+    void startsWithJavascriptSchemeNormalizationMatrix() {
+        // 命中：控制符剥离 + 大小写 + 首尾空白（前缀语义与既有行为一致）
+        assertThat(HtmlSafeList.startsWithJavascriptScheme("javascript:alert(1)")).isTrue();
+        assertThat(HtmlSafeList.startsWithJavascriptScheme("java\tscript:alert(1)")).isTrue();
+        assertThat(HtmlSafeList.startsWithJavascriptScheme("jav\nascript:alert(1)")).isTrue();
+        assertThat(HtmlSafeList.startsWithJavascriptScheme("jav\rascript:alert(1)")).isTrue();
+        assertThat(HtmlSafeList.startsWithJavascriptScheme("JAVASCRIPT:alert(1)")).isTrue();
+        assertThat(HtmlSafeList.startsWithJavascriptScheme("JaVaScRiPt:alert(1)")).isTrue();
+        assertThat(HtmlSafeList.startsWithJavascriptScheme(" javascript:alert(1)")).isTrue();
+        assertThat(HtmlSafeList.startsWithJavascriptScheme("\tjavascript")).isTrue();
+        // 不命中：正常链接形态
+        assertThat(HtmlSafeList.startsWithJavascriptScheme("/list?page=1")).isFalse();
+        assertThat(HtmlSafeList.startsWithJavascriptScheme("./edit?id=9")).isFalse();
+        assertThat(HtmlSafeList.startsWithJavascriptScheme("../up")).isFalse();
+        assertThat(HtmlSafeList.startsWithJavascriptScheme("#frag")).isFalse();
+        assertThat(HtmlSafeList.startsWithJavascriptScheme("https://example.com")).isFalse();
+        // 不命中：值中部普通空格（非法 scheme，浏览器不执行）
+        assertThat(HtmlSafeList.startsWithJavascriptScheme("java script:alert(1)")).isFalse();
+        // 不命中：字面量实体不做二次解码
+        assertThat(HtmlSafeList.startsWithJavascriptScheme("java&#9;script:x")).isFalse();
+        assertThat(HtmlSafeList.startsWithJavascriptScheme("")).isFalse();
+    }
 }

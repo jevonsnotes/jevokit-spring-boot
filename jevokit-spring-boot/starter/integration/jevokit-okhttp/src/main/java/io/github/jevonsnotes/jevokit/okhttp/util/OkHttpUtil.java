@@ -36,15 +36,14 @@ import java.util.Map;
  * 由 jevokit-okhttp-spring-boot-starter 装配为单例 Bean 直接注入；个性化定制走 CustomOkhttpConfiguration
  * Bean 改写底层 Builder，或经 ofProxy(...) 克隆出携带自定义客户端的独立副本（CloneSupport 深拷贝）。
  *
- * <p>三类行为由 jevokit.ok.http.* 配置驱动，语义边界务必区分：
+ * <p>两类行为由 jevokit.ok.http.* 配置驱动，语义边界务必区分：
  * <ul>
  *   <li><b>proxy-mode</b>：always 一律走代理客户端；manual 默认直连，需代理时调用 {@link #ofProxy()}
  *       或 {@link #ofProxy(CustomOkhttpProxyConfiguration)} 显式切换；</li>
- *   <li><b>error-mode</b>（IO 异常与非 2xx 的统一处置）：quiet / log_simple / log_detail 模式
- *       <b>吞掉异常并返回空串或错误体，不向调用方抛错</b>——调用方必须以返回值判成败；
- *       仅 throwout（默认）抛 OkHttpRuntimeException / OkHttpStatusRuntimeException；</li>
- *   <li><b>http-status-sensitive</b>：开启后非 2xx 一律视为错误抛 OkHttpStatusRuntimeException，
- *       判定先于 error-mode——与 throwout 组合即"任何异常状态必抛"，与日志模式组合则同样被吞。</li>
+ *   <li><b>error-mode</b>：IO 异常与非 2xx 的统一处置，文本/字节/流三路径语义一致。throwout（默认）
+ *       非 2xx 抛 OkHttpStatusRuntimeException、IO 异常抛 OkHttpRuntimeException/IORuntimeException；
+ *       quiet / log_simple / log_detail 吞掉不向调用方抛错——文本路径返回空串或错误体，
+ *       字节/流路径返回 null，调用方必须以返回值判成败。</li>
  * </ul>
  *
  * <p>关键约束：底层客户端 retryOnConnectionFailure=false（禁用自动重试，避免超时场景的重复请求）；
@@ -64,7 +63,7 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
 
      /**
      * 构造门面实例（由 JevokitOkhttpConfiguration 装配调用，业务侧注入使用而非自建）
-     * @param properties 行为配置（error-mode/状态敏感开关/代理模式）
+     * @param properties 行为配置（error-mode/代理模式）
      * @param okHttpClient 直连客户端
      * @param okHttpProxyClient 代理客户端（多代理自动切换）
      * @return 无（构造器）
@@ -455,7 +454,7 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
      * @param charset 一体两用：既写进 Content-Type 作请求体编码，也作为响应体解码字符集
      *                （经 execute 透传）——目标站响应编码与请求不一致时必须显式指定，
      *                null 则请求默认 utf-8、响应按 OkHttp 自动探测
-     * @return 响应体文本；非 2xx 行为受 error-mode/http-status-sensitive 配置支配（见类注释）
+     * @return 响应体文本；非 2xx 行为受 error-mode 配置支配（见类注释）
      */
     public String postXml(String url, String xml, Map<String, String> headers, Charset charset) {
         RequestBody requestBody = RequestBody.create(xml, charset != null ? MediaType.parse("application/xml; charset=" + charset.name()) : XML);
@@ -598,18 +597,18 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
     }
 
     /**
-    * 文本执行核心：checkStatus → 读取响应（charset 指定解码）→ 非 2xx 按 error-mode 分派 → 异常 processError。
+    * 文本执行核心：读取响应（charset 指定解码）→ 非 2xx 按 error-mode 分派 → 异常 processError。
     */
     private String execute(Request request, Charset charset) {
         log(request);
         try (Response response = getClient().newCall(request).execute()) {
-            checkStatus(response);
             if (response.body() != null) {
                 String body = charset != null ? new String(response.body().bytes(), charset) : response.body().string();
                 if (!response.isSuccessful() && properties.getErrorMode() == OkhttpProperties.ErrorMode.throwout) {
                     // BUG-3 修复：非 2xx 统一尊重 error-mode——throwout 抛带响应信息的状态异常
                     //（此处抛出会被本方法 catch 捕获并经 processError 在 throwout 分支原样重抛）；
-                    // quiet/log 模式返回错误体（与原 GET 路径行为一致，两条路径自此对称）
+                    // quiet/log 模式返回错误体（与原 GET 路径行为一致，两条路径自此对称）。
+                    // 错误体已随 body 解出，直接复用变量，不做二次读取
                     OkHttpStatusRuntimeException.ofThrow(response.code(), response.message(),
                             response.request().url().toString(), body);
                 }
@@ -623,15 +622,19 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
 
 
     /**
-    * 字节执行：吞错路径异常返回 null（文本方法返回空串，差异见各公开方法注释）。
+    * 字节执行核心：2xx 且有体读字节返回；非 2xx（或空体）按 error-mode 分派 → 异常 processError。
+    * 非 2xx 与文本路径同语义：throwout 抛 OkHttpStatusRuntimeException，quiet/log 吞错；
+    * 吞错路径返回 null（文本方法返回空串，差异见各公开方法注释）。
     */
     private byte[] executeByte(Request request) {
         log(request);
         try (Response response = getClient().newCall(request).execute()) {
-            checkStatus(response);
             if (response.isSuccessful() && response.body() != null) {
                 return response.body().bytes();
             }
+            // 非 2xx 统一 error-mode 分派：throwout 抛状态异常（错误体在此安静读出供异常携带），
+            // quiet/log 不动作；try-with-resources 保证两种模式都正确关闭响应
+            throwIfNon2xxOnThrowout(response);
         } catch (Exception e) {
             processError(e);
         }
@@ -639,7 +642,8 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
     }
 
     /**
-    * 流执行：Response 包装移交调用方（所有权语义见 ResponseBodyStreamWrapper）。
+    * 流执行核心：2xx 且有体将 Response 包装移交调用方（所有权语义见 ResponseBodyStreamWrapper）；
+    * 非 2xx（或空体）按 error-mode 分派 → 异常 processError。吞错路径关闭响应后返回 null。
     */
     private InputStream executeStream(Request request) {
         log(request);
@@ -647,10 +651,16 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
             Response response = getClient().newCall(request).execute();
             if (response.isSuccessful() && response.body() != null) {
                 // 流包装接管 Response 的关闭职责：调用方读完/关闭流时连带关闭 Response（连接归还连接池），
-                // 未读完即 close 也能正确释放；错误路径在此处即时关闭，不泄漏
+                // 未读完即 close 也能正确释放
                 return new ResponseBodyStreamWrapper(response);
             }
-            response.close();
+            // 非 2xx 统一 error-mode 分派：throwout 抛状态异常、quiet/log 吞错返回 null。
+            // finally 兜底关闭响应——抛出路径也不泄漏连接（错误体已安静耗尽，close 为幂等收尾）
+            try {
+                throwIfNon2xxOnThrowout(response);
+            } finally {
+                response.close();
+            }
         } catch (Exception e) {
             processError(e);
         }
@@ -700,18 +710,27 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
     }
 
     /**
-    * http-status-sensitive 开启时非 2xx 抛 OkHttpStatusRuntimeException（先于 error-mode 判定）。
+    * 非 2xx 统一 error-mode 分派点（字节/流路径共用）：throwout 抛 OkHttpStatusRuntimeException
+    * （携带 code/message/url 与安静读出的错误体；经 processError throwout 分支原样重抛，类型不降级）；
+    * quiet/log 不做任何动作，由调用方按各自路径返回 null。
+    * 文本路径（execute）同语义分派内联在读取后——错误体已解出直接复用，不走本方法以免二次读体。
     */
-    private void checkStatus(Response response){
-        if(!response.isSuccessful() && properties.isHttpStatusSensitive()){
-            String body = StrUtil.EMPTY;
-            if (response.body() != null) {
-                try {
-                    body = response.body().string();
-                } catch (IOException ignored) {
-                }
-            }
-            OkHttpStatusRuntimeException.ofThrow(response.code(),response.message(),response.request().url().toString(),body);
+    private void throwIfNon2xxOnThrowout(Response response) {
+        if (!response.isSuccessful() && properties.getErrorMode() == OkhttpProperties.ErrorMode.throwout) {
+            OkHttpStatusRuntimeException.ofThrow(response.code(), response.message(),
+                    response.request().url().toString(), readBodyQuietly(response));
+        }
+    }
+
+    /**
+    * 安静读取响应体文本（响应无体或读取 IO 失败时降级为空串），仅供异常上下文携带错误详情，
+    * 读取出错不影响主异常的抛出。
+    */
+    private String readBodyQuietly(Response response) {
+        try {
+            return response.body() != null ? response.body().string() : StrUtil.EMPTY;
+        } catch (IOException ignored) {
+            return StrUtil.EMPTY;
         }
     }
 
@@ -728,7 +747,10 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
                 log.error(ExceptionUtil.getMessage(e), e);
                 break;
             case throwout:
-                if( e instanceof OkHttpRuntimeException){
+                if (e instanceof OkHttpStatusRuntimeException) {
+                    // 非 2xx 状态异常原样重抛：保住 code/url/body 访问器语义，不被包装降级
+                    throw (OkHttpStatusRuntimeException) e;
+                } else if( e instanceof OkHttpRuntimeException){
                     throw (OkHttpRuntimeException) e;
                 } else if(e instanceof IOException){
                     IORuntimeException.ofThrow(e);

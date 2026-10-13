@@ -279,20 +279,8 @@ class OkHttpUtilTest {
     // ---------------- 错误码 / 错误模式 ----------------
 
     @Test
-    @DisplayName("httpStatusSensitive=true：非 2xx 抛 OkHttpStatusRuntimeException")
-    void errorStatus_sensitiveThrows() {
-        properties.setHttpStatusSensitive(true);
-        server.enqueue(new MockResponse().setResponseCode(500).setBody("boom"));
-
-        assertThatThrownBy(() -> util.get(url("/err")))
-                .as("敏感模式下 500 应抛状态异常")
-                .isInstanceOf(OkHttpStatusRuntimeException.class)
-                .hasMessageContaining("500");
-    }
-
-    @Test
-    @DisplayName("httpStatusSensitive=false（默认）quiet：GET/POST 非 2xx 均返回错误体（BUG-3 修复后统一契约）")
-    void errorStatus_insensitiveQuietReturnsErrorBody() {
+    @DisplayName("errorMode=quiet：文本路径 GET/POST 非 2xx 均返回错误体（三路径统一 error-mode 语义）")
+    void errorStatus_quietReturnsErrorBody() {
         properties.setErrorMode(OkhttpProperties.ErrorMode.quiet);
         server.enqueue(new MockResponse().setResponseCode(404).setBody("not found"));
         String getBody = util.get(url("/miss"));
@@ -304,9 +292,8 @@ class OkHttpUtilTest {
     }
 
     @Test
-    @DisplayName("httpStatusSensitive=false（默认）throwout：非 2xx 抛 OkHttpStatusRuntimeException 并带响应信息（BUG-3 修复后）")
-    void errorStatus_insensitiveThrowoutThrows() {
-        properties.setErrorMode(OkhttpProperties.ErrorMode.throwout);
+    @DisplayName("errorMode=throwout（默认）：文本路径非 2xx 抛 OkHttpStatusRuntimeException 并带响应信息")
+    void errorStatus_throwoutThrows() {
         server.enqueue(new MockResponse().setResponseCode(503).setBody("svc down"));
 
         assertThatThrownBy(() -> util.get(url("/throw")))
@@ -325,13 +312,64 @@ class OkHttpUtilTest {
     }
 
     @Test
-    @DisplayName("errorMode=log_simple/log_detail：非 2xx 不抛、记录日志后返回错误体")
+    @DisplayName("errorMode=throwout：字节路径非 2xx 抛 OkHttpStatusRuntimeException（类型不降级，code/body 可访问）")
+    void errorByte_throwoutThrowsStatusException() {
+        server.enqueue(new MockResponse().setResponseCode(500).setBody("byte-boom"));
+
+        assertThatThrownBy(() -> util.getByte(url("/err-byte")))
+                .as("throwout 模式下字节路径非 2xx 应抛状态异常（与其他路径统一）")
+                .isExactlyInstanceOf(OkHttpStatusRuntimeException.class)
+                .hasFieldOrPropertyWithValue("code", 500)
+                .hasFieldOrPropertyWithValue("body", "byte-boom")
+                .hasMessageContaining("/err-byte");
+    }
+
+    @Test
+    @DisplayName("errorMode=throwout：流路径非 2xx 抛 OkHttpStatusRuntimeException（类型不降级）")
+    void errorStream_throwoutThrowsStatusException() {
+        server.enqueue(new MockResponse().setResponseCode(502).setBody("bad gw"));
+
+        assertThatThrownBy(() -> util.downloadAsStream(url("/err-stream")))
+                .as("throwout 模式下流路径非 2xx 应抛状态异常（与其他路径统一）")
+                .isExactlyInstanceOf(OkHttpStatusRuntimeException.class)
+                .hasFieldOrPropertyWithValue("code", 502)
+                .hasFieldOrPropertyWithValue("body", "bad gw");
+    }
+
+    @Test
+    @DisplayName("errorMode=quiet：字节/流路径非 2xx 不抛、按路径原样返回 null")
+    void errorByteAndStream_quietReturnNull() {
+        properties.setErrorMode(OkhttpProperties.ErrorMode.quiet);
+        server.enqueue(new MockResponse().setResponseCode(500).setBody("quiet-byte"));
+        server.enqueue(new MockResponse().setResponseCode(404).setBody("quiet-stream"));
+
+        assertThat(util.getByte(url("/q-byte")))
+                .as("quiet 模式下字节路径非 2xx 应返回 null").isNull();
+        assertThat(util.downloadAsStream(url("/q-stream")))
+                .as("quiet 模式下流路径非 2xx 应返回 null").isNull();
+    }
+
+    @Test
+    @DisplayName("errorMode=log_detail：字节/流路径非 2xx 只记日志不抛、返回 null")
+    void errorByteAndStream_logModesReturnNull() {
+        properties.setErrorMode(OkhttpProperties.ErrorMode.log_detail);
+        server.enqueue(new MockResponse().setResponseCode(500).setBody("log-byte"));
+        server.enqueue(new MockResponse().setResponseCode(404).setBody("log-stream"));
+
+        assertThat(util.getByte(url("/l-byte")))
+                .as("log_detail 模式下字节路径非 2xx 应返回 null").isNull();
+        assertThat(util.downloadAsStream(url("/l-stream")))
+                .as("log_detail 模式下流路径非 2xx 应返回 null").isNull();
+    }
+
+    @Test
+    @DisplayName("errorMode=log_simple：非 2xx 不抛、返回错误体")
     void errorStatus_logModesReturnErrorBody() {
         properties.setErrorMode(OkhttpProperties.ErrorMode.log_simple);
         server.enqueue(new MockResponse().setResponseCode(404).setBody("nf"));
 
         String body = util.get(url("/logsimple"));
-        // log 模式在 processError 只打日志不抛——状态异常被吞后回落返回错误体
+        // log 模式下非 2xx 不构造异常，直接回落返回错误体（processError 只服务 IO 异常路径的记录）
         assertThat(body).as("log_simple 模式下应记录并返回错误体").isEqualTo("nf");
     }
 

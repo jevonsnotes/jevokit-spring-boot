@@ -35,8 +35,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  *       message 包含）；</li>
  *   <li><b>BUG-4 补</b>：consumer 读流一半抛异常——try-with-resources 的 close 在异常路径
  *       也要走到、连接归池（后续请求可正常服务），而非只验证正常 close；</li>
- *   <li><b>BUG-4 增</b>：非 2xx 流路径即时关闭后连接可复用（锁定"非 2xx 返回 null"的旧语义
- *       ——终验裁定维持不动，此处防回归）；</li>
+ *   <li><b>BUG-4 增</b>：非 2xx 流路径语义随 error-mode 统一后的两条边界——throwout（默认）
+ *       抛 OkHttpStatusRuntimeException 且连接即时释放；quiet 返回 null（吞错语义归位 quiet 模式）
+ *       且连接即时释放，两用例均防回归；</li>
  *   <li><b>BUG-5 补</b>：ISO-8859-1 单字节字符集表单往返（排除"只有双字节字符集才暴露"的侥幸），
  *       另补默认 UTF-8 下 emoji 精确往返（eng 用例 GBK+emoji 中 emoji 必然降级为 '?'，未证真）。</li>
  * </ol>
@@ -144,16 +145,33 @@ class OkHttpAdversarialVerificationTest {
     }
 
     @Test
-    @DisplayName("非 2xx 流路径：返回 null（终验裁定维持的旧语义）且连接即时释放")
-    void streamNon2xxReturnsNullAndReleasesConnection() throws Exception {
+    @DisplayName("非 2xx 流路径 throwout：抛 OkHttpStatusRuntimeException（三路径统一）且连接即时释放")
+    void streamNon2xxThrowsInThrowoutModeAndReleasesConnection() throws Exception {
+        OkHttpUtil util = util(new OkHttpClient());
+        server.enqueue(new MockResponse().setResponseCode(404).setBody("gone"));
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("recovered"));
+
+        // when / then：默认 throwout 下流路径非 2xx 也抛状态异常（与文本/字节路径统一），
+        // 且抛出路径上响应已关闭——同一 server 立即接受并服务下一个请求佐证连接未泄漏
+        assertThatThrownBy(() -> util.downloadAsStream(url("/miss-stream")))
+                .as("throwout 模式下流路径非 2xx 应抛状态异常（三路径语义一致）")
+                .isInstanceOf(OkHttpStatusRuntimeException.class)
+                .hasFieldOrPropertyWithValue("code", 404);
+        assertThat(util.get(url("/after-miss"))).isEqualTo("recovered");
+    }
+
+    @Test
+    @DisplayName("非 2xx 流路径 quiet：返回 null 且连接即时释放（吞错语义归位 quiet 模式）")
+    void streamNon2xxReturnsNullInQuietModeAndReleasesConnection() throws Exception {
+        properties.setErrorMode(OkhttpProperties.ErrorMode.quiet);
         OkHttpUtil util = util(new OkHttpClient());
         server.enqueue(new MockResponse().setResponseCode(404).setBody("gone"));
         server.enqueue(new MockResponse().setResponseCode(200).setBody("recovered"));
 
         // when
         InputStream in = util.downloadAsStream(url("/miss-stream"));
-        // then：旧语义 = null（不抛）；连接释放可由后续请求正常服务佐证
-        assertThat(in).as("非 2xx 流路径维持返回 null 的旧语义").isNull();
+        // then：quiet 吞错返回 null（不抛）；连接释放可由后续请求正常服务佐证
+        assertThat(in).as("quiet 模式下流路径非 2xx 应返回 null").isNull();
         assertThat(util.get(url("/after-miss"))).isEqualTo("recovered");
     }
 

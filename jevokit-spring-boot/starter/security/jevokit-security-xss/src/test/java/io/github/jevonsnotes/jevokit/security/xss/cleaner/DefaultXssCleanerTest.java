@@ -42,7 +42,11 @@ class DefaultXssCleanerTest {
             "<img src=x onerror=alert(1)>",
             "<a href=\"javascript:alert(1)\">点我</a>",
             "<svg/onload=alert(1)>",
-            "<iframe src=\"http://evil.example.com\"></iframe>"
+            "<iframe src=\"http://evil.example.com\"></iframe>",
+            // 实体/控制符混淆形态：规范化后按 javascript 协议剥离（防绕过回归）
+            "<a href=\"java&#9;script:alert(1)\">点我</a>",
+            "<a href=\"jav&#x0A;ascript:alert(1)\">点我</a>",
+            "<img src=\"java&#115;cript:alert(1)\">"
     })
     void clearModeNeutralizesAttacks(String payload) {
         mode(XssProperties.Mode.clear);
@@ -101,6 +105,17 @@ class DefaultXssCleanerTest {
                 .isEqualTo("<p>你好<b>世界</b></p>");
     }
 
+    @Test
+    @DisplayName("[假] clear 模式：相对路径/锚点链接规范化判定不误伤")
+    void clearModeKeepsRelativeLinksAndAnchors() {
+        mode(XssProperties.Mode.clear);
+        String cleaned = cleaner.clean("<a href=\"/list?page=1\">列表</a><a href=\"#top\">顶部</a>");
+        assertThat(cleaned)
+                .as("相对路径与锚点链接的 href 必须保留: %s", cleaned)
+                .contains("<a href=\"/list?page=1\">")
+                .contains("<a href=\"#top\">");
+    }
+
     // ------------------------- escape 模式 -------------------------
 
     @Test
@@ -142,6 +157,17 @@ class DefaultXssCleanerTest {
                 .isEqualTo("a&quot;b");
     }
 
+    @Test
+    @DisplayName("[真] escape 模式：实体混淆载荷整体转义为惰性文本，无活动形态")
+    void escapeModeNeutralizesObfuscatedPayload() {
+        mode(XssProperties.Mode.escape);
+        String escaped = cleaner.clean("<a href=\"java&#9;script:alert(1)\">x</a>");
+        assertThat(escaped)
+                .as("escape 模式下标签与实体均被转义，输出为惰性文本: %s", escaped)
+                .startsWith("&lt;a href=")
+                .doesNotContain("<a href=");
+    }
+
     // ------------------------- reject 模式 -------------------------
 
     @ParameterizedTest(name = "[真] reject 拒绝载荷: {0}")
@@ -149,7 +175,13 @@ class DefaultXssCleanerTest {
             "<script>alert(1)</script>",
             "<img src=x onerror=alert(1)>",
             "<a href=\"javascript:alert(1)\">x</a>",
-            "<iframe></iframe>"
+            "<iframe></iframe>",
+            // 实体/控制符混淆形态：isValid 走同一规范化判定，命中即拒
+            "<a href=\"java&#9;script:alert(1)\">x</a>",
+            "<a href=\"jav&#x0A;ascript:alert(1)\">x</a>",
+            "<a href=\"&#106;avascript:alert(1)\">x</a>",
+            "<a href=\" JAVA&#X9;SCRIPT:alert(1)\">x</a>",
+            "<img src=\"java&#115;cript:alert(1)\">"
     })
     void rejectModeThrowsOnAttacks(String payload) {
         mode(XssProperties.Mode.reject);
@@ -162,7 +194,10 @@ class DefaultXssCleanerTest {
     @ValueSource(strings = {
             "普通中文报文",
             "<b>白名单加粗</b>",
-            "<p>段落<a href=\"https://example.com\" title=\"t\">链接</a></p>"
+            "<p>段落<a href=\"https://example.com\" title=\"t\">链接</a></p>",
+            // 规范化判定不误伤：相对路径与字面量实体（双重转义，浏览器不按 javascript scheme 执行）
+            "<a href=\"/list?page=1&size=10\">x</a>",
+            "<a href=\"java&amp;#9;script:notes\">x</a>"
     })
     void rejectModePassesBenignContent(String content) {
         mode(XssProperties.Mode.reject);

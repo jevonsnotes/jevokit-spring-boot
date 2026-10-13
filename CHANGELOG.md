@@ -2,6 +2,16 @@
 
 本仓库遵循[四段式版本号](docs/preferences/pref-version-scheme.md)：前两段对齐 Spring Boot 版本线，第三位为本项目破坏性变更位（递增时第四位归 0），第四位为常规迭代位。
 
+## [未发布]
+
+### 破坏性变更（Breaking）
+
+- **jevokit-okhttp 删除 `jevokit.ok.http.http-status-sensitive` 配置项**：非 2xx 响应处理语义统一由 `errorMode` 管理——原 `http-status-sensitive: true` 使用方改配 `error-mode: throwout`（行为等价，非 2xx 抛 OkHttpStatusRuntimeException 且携带 code/url/body）；quiet/log 模式吞错语义不变（文本路径返回错误体、字节/流路径返回 null）
+
+### 修复
+
+- **XSS 安全修复**：`HtmlSafeList` 的 javascript 协议检查改为规范化后判定（小写 + 剥除值内 \t\r\n + trim 首尾空白），堵住 `java&#9;script:` 等实体/控制符/首部空格混淆形态绕过 `src`/`href` 拦截的漏洞；相对路径、锚点、`data:;base64` 图片特例等既有放行行为不变
+
 ## [3.5.2.1] — 2026-10-08
 
 ### 构建（对使用方零影响）
