@@ -7,7 +7,7 @@ import io.github.jevonsnotes.jevokit.core.annotation.Excel;
 import io.github.jevonsnotes.jevokit.core.lang.ApiResponse;
 import io.github.jevonsnotes.jevokit.sample.vo.ExcelVo;
 
-import jakarta.validation.Valid;
+import javax.validation.Valid;
 import java.util.List;
 
  /**

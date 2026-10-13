@@ -8,8 +8,8 @@ import lombok.experimental.Accessors;
 import io.github.jevonsnotes.jevokit.audit.log.dao.AuditLogDao;
 import io.github.jevonsnotes.jevokit.audit.log.dao.BaseAutoDao;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Table;
+import javax.persistence.Column;
+import javax.persistence.Table;
 import java.util.Date;
 
 /**

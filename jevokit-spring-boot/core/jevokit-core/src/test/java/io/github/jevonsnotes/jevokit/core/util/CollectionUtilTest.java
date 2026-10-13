@@ -7,6 +7,7 @@ import io.github.jevonsnotes.jevokit.core.lang.Entry;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -120,7 +121,7 @@ class CollectionUtilTest {
     @DisplayName("getAndSetIfNull(默认值)：已有值返回原值，缺失时填充默认值")
     void getAndSetIfNullDefaultValue() {
         // given
-        Map<String, Integer> map = new HashMap<>(Map.of("a", 1));
+        Map<String, Integer> map = new HashMap<>(Collections.singletonMap("a", 1));
         // when
         Integer existing = CollectionUtil.getAndSetIfNull(map, "a", 99);
         Integer absent = CollectionUtil.getAndSetIfNull(map, "b", 99);

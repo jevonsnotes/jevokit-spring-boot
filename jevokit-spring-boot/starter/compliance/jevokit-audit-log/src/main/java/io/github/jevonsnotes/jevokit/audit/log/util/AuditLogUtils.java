@@ -17,11 +17,11 @@ import io.github.jevonsnotes.jevokit.core.http.wrapper.RequestReaderHttpServletR
 import io.github.jevonsnotes.jevokit.core.http.wrapper.ResponseReaderHttpServletResponseWrapper;
 import io.github.jevonsnotes.jevokit.core.lang.Callback;
 
-import jakarta.servlet.ServletRequestWrapper;
-import jakarta.servlet.ServletResponse;
-import jakarta.servlet.ServletResponseWrapper;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import javax.servlet.ServletRequestWrapper;
+import javax.servlet.ServletResponse;
+import javax.servlet.ServletResponseWrapper;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.lang.reflect.Method;
 import java.util.Optional;
 

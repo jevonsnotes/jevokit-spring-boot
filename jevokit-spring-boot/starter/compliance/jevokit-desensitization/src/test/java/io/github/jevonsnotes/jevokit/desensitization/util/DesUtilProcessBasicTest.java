@@ -1,5 +1,6 @@
 package io.github.jevonsnotes.jevokit.desensitization.util;
 
+import cn.hutool.core.util.StrUtil;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -51,7 +52,7 @@ class DesUtilProcessBasicTest {
     @Test
     @DisplayName("NAME：超长输入不崩溃且保留头尾")
     void nameLong() {
-        String longName = "赵".repeat(50) + "钱";
+        String longName = StrUtil.repeat("赵", 50) + "钱";
         String masked = process(longName, DstType.NAME);
         assertThat(masked).as("超长姓名长度不变").hasSize(longName.length());
         assertThat(masked).as("保留首尾").startsWith("赵").endsWith("钱").contains("*");
@@ -278,7 +279,7 @@ class DesUtilProcessBasicTest {
     @Test
     @DisplayName("超长输入（1 万字符）在 DEFAULT 类型下长度不变")
     void veryLongInput() {
-        String longText = "a1".repeat(5_000);
+        String longText = StrUtil.repeat("a1", 5_000);
         assertThat(process(longText, DstType.DEFAULT)).hasSize(longText.length());
     }
 

@@ -7,6 +7,9 @@ import io.github.jevonsnotes.jevokit.desensitization.config.JevokitDesensitizati
 import io.github.jevonsnotes.jevokit.desensitization.consts.DstLevel;
 import io.github.jevonsnotes.jevokit.desensitization.consts.DstType;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -22,14 +25,15 @@ class DesUtilJsonXmlTest {
     private static final String ID_CARD = "110101190001011234";
 
     private static JevokitDesensitizationProperties sensitiveProps() {
+        Map<DstType, List<String>> lv0 = new HashMap<>();
+        lv0.put(DstType.MOBILE, Arrays.asList("mobile", "phone", "aae005"));
+        lv0.put(DstType.NAME, Arrays.asList("name", "aac003", "paf313", "pkc247", "oppactname", "Name"));
+        lv0.put(DstType.ID_CARD, Arrays.asList("idNumber", "aac002", "ID", "PersonalID"));
+        lv0.put(DstType.BANK_CARD, Arrays.asList("pka575", "BankAccount"));
         return DesensitizationTestSupport.properties(
-                Map.of(DstLevel.LV0, Map.of(
-                        DstType.MOBILE, List.of("mobile", "phone", "aae005"),
-                        DstType.NAME, List.of("name", "aac003", "paf313", "pkc247", "oppactname", "Name"),
-                        DstType.ID_CARD, List.of("idNumber", "aac002", "ID", "PersonalID"),
-                        DstType.BANK_CARD, List.of("pka575", "BankAccount"))),
-                List.of(),
-                Map.of());
+                Collections.singletonMap(DstLevel.LV0, lv0),
+                Collections.emptyList(),
+                Collections.emptyMap());
     }
 
     // ------------------------- desensitizeJson：小样例 -------------------------
@@ -143,9 +147,10 @@ class DesUtilJsonXmlTest {
     @DisplayName("[真] XML CDATA 节段按标签名脱敏")
     void xmlCDataDesensitized() {
         JevokitDesensitizationProperties properties = DesensitizationTestSupport.properties(
-                Map.of(DstLevel.LV0, Map.of(DstType.MOBILE, List.of("payload"))),
-                List.of(),
-                Map.of());
+                Collections.singletonMap(DstLevel.LV0, Collections.singletonMap(
+                        DstType.MOBILE, Collections.singletonList("payload"))),
+                Collections.emptyList(),
+                Collections.emptyMap());
         DesensitizationTestSupport.minimalRunner(properties).run(context -> {
             String out = DesUtil.desensitizeXml("<payload><![CDATA[" + MOBILE + "]]></payload>");
             assertThat(out).as("CDATA 内手机号必须脱敏").doesNotContain(MOBILE).contains("138****8000");

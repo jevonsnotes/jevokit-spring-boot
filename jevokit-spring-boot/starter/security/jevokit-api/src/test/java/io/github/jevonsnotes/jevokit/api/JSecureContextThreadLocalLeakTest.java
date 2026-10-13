@@ -1,7 +1,7 @@
 package io.github.jevonsnotes.jevokit.api;
 
 import com.alibaba.fastjson2.JSON;
-import jakarta.validation.Valid;
+import javax.validation.Valid;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

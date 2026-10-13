@@ -2,7 +2,7 @@ package io.github.jevonsnotes.jevokit.core.util;
 
 import cn.hutool.core.util.StrUtil;
 
-import jakarta.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * HTTP 服务端工具，在 hutool HttpUtil 基础上补充请求侧信息提取。

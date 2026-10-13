@@ -111,9 +111,9 @@ public class JevokitRedisConfiguration {
         redisTemplate.setConnectionFactory(redisConnectionFactory);
 
         // 使用Jackson2JsonRedisSerialize 替换默认序列化
-        Jackson2JsonRedisSerializer jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer(getObjectMapper(),Object.class);
-
-//        jackson2JsonRedisSerializer.setObjectMapper();
+        //（SB 2.7 线：spring-data-redis 2.x 无 (ObjectMapper, Class) 双参构造器，单参构造 + setObjectMapper 注入）
+        Jackson2JsonRedisSerializer jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer(Object.class);
+        jackson2JsonRedisSerializer.setObjectMapper(getObjectMapper());
 
         // 设置value的序列化规则和 key的序列化规则
         redisTemplate.setValueSerializer(jackson2JsonRedisSerializer);
@@ -168,7 +168,9 @@ public class JevokitRedisConfiguration {
     public RedisCacheConfiguration redisCacheConfiguration(GlobalCacheKeyPrefix globalCacheKeyPrefix) {
         RedisCacheConfiguration configuration = RedisCacheConfiguration.defaultCacheConfig();
 
-        Jackson2JsonRedisSerializer<Object> jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer<Object>(getObjectMapper(),Object.class);
+        //（SB 2.7 线：spring-data-redis 2.x 无 (ObjectMapper, Class) 双参构造器，单参构造 + setObjectMapper 注入）
+        Jackson2JsonRedisSerializer<Object> jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer<>(Object.class);
+        jackson2JsonRedisSerializer.setObjectMapper(getObjectMapper());
 
         configuration = configuration.computePrefixWith(globalCacheKeyPrefix)
                 .serializeValuesWith(

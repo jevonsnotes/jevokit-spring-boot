@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -94,9 +95,9 @@ class PageUtilRaceVerificationTest {
         int rounds = 150;
         List<Integer> data = range(1, elements);
         List<Integer> expectedIndexes = IntStream.rangeClosed(0, elements / pageSize - 1)
-                .boxed().toList();
+                .boxed().collect(Collectors.toList());
         List<Integer> expectedHeads = IntStream.iterate(1, v -> v + pageSize)
-                .limit(elements / pageSize).boxed().toList();
+                .limit(elements / pageSize).boxed().collect(Collectors.toList());
         // 杀伤力自证：统计运行在非主线程的任务数——若全部被 CallerRunsPolicy 内联到主线程，
         // 快照读与共享读不可区分，本压力用例对 BUG-1 就没有检出能力（阳性对照原理）
         String mainThread = Thread.currentThread().getName();

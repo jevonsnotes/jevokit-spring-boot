@@ -1,12 +1,12 @@
 package io.github.jevonsnotes.jevokit.api.dto;
 
-import jakarta.validation.Valid;
+import javax.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 
 /**
  * JSecure 协议请求报文：安全接口的入参信封，承载交易标识、签名与数据密文。

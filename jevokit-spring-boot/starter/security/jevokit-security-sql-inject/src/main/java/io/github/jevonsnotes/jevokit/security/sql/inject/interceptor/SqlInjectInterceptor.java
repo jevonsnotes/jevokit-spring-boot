@@ -8,8 +8,8 @@ import io.github.jevonsnotes.jevokit.configuration.security.sql.inject.SqlInject
 import io.github.jevonsnotes.jevokit.configuration.security.sql.inject.SqlInjectProperties;
 import io.github.jevonsnotes.jevokit.configuration.holder.ConfigHolder;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 @RequiredArgsConstructor
 public class SqlInjectInterceptor implements AsyncHandlerInterceptor {

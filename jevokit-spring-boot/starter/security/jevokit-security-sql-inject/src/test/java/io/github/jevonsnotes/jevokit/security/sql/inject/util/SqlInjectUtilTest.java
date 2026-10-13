@@ -1,5 +1,6 @@
 package io.github.jevonsnotes.jevokit.security.sql.inject.util;
 
+import cn.hutool.core.util.StrUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -9,8 +10,8 @@ import io.github.jevonsnotes.jevokit.configuration.holder.ConfigHolder;
 import io.github.jevonsnotes.jevokit.configuration.security.sql.inject.SqlInjectProperties;
 import io.github.jevonsnotes.jevokit.security.sql.inject.exception.SqlInjectException;
 
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -78,7 +79,7 @@ class SqlInjectUtilTest {
     @Test
     @DisplayName("[真] clear + additionTaintedPatterns：union select / 注释截断被清除")
     void clearModeAppliesAdditionTaintedPatterns() {
-        properties.setAdditionTaintedPatterns(List.of(
+        properties.setAdditionTaintedPatterns(Arrays.asList(
                 "((?i)union[ ]+select)",
                 "--",
                 "/\\*.*?\\*/"));
@@ -127,7 +128,7 @@ class SqlInjectUtilTest {
     @Test
     @DisplayName("[真] 追加规则（文档示例四条正则背书）：union select / -- / # / 块注释字符类形态")
     void additionTaintedPatternsDocExamplePatterns() {
-        properties.setAdditionTaintedPatterns(List.of(
+        properties.setAdditionTaintedPatterns(Arrays.asList(
                 "((?i)union[ ]+select)", "--", "#", "[/][*].*?[*][/]"));
         mode(SqlInjectProperties.Mode.clear);
         String cleaned = SqlInjectUtil.clean(
@@ -145,7 +146,7 @@ class SqlInjectUtilTest {
     @Test
     @DisplayName("[真] 追加规则：# 单独触发拒绝（reject 模式，无默认表命中干扰）")
     void additionHashCommentReject() {
-        properties.setAdditionTaintedPatterns(List.of("#"));
+        properties.setAdditionTaintedPatterns(Collections.singletonList("#"));
         mode(SqlInjectProperties.Mode.reject);
         assertThatThrownBy(() -> SqlInjectUtil.clean("price # discount note", properties.getAllTaintedPatterns()))
                 .as("仅命中 # 追加规则也必须拒绝")
@@ -181,7 +182,7 @@ class SqlInjectUtilTest {
     @DisplayName("超长中文报文（10 万字符）clear 模式原样返回")
     void longBenignContentPassthrough() {
         mode(SqlInjectProperties.Mode.clear);
-        String longText = "安全中文长报文".repeat(20_000);
+        String longText = StrUtil.repeat("安全中文长报文", 20_000);
         assertThat(SqlInjectUtil.clean(longText, properties.getAllTaintedPatterns()))
                 .as("无命中的长报文必须原样返回")
                 .isEqualTo(longText);

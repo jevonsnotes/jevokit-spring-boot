@@ -49,6 +49,8 @@
 | 测试报告编码不一致：Surefire XML UTF-8 声明与 JVM 平台默认 GBK 冲突（Windows + JDK17） | 契约不一致 | 已修复·已沉淀 | [bug-surefire-report-encoding-gbk-mismatch-20260918.md](bug-surefire-report-encoding-gbk-mismatch-20260918.md) |
 | JSecureContext 三个 ThreadLocal 请求结束后不清理——线程池复用串终端/串交易号 | 异常路径未处理 | 已修复·已沉淀 | [bug-jsecure-context-threadlocal-leak-20260920.md](bug-jsecure-context-threadlocal-leak-20260920.md) |
 | Maven Central 首发五连障：插件静默跳过/token 失效/两步序少半步/模块缺 name/旧 BOM 假绿 | 契约不一致 | 已修复·已沉淀 | [bug-central-release-pipeline-20260921.md](bug-central-release-pipeline-20260921.md) |
+| 子模块 pom parent 块硬编码旧版本号——配置翻新后全量编译"假绿"（BUILD SUCCESS 但新配置零生效） | 重复实现走偏 | 已修复·已沉淀 | [bug-parent-version-stale-pom-false-green-20261012.md](bug-parent-version-stale-pom-false-green-20261012.md) |
+| 日志路径上的 Spring 容器查找——logback 过滤器 getBean 与上下文刷新的三方循环等待（DEF-1） | 性能·并发 | 已修复·已沉淀 | [bug-log-filter-container-deadlock-20261012.md](bug-log-filter-container-deadlock-20261012.md) |
 
 ## 单条目骨架
 

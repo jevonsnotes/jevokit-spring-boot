@@ -10,8 +10,8 @@ import cn.hutool.core.util.StrUtil;
 import org.springframework.data.util.ParsingUtils;
 import io.github.jevonsnotes.jevokit.core.dto.SqlBundleDto;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Table;
+import javax.persistence.Column;
+import javax.persistence.Table;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;

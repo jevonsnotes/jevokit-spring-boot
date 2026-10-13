@@ -4,9 +4,9 @@ import cn.hutool.core.io.IORuntimeException;
 import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.lang.caller.CallerUtil;
 import cn.hutool.core.util.StrUtil;
-import jakarta.servlet.ReadListener;
-import jakarta.servlet.ServletInputStream;
-import jakarta.servlet.http.HttpServletRequest;
+import javax.servlet.ReadListener;
+import javax.servlet.ServletInputStream;
+import javax.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 import io.github.jevonsnotes.jevokit.core.consts.HttpMethod;
@@ -158,7 +158,7 @@ public class RequestContentCachingRequestWrapper extends ContentCachingRequestWr
      */
     @Override
     public Enumeration<String> getParameterNames() {
-        return new Enumeration<>() {
+        return new Enumeration<String>() {
             private final String[] arr = getParameterMap().keySet().toArray(new String[0]);
             private int idx = 0;
 
@@ -264,11 +264,11 @@ public class RequestContentCachingRequestWrapper extends ContentCachingRequestWr
                     name = s.substring(0, i);
                     value = s.substring(i + 1);
                     try {
-                        name = URLDecoder.decode(name, StandardCharsets.UTF_8);
+                        name = URLDecoder.decode(name, StandardCharsets.UTF_8.name());
                     } catch (Exception ignored) {
                     }
                     try {
-                        value = URLDecoder.decode(value, StandardCharsets.UTF_8);
+                        value = URLDecoder.decode(value, StandardCharsets.UTF_8.name());
                     } catch (Exception ignored) {
                     }
                     List<String> list = tempParams.computeIfAbsent(name, k -> new LinkedList<>());
@@ -282,6 +282,17 @@ public class RequestContentCachingRequestWrapper extends ContentCachingRequestWr
             map.put(key, tempParams.get(key).toArray(new String[0]));
         }
         parameters = map;
+    }
+
+    /**
+     * 以字符串返回缓存的请求体：按请求字符集解码缓存字节，未声明/非法字符集时兜底 UTF-8
+     * （字符集语义与 {@code parseBody} 的表单体解析一致）
+     *
+     * @return 缓存请求体解码后的字符串
+     */
+    public String getContentAsString() {
+        Charset bodyCharset = getCharset() != null ? getCharset() : StandardCharsets.UTF_8;
+        return new String(getContentAsByteArray(), bodyCharset);
     }
 
     /**

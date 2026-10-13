@@ -19,8 +19,8 @@ import io.github.jevonsnotes.jevokit.core.annotation.Excel;
 import io.github.jevonsnotes.jevokit.core.exception.ExcelException;
 import io.github.jevonsnotes.jevokit.core.util.FieldUtil;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.Part;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.Part;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;

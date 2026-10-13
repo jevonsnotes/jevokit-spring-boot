@@ -8,6 +8,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
+import org.springframework.util.StreamUtils;
 import io.github.jevonsnotes.jevokit.core.util.SecurityUtil;
 import io.github.jevonsnotes.jevokit.desensitization.util.DesUtil;
 import io.github.jevonsnotes.jevokit.redis.cache.GlobalCacheKeyPrefix;
@@ -125,7 +126,7 @@ class JevokitPrefixGuardTest {
         byte[] classBytes;
         try (InputStream in = DesUtil.class.getResourceAsStream("DesUtil.class")) {
             assertThat(in).as("classpath 上找不到 DesUtil.class 资源").isNotNull();
-            classBytes = in.readAllBytes();
+            classBytes = StreamUtils.copyToByteArray(in);
         }
         String constantPoolText = new String(classBytes, StandardCharsets.ISO_8859_1);
         for (String old : OLD_PREFIXES) {

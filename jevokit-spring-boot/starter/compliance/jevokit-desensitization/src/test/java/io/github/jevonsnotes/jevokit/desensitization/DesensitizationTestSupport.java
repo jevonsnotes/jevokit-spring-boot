@@ -1,5 +1,6 @@
 package io.github.jevonsnotes.jevokit.desensitization;
 
+import cn.hutool.core.io.IoUtil;
 import cn.hutool.extra.spring.SpringUtil;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -39,7 +40,7 @@ public final class DesensitizationTestSupport {
             if (in == null) {
                 throw new IllegalStateException("fixture not found on classpath: " + name);
             }
-            return new String(in.readAllBytes(), StandardCharsets.UTF_8);
+            return IoUtil.read(in, StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new UncheckedIOException("fixture read failed: " + name, e);
         }

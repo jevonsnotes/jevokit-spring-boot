@@ -1,7 +1,7 @@
 package io.github.jevonsnotes.jevokit.sample.rpc;
 
 import cn.hutool.extra.spring.SpringUtil;
-import jakarta.xml.ws.Endpoint;
+import javax.xml.ws.Endpoint;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.cxf.Bus;
 import org.apache.cxf.bus.spring.SpringBus;

@@ -1,8 +1,8 @@
 package io.github.jevonsnotes.jevokit.audit.log.filter;
 
 import cn.hutool.extra.spring.SpringUtil;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,9 +20,10 @@ import io.github.jevonsnotes.jevokit.configuration.config.IpConfiguration;
 import io.github.jevonsnotes.jevokit.core.consts.HttpMethod;
 
 import java.lang.reflect.Field;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -147,7 +148,7 @@ class AuditLogFilterThreadLocalLeakTest {
                     .hasMessage("boom-1");
 
             List<AuditLogDto> firstRequestSaved = processor.saved.stream()
-                    .filter(dto -> AUDITED_PATH_1.equals(dto.getServletPath())).toList();
+                    .filter(dto -> AUDITED_PATH_1.equals(dto.getServletPath())).collect(Collectors.toList());
             assertThat(firstRequestSaved)
                     .as("前置：around 开启时请求1 在 preHandle 已落开始审计（携带 globalKey 供继承比对）")
                     .isNotEmpty();
@@ -157,7 +158,7 @@ class AuditLogFilterThreadLocalLeakTest {
             filter.doFilter(auditedRequest(AUDITED_PATH_2), new MockHttpServletResponse(), (req, res) -> { });
 
             List<AuditLogDto> secondRequestSaved = processor.saved.stream()
-                    .filter(dto -> AUDITED_PATH_2.equals(dto.getServletPath())).toList();
+                    .filter(dto -> AUDITED_PATH_2.equals(dto.getServletPath())).collect(Collectors.toList());
             assertThat(secondRequestSaved)
                     .as("请求2 应产生自己的审计记录（around 开启时 pre/after 各一条）")
                     .isNotEmpty();
@@ -201,7 +202,8 @@ class AuditLogFilterThreadLocalLeakTest {
         properties.setEnabled(true);
         properties.setEnabledAround(enabledAround);
         properties.getEventTypes().setPatterns(
-                Map.of(HttpMethod.GET, Map.of(EVENT_TYPE, List.of("/api/orders/**"))));
+                Collections.singletonMap(HttpMethod.GET,
+                        Collections.singletonMap(EVENT_TYPE, Collections.singletonList("/api/orders/**"))));
         return properties;
     }
 

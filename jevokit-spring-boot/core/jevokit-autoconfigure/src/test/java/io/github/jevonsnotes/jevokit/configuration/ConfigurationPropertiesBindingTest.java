@@ -15,6 +15,7 @@ import io.github.jevonsnotes.jevokit.configuration.security.xss.XssProperties;
 import io.github.jevonsnotes.jevokit.core.consts.AuditLogPersistentMode;
 import io.github.jevonsnotes.jevokit.core.consts.HttpMethod;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -134,7 +135,7 @@ class ConfigurationPropertiesBindingTest {
                                 props.getEventTypes().getPatterns().get(HttpMethod.GET);
                         assertThat(getPatterns)
                                 .as("patterns[GET] 键应为 HttpMethod 枚举")
-                                .containsEntry("/api/user/**", List.of("id", "name"));
+                                .containsEntry("/api/user/**", Arrays.asList("id", "name"));
                     });
         }
     }
@@ -282,7 +283,7 @@ class ConfigurationPropertiesBindingTest {
                         assertThat(props.isNegative()).as("negative 应绑定").isTrue();
                         assertThat(props.getNamespaces())
                                 .as("default 命名空间正则应按序绑定")
-                                .containsEntry("default", List.of("java.lang.Runtime", "javax.script.*"));
+                                .containsEntry("default", Arrays.asList("java.lang.Runtime", "javax.script.*"));
                     });
         }
     }

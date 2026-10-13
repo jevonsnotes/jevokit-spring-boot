@@ -8,8 +8,8 @@ import io.github.jevonsnotes.jevokit.configuration.annotation.XssClean;
 import io.github.jevonsnotes.jevokit.configuration.security.xss.XssMeta;
 import io.github.jevonsnotes.jevokit.configuration.security.xss.XssProperties;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 @RequiredArgsConstructor
 public class XssCleanInterceptor implements AsyncHandlerInterceptor {

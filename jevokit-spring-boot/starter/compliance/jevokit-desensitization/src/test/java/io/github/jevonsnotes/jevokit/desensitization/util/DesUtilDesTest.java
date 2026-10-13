@@ -16,6 +16,9 @@ import io.github.jevonsnotes.jevokit.desensitization.desensitizer.DefaultDesensi
 import io.github.jevonsnotes.jevokit.desensitization.desensitizer.Desensitizer;
 import io.github.jevonsnotes.jevokit.desensitization.dto.DstContext;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -42,12 +45,13 @@ class DesUtilDesTest {
     }
 
     private static JevokitDesensitizationProperties mobileNameProps() {
+        Map<DstType, List<String>> lv0 = new HashMap<>();
+        lv0.put(DstType.MOBILE, Arrays.asList("mobile", "phone"));
+        lv0.put(DstType.NAME, Arrays.asList("name", "applicantName"));
         return DesensitizationTestSupport.properties(
-                Map.of(DstLevel.LV0, Map.of(
-                        DstType.MOBILE, List.of("mobile", "phone"),
-                        DstType.NAME, List.of("name", "applicantName"))),
-                List.of(),
-                Map.of());
+                Collections.singletonMap(DstLevel.LV0, lv0),
+                Collections.emptyList(),
+                Collections.emptyMap());
     }
 
     @Test
@@ -158,9 +162,10 @@ class DesUtilDesTest {
     @DisplayName("desByProperties：ignore-pattern 优先于 prop-pattern")
     void ignorePatternWins() {
         JevokitDesensitizationProperties properties = DesensitizationTestSupport.properties(
-                Map.of(DstLevel.LV0, Map.of(DstType.MOBILE, List.of("mobile"))),
-                List.of("mobile"),
-                Map.of());
+                Collections.singletonMap(DstLevel.LV0,
+                        Collections.singletonMap(DstType.MOBILE, Collections.singletonList("mobile"))),
+                Collections.singletonList("mobile"),
+                Collections.emptyMap());
         DesensitizationTestSupport.minimalRunner(properties).run(context ->
                 assertThat(DesUtil.desByProperties("mobile", MOBILE))
                         .as("ignore 命中时即使有规则也放行")
@@ -171,9 +176,10 @@ class DesUtilDesTest {
     @DisplayName("desByProperties：含反斜杠点号的模式按全名匹配")
     void dottedPatternMatchesFullName() {
         JevokitDesensitizationProperties properties = DesensitizationTestSupport.properties(
-                Map.of(DstLevel.LV0, Map.of(DstType.MOBILE, List.of("payload\\.mobile"))),
-                List.of(),
-                Map.of());
+                Collections.singletonMap(DstLevel.LV0, Collections.singletonMap(
+                        DstType.MOBILE, Collections.singletonList("payload\\.mobile"))),
+                Collections.emptyList(),
+                Collections.emptyMap());
         DesensitizationTestSupport.minimalRunner(properties).run(context -> {
             assertThat(DesUtil.desByProperties("payload.mobile", MOBILE))
                     .as("点号模式匹配全名")
@@ -188,9 +194,10 @@ class DesUtilDesTest {
     @DisplayName("desByProperties：非法正则模式不阻断（告警吞掉）")
     void invalidPatternDoesNotBreakProcessing() {
         JevokitDesensitizationProperties properties = DesensitizationTestSupport.properties(
-                Map.of(DstLevel.LV0, Map.of(DstType.MOBILE, List.of("mobile(", "mobile"))),
-                List.of(),
-                Map.of());
+                Collections.singletonMap(DstLevel.LV0, Collections.singletonMap(
+                        DstType.MOBILE, Arrays.asList("mobile(", "mobile"))),
+                Collections.emptyList(),
+                Collections.emptyMap());
         DesensitizationTestSupport.minimalRunner(properties).run(context ->
                 assertThat(DesUtil.desByProperties("mobile", MOBILE))
                         .as("坏模式跳过后好模式仍生效")
@@ -215,9 +222,9 @@ class DesUtilDesTest {
     @DisplayName("decrypt：ignorePower=false 且无权限（默认拦截器恒 false）时抛异常")
     void decryptPowerDeniedThrows() {
         JevokitDesensitizationProperties properties = DesensitizationTestSupport.properties(
-                Map.of(),
-                List.of(),
-                Map.of(DstLevel.LV0, List.of("power.admin")));
+                Collections.emptyMap(),
+                Collections.emptyList(),
+                Collections.singletonMap(DstLevel.LV0, Collections.singletonList("power.admin")));
         DesensitizationTestSupport.minimalRunner(properties).run(context -> {
             String enc = DesUtil.processSM4(MOBILE, DstContext.builder().type(DstType.MOBILE).level(DstLevel.LV0).build());
             assertThatThrownBy(() -> DesUtil.decrypt(enc, false))

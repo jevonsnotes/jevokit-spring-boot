@@ -1,7 +1,7 @@
 package io.github.jevonsnotes.jevokit.core.util;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Table;
+import javax.persistence.Column;
+import javax.persistence.Table;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import io.github.jevonsnotes.jevokit.core.dto.SqlBundleDto;

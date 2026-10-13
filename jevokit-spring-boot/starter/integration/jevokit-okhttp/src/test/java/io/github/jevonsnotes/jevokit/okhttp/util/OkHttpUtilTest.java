@@ -1,5 +1,6 @@
 package io.github.jevonsnotes.jevokit.okhttp.util;
 
+import cn.hutool.core.io.IoUtil;
 import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -20,6 +21,7 @@ import java.net.Proxy;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -97,7 +99,7 @@ class OkHttpUtilTest {
     @DisplayName("getWithHeaders：自定义头随请求发送")
     void get_headersSent() throws InterruptedException {
         server.enqueue(new MockResponse().setBody("ok"));
-        util.getWithHeaders(url("/h"), Map.of("X-Kit-Trace", "abc-123"));
+        util.getWithHeaders(url("/h"), Collections.singletonMap("X-Kit-Trace", "abc-123"));
 
         RecordedRequest recorded = take();
         assertThat(recorded.getHeader("X-Kit-Trace")).as("自定义请求头应送达服务端").isEqualTo("abc-123");
@@ -131,7 +133,7 @@ class OkHttpUtilTest {
     @DisplayName("buildUrlByQueryParams：urlEncode=false 原样拼接")
     void buildUrl_noEncodeWhenDisabled() {
         String built = OkHttpUtil.buildUrlByQueryParams("http://kit.example/p",
-                Map.of("a", "1 2"), false, StandardCharsets.UTF_8);
+                Collections.singletonMap("a", "1 2"), false, StandardCharsets.UTF_8);
 
         assertThat(built).as("关闭编码时应原样拼接").isEqualTo("http://kit.example/p?a=1 2");
     }
@@ -254,7 +256,7 @@ class OkHttpUtilTest {
     void postFormDataPart_multipartSent(@TempDir File tempDir) throws Exception {
         server.enqueue(new MockResponse().setBody("ok"));
         File file = new File(tempDir, "part.txt");
-        Files.writeString(file.toPath(), "file-content-中文");
+        Files.write(file.toPath(), "file-content-中文".getBytes(StandardCharsets.UTF_8));
 
         FormDataPart part = FormDataPart.builder()
                 .name("attachment")
@@ -263,7 +265,7 @@ class OkHttpUtilTest {
                 .mediaType("text/plain")
                 .build();
 
-        util.postFormDataPart(url("/multi"), Map.of("field", "fv"), java.util.List.of(part));
+        util.postFormDataPart(url("/multi"), Collections.singletonMap("field", "fv"), Collections.singletonList(part));
 
         RecordedRequest recorded = take();
         assertThat(recorded.getHeader("Content-Type")).as("应为 multipart 表单")
@@ -279,34 +281,21 @@ class OkHttpUtilTest {
     // ---------------- 错误码 / 错误模式 ----------------
 
     @Test
-    @DisplayName("httpStatusSensitive=true：非 2xx 抛 OkHttpStatusRuntimeException")
-    void errorStatus_sensitiveThrows() {
-        properties.setHttpStatusSensitive(true);
-        server.enqueue(new MockResponse().setResponseCode(500).setBody("boom"));
-
-        assertThatThrownBy(() -> util.get(url("/err")))
-                .as("敏感模式下 500 应抛状态异常")
-                .isInstanceOf(OkHttpStatusRuntimeException.class)
-                .hasMessageContaining("500");
-    }
-
-    @Test
-    @DisplayName("httpStatusSensitive=false（默认）quiet：GET/POST 非 2xx 均返回错误体（BUG-3 修复后统一契约）")
-    void errorStatus_insensitiveQuietReturnsErrorBody() {
+    @DisplayName("errorMode=quiet：文本路径 GET/POST 非 2xx 均返回错误体（三路径统一 error-mode 语义）")
+    void errorStatus_quietReturnsErrorBody() {
         properties.setErrorMode(OkhttpProperties.ErrorMode.quiet);
         server.enqueue(new MockResponse().setResponseCode(404).setBody("not found"));
         String getBody = util.get(url("/miss"));
         assertThat(getBody).as("quiet 模式下 GET 404 应返回错误体").isEqualTo("not found");
 
         server.enqueue(new MockResponse().setResponseCode(500).setBody("server boom"));
-        String postBody = util.postForm(url("/miss"), Map.of("a", "1"));
+        String postBody = util.postForm(url("/miss"), Collections.singletonMap("a", "1"));
         assertThat(postBody).as("quiet 模式下 POST 500 应同样返回错误体（与 GET 一致）").isEqualTo("server boom");
     }
 
     @Test
-    @DisplayName("httpStatusSensitive=false（默认）throwout：非 2xx 抛 OkHttpStatusRuntimeException 并带响应信息（BUG-3 修复后）")
-    void errorStatus_insensitiveThrowoutThrows() {
-        properties.setErrorMode(OkhttpProperties.ErrorMode.throwout);
+    @DisplayName("errorMode=throwout（默认）：文本路径非 2xx 抛 OkHttpStatusRuntimeException 并带响应信息")
+    void errorStatus_throwoutThrows() {
         server.enqueue(new MockResponse().setResponseCode(503).setBody("svc down"));
 
         assertThatThrownBy(() -> util.get(url("/throw")))
@@ -325,13 +314,64 @@ class OkHttpUtilTest {
     }
 
     @Test
-    @DisplayName("errorMode=log_simple/log_detail：非 2xx 不抛、记录日志后返回错误体")
+    @DisplayName("errorMode=throwout：字节路径非 2xx 抛 OkHttpStatusRuntimeException（类型不降级，code/body 可访问）")
+    void errorByte_throwoutThrowsStatusException() {
+        server.enqueue(new MockResponse().setResponseCode(500).setBody("byte-boom"));
+
+        assertThatThrownBy(() -> util.getByte(url("/err-byte")))
+                .as("throwout 模式下字节路径非 2xx 应抛状态异常（与其他路径统一）")
+                .isExactlyInstanceOf(OkHttpStatusRuntimeException.class)
+                .hasFieldOrPropertyWithValue("code", 500)
+                .hasFieldOrPropertyWithValue("body", "byte-boom")
+                .hasMessageContaining("/err-byte");
+    }
+
+    @Test
+    @DisplayName("errorMode=throwout：流路径非 2xx 抛 OkHttpStatusRuntimeException（类型不降级）")
+    void errorStream_throwoutThrowsStatusException() {
+        server.enqueue(new MockResponse().setResponseCode(502).setBody("bad gw"));
+
+        assertThatThrownBy(() -> util.downloadAsStream(url("/err-stream")))
+                .as("throwout 模式下流路径非 2xx 应抛状态异常（与其他路径统一）")
+                .isExactlyInstanceOf(OkHttpStatusRuntimeException.class)
+                .hasFieldOrPropertyWithValue("code", 502)
+                .hasFieldOrPropertyWithValue("body", "bad gw");
+    }
+
+    @Test
+    @DisplayName("errorMode=quiet：字节/流路径非 2xx 不抛、按路径原样返回 null")
+    void errorByteAndStream_quietReturnNull() {
+        properties.setErrorMode(OkhttpProperties.ErrorMode.quiet);
+        server.enqueue(new MockResponse().setResponseCode(500).setBody("quiet-byte"));
+        server.enqueue(new MockResponse().setResponseCode(404).setBody("quiet-stream"));
+
+        assertThat(util.getByte(url("/q-byte")))
+                .as("quiet 模式下字节路径非 2xx 应返回 null").isNull();
+        assertThat(util.downloadAsStream(url("/q-stream")))
+                .as("quiet 模式下流路径非 2xx 应返回 null").isNull();
+    }
+
+    @Test
+    @DisplayName("errorMode=log_detail：字节/流路径非 2xx 只记日志不抛、返回 null")
+    void errorByteAndStream_logModesReturnNull() {
+        properties.setErrorMode(OkhttpProperties.ErrorMode.log_detail);
+        server.enqueue(new MockResponse().setResponseCode(500).setBody("log-byte"));
+        server.enqueue(new MockResponse().setResponseCode(404).setBody("log-stream"));
+
+        assertThat(util.getByte(url("/l-byte")))
+                .as("log_detail 模式下字节路径非 2xx 应返回 null").isNull();
+        assertThat(util.downloadAsStream(url("/l-stream")))
+                .as("log_detail 模式下流路径非 2xx 应返回 null").isNull();
+    }
+
+    @Test
+    @DisplayName("errorMode=log_simple：非 2xx 不抛、返回错误体")
     void errorStatus_logModesReturnErrorBody() {
         properties.setErrorMode(OkhttpProperties.ErrorMode.log_simple);
         server.enqueue(new MockResponse().setResponseCode(404).setBody("nf"));
 
         String body = util.get(url("/logsimple"));
-        // log 模式在 processError 只打日志不抛——状态异常被吞后回落返回错误体
+        // log 模式下非 2xx 不构造异常，直接回落返回错误体（processError 只服务 IO 异常路径的记录）
         assertThat(body).as("log_simple 模式下应记录并返回错误体").isEqualTo("nf");
     }
 
@@ -414,7 +454,7 @@ class OkHttpUtilTest {
 
         // when：方法返回时 Response 已不再被提前关闭，流持有其生命周期
         try (java.io.InputStream in = util.downloadAsStream(url("/dl"))) {
-            String content = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+            String content = IoUtil.read(in, StandardCharsets.UTF_8);
             // then：拿到即可读，内容完整（修复前读取即抛 IOException——Response 已关）
             assertThat(content).as("返回的流应可完整读取").isEqualTo("stream-body");
         }
@@ -439,8 +479,8 @@ class OkHttpUtilTest {
     void postDownloadAsStream_readable() throws Exception {
         server.enqueue(new MockResponse().setBody("post-stream"));
 
-        try (java.io.InputStream in = util.postDownloadAsStream(url("/pdl"), Map.of("k", "v"), null)) {
-            assertThat(new String(in.readAllBytes(), StandardCharsets.UTF_8))
+        try (java.io.InputStream in = util.postDownloadAsStream(url("/pdl"), Collections.singletonMap("k", "v"), null)) {
+            assertThat(IoUtil.read(in, StandardCharsets.UTF_8))
                     .as("POST 流式下载应可完整读取").isEqualTo("post-stream");
         }
         RecordedRequest recorded = take();

@@ -1,5 +1,6 @@
 package io.github.jevonsnotes.jevokit.security.xss.cleaner;
 
+import cn.hutool.core.util.StrUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -10,7 +11,8 @@ import io.github.jevonsnotes.jevokit.configuration.holder.ConfigHolder;
 import io.github.jevonsnotes.jevokit.configuration.security.xss.XssProperties;
 import io.github.jevonsnotes.jevokit.security.xss.exception.XssException;
 
-import java.util.List;
+import java.util.Arrays;
+import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -42,7 +44,11 @@ class DefaultXssCleanerTest {
             "<img src=x onerror=alert(1)>",
             "<a href=\"javascript:alert(1)\">点我</a>",
             "<svg/onload=alert(1)>",
-            "<iframe src=\"http://evil.example.com\"></iframe>"
+            "<iframe src=\"http://evil.example.com\"></iframe>",
+            // 实体/控制符混淆形态：规范化后按 javascript 协议剥离（防绕过回归）
+            "<a href=\"java&#9;script:alert(1)\">点我</a>",
+            "<a href=\"jav&#x0A;ascript:alert(1)\">点我</a>",
+            "<img src=\"java&#115;cript:alert(1)\">"
     })
     void clearModeNeutralizesAttacks(String payload) {
         mode(XssProperties.Mode.clear);
@@ -84,7 +90,7 @@ class DefaultXssCleanerTest {
     @Test
     @DisplayName("[真] clear 模式 + additionTaintedPatterns 追加清洗用户指定片段")
     void clearModeAppliesAdditionTaintedPatterns() {
-        properties.setAdditionTaintedPatterns(List.of("(?i)onfocus", "EVILWORD"));
+        properties.setAdditionTaintedPatterns(Arrays.asList("(?i)onfocus", "EVILWORD"));
         mode(XssProperties.Mode.clear);
         String cleaned = cleaner.clean("文本带 onfocus 与 EVILWORD 标记");
         assertThat(cleaned)
@@ -99,6 +105,17 @@ class DefaultXssCleanerTest {
         assertThat(cleaner.clean("<p>你好<b>世界</b></p>"))
                 .as("白名单标签应保留")
                 .isEqualTo("<p>你好<b>世界</b></p>");
+    }
+
+    @Test
+    @DisplayName("[假] clear 模式：相对路径/锚点链接规范化判定不误伤")
+    void clearModeKeepsRelativeLinksAndAnchors() {
+        mode(XssProperties.Mode.clear);
+        String cleaned = cleaner.clean("<a href=\"/list?page=1\">列表</a><a href=\"#top\">顶部</a>");
+        assertThat(cleaned)
+                .as("相对路径与锚点链接的 href 必须保留: %s", cleaned)
+                .contains("<a href=\"/list?page=1\">")
+                .contains("<a href=\"#top\">");
     }
 
     // ------------------------- escape 模式 -------------------------
@@ -142,6 +159,17 @@ class DefaultXssCleanerTest {
                 .isEqualTo("a&quot;b");
     }
 
+    @Test
+    @DisplayName("[真] escape 模式：实体混淆载荷整体转义为惰性文本，无活动形态")
+    void escapeModeNeutralizesObfuscatedPayload() {
+        mode(XssProperties.Mode.escape);
+        String escaped = cleaner.clean("<a href=\"java&#9;script:alert(1)\">x</a>");
+        assertThat(escaped)
+                .as("escape 模式下标签与实体均被转义，输出为惰性文本: %s", escaped)
+                .startsWith("&lt;a href=")
+                .doesNotContain("<a href=");
+    }
+
     // ------------------------- reject 模式 -------------------------
 
     @ParameterizedTest(name = "[真] reject 拒绝载荷: {0}")
@@ -149,7 +177,13 @@ class DefaultXssCleanerTest {
             "<script>alert(1)</script>",
             "<img src=x onerror=alert(1)>",
             "<a href=\"javascript:alert(1)\">x</a>",
-            "<iframe></iframe>"
+            "<iframe></iframe>",
+            // 实体/控制符混淆形态：isValid 走同一规范化判定，命中即拒
+            "<a href=\"java&#9;script:alert(1)\">x</a>",
+            "<a href=\"jav&#x0A;ascript:alert(1)\">x</a>",
+            "<a href=\"&#106;avascript:alert(1)\">x</a>",
+            "<a href=\" JAVA&#X9;SCRIPT:alert(1)\">x</a>",
+            "<img src=\"java&#115;cript:alert(1)\">"
     })
     void rejectModeThrowsOnAttacks(String payload) {
         mode(XssProperties.Mode.reject);
@@ -162,7 +196,10 @@ class DefaultXssCleanerTest {
     @ValueSource(strings = {
             "普通中文报文",
             "<b>白名单加粗</b>",
-            "<p>段落<a href=\"https://example.com\" title=\"t\">链接</a></p>"
+            "<p>段落<a href=\"https://example.com\" title=\"t\">链接</a></p>",
+            // 规范化判定不误伤：相对路径与字面量实体（双重转义，浏览器不按 javascript scheme 执行）
+            "<a href=\"/list?page=1&size=10\">x</a>",
+            "<a href=\"java&amp;#9;script:notes\">x</a>"
     })
     void rejectModePassesBenignContent(String content) {
         mode(XssProperties.Mode.reject);
@@ -174,7 +211,7 @@ class DefaultXssCleanerTest {
     @Test
     @DisplayName("[真] reject 模式 + additionTaintedPatterns 追加拒绝")
     void rejectModeAppliesAdditionTaintedPatterns() {
-        properties.setAdditionTaintedPatterns(List.of("(?i)union[ ]+select"));
+        properties.setAdditionTaintedPatterns(Collections.singletonList("(?i)union[ ]+select"));
         mode(XssProperties.Mode.reject);
         assertThatThrownBy(() -> cleaner.clean("1 UNION SELECT password FROM users"))
                 .as("追加污染模式命中时 reject 必须抛异常")
@@ -198,7 +235,7 @@ class DefaultXssCleanerTest {
     @DisplayName("超长报文（10 万字符中文）clear 模式可正常清洗且长度不膨胀")
     void longContentIsHandled() {
         mode(XssProperties.Mode.clear);
-        String longText = "中文安全内容".repeat(20_000);
+        String longText = StrUtil.repeat("中文安全内容", 20_000);
         String cleaned = cleaner.clean(longText);
         assertThat(cleaned)
                 .as("无载荷长报文必须原样返回")

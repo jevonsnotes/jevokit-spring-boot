@@ -6,6 +6,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 
 import java.lang.reflect.Field;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -56,6 +57,34 @@ class RequestContentCachingRequestWrapperTest {
         // when / then
         assertThat(wrapper.getParameterMap()).as("未知编码名不应中断参数解析").isNotNull();
         assertThat(readCharsetField(wrapper)).as("未知编码名应被忽略，charset 保持 null").isNull();
+    }
+
+    @Test
+    @DisplayName("getContentAsString：按声明的非 UTF-8 编码（GBK）解码缓存体")
+    void contentAsStringGbk() {
+        // given
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setMethod("POST");
+        request.setContentType("application/x-www-form-urlencoded");
+        request.setCharacterEncoding("GBK");
+        request.setContent("中文内容".getBytes(Charset.forName("GBK")));
+        RequestContentCachingRequestWrapper wrapper = new RequestContentCachingRequestWrapper(request);
+        // when / then
+        assertThat(wrapper.getContentAsString()).as("GBK 缓存体应按声明编码解码").isEqualTo("中文内容");
+    }
+
+    @Test
+    @DisplayName("getContentAsString：非法编码名兜底 UTF-8 解码，不抛异常")
+    void contentAsStringFallbackUtf8() {
+        // given：声明非法编码名时 charset 解析为 null，方法内部应兜底 UTF-8
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setMethod("POST");
+        request.setContentType("application/x-www-form-urlencoded");
+        request.setCharacterEncoding("!!!not-a-charset");
+        request.setContent("兜底UTF-8".getBytes(StandardCharsets.UTF_8));
+        RequestContentCachingRequestWrapper wrapper = new RequestContentCachingRequestWrapper(request);
+        // when / then
+        assertThat(wrapper.getContentAsString()).as("非法编码名应兜底 UTF-8 解码").isEqualTo("兜底UTF-8");
     }
 
     private Charset readCharsetField(RequestContentCachingRequestWrapper wrapper) {

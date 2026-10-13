@@ -10,8 +10,8 @@ import org.springframework.web.servlet.AsyncHandlerInterceptor;
 import io.github.jevonsnotes.jevokit.api.config.JevokitApiAccessMapperProperties;
 import io.github.jevonsnotes.jevokit.api.config.JevokitApiProperties;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import io.github.jevonsnotes.jevokit.api.context.JSecureContext;
 

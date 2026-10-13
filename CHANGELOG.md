@@ -2,6 +2,82 @@
 
 本仓库遵循[四段式版本号](docs/preferences/pref-version-scheme.md)：前两段对齐 Spring Boot 版本线，第三位为本项目破坏性变更位（递增时第四位归 0），第四位为常规迭代位。
 
+## [2.7.3.0-SNAPSHOT] — 未发布
+
+2.7 线首个版本：自 3.5.2.2 全功能降级至 Spring Boot 2.7.18（**2.7.3.0 ≙ 3.5.2.2 功能全集**），与 3.5 线并行维护。
+
+### 破坏性变更（Breaking）
+
+- **API 命名空间回归 `javax.*`**：全部模块源码从 `jakarta.servlet/persistence/validation/annotation/jws` 回归 `javax.*`（与 Spring Boot 2.7 生态一致；依赖 Maven 坐标保持 jakarta 的 EE8 过渡形态，见文末架构备忘）。自 3.5 线移植业务代码时，需将 `jakarta.servlet` 等 import 同步改回 `javax.*`
+- **编译级别降至 Java 8**：`maven.compiler.release=8`，产物字节码 Java 8，运行环境 JDK 8+；构建工具链 JDK 17 交叉编译（构建者无需安装 JDK 8）。源码同步回退 Java 9+ API（`List.of` 家族 / `String.repeat` / `Files.writeString` / `InputStream.readAllBytes` / `Stream.toList` / instanceof 模式匹配等）
+- **依赖版本线回退**：
+
+  | 组件 | 3.5 线 | 2.7 线（本版） |
+  |---|---|---|
+  | Spring Boot | 3.5.16 | 2.7.18 |
+  | Spring Framework | 6.x | 5.3.x |
+  | Spring Cloud | 2025.0.3 | 2021.0.9 |
+  | Camunda（workflow） | 7.23.0 | 7.19.0（javax 线末代；兜底 7.18.0） |
+  | CXF（sample jaxws） | 4.1.2 | 3.5.11 |
+  | logback | 1.5.x | 1.2.13（Boot 2.7.18 自管） |
+  | Tomcat embed | 10.1.x | 9.0.122（root 显式钉版，覆盖 Boot 自管 9.0.83） |
+  | Redisson | 3.50.0（spring-data-35） | 3.50.0（spring-data-27：starter 排除传递的 -35，显式引入 -27） |
+  | RocketMQ spring / client | 2.3.0 / 5.2.0 | 不变——2.3.0 官方基线即 SB 2.7.18 + client 5.2.0，原生配套 |
+  | H2 | 2.2.220 | 2.2.220 保持（与 Camunda 7.19 的兼容性验证安排见"已知行为差异"） |
+
+- **okhttp 模块 `httpStatusSensitive` 配置属性删除**：非 2xx 响应处理语义统一由 `errorMode` 管理——原 `sensitive=true` 使用方改配 `errorMode=throwout`（行为等价，且异常类型不再被包装降级）。该变更将同步 3.5.x 线。
+
+### 迁移指引
+
+**自旧版内部定制版本（2.7.2.x 线）迁移的 Boot 2.7 用户**
+
+- Maven 坐标整体替换为 `io.github.jevonsnotes:jevokit-*-spring-boot-starter:2.7.3.0`——旧版工具模块对应 `jevokit-core`、配置模块对应 `jevokit-autoconfigure`、各 starter 按功能名一一对应（历史坐标字样从略，需完整对照可联系维护者）；
+- 配置前缀核对：配置键以 `jevokit.*` 为准——旧配置前缀统一将**首段整体替换为 `jevokit`**（其余段不变；更早期历史前缀同理整体替换）。双侧 `CONFIG_PREFIX` 全量对照 9 模块零反例，按功能域对照如下：
+
+  | 功能域 | jevokit 2.7 线前缀 |
+  |---|---|
+  | 安全防护·XSS 过滤（security-xss） | `jevokit.security.xss.*` |
+  | 安全防护·SQL 注入（security-sql-inject） | `jevokit.security.sql-inject.*` |
+  | 安全防护·路径穿越（security-path-traversal） | `jevokit.security.path-traversal.*` |
+  | 安全防护·代码注入（security-code-inject） | `jevokit.security.code-inject.*` |
+  | 操作日志审计（audit-log） | `jevokit.audit.log.*` |
+  | 数据脱敏（desensitization） | `jevokit.desensitization.*` |
+  | nogen | `jevokit.nogen.*` |
+  | api | `jevokit.api.*` |
+  | OkHttp 集成（okhttp） | `jevokit.ok.http.*`（注意为 `ok.http` 三段形态，勿误写为 `jevokit.okhttp.*`） |
+- **jasypt 加密密文兼容（jasypt 2.1.0 → 3.0.5）**：默认算法由 `PBEWithMD5AndDES` 分叉为 `PBEWITHHMACSHA512ANDAES_256` + 随机 IV（RandomIV）——默认配置下存量密文跨版本互解直接失败。隔离探针实证：两版属性源解析机制在 Boot 2.7.18 下一致（`ENC()` 内联、`@Value`、配置绑定、`spring.config.import`、bootstrap 均无问题），仅算法默认值分叉。存量 2.x 默认生成的 `ENC()` 密文升级后二选一：① 显式配置 `algorithm=PBEWithMD5AndDES` + `iv-generator-classname=org.jasypt.iv.NoIvGenerator`（密码/盐/迭代次数默认值两版一致，存量密文可平滑续用）；② 迁移期以新默认算法重新加密。
+- **XSS reject 模式收紧（jsoup 1.15.3 → 1.23.2）**：jsoup 1.17.2 起 Cleaner 新增校验，含未闭合"必需结束标签"的输入（如 `<b>bold`、`<span>abc`）由放行改为拒绝——reject 模式下历史上含未闭合标签的入参会开始抛 `XssException`（只收紧不弱化）；clear/escape 模式 39 场景字节级一致，无感。reject 模式使用方请评估存量入参形态。
+- `javax.*` 命名空间与 Boot 2.7 生态天然一致，业务代码通常零改动。
+
+**自 jevokit-spring-boot 3.5.x 切线至 2.7 线的用户**
+
+- 业务代码中直接 import 的 `jakarta.servlet` / `jakarta.annotation` / `jakarta.validation` 等（随 Boot 3 引入）需改回 `javax.*`；
+- 配置键迁移：`spring.data.redis.*` → `spring.redis.*`（Boot 3 专属键空间回迁）；
+- Redisson：Boot 3 的 `spring.data.redis.ssl.bundle`（SSL bundle 引用）配置形态不受支持，Boot 2.7 的 `spring.redis.ssl`（布尔开关）仍有效；
+- logback 由 1.5 降回 1.2：`logback-spring.xml` 按 1.2 语法核对（jevokit 日志脱敏 filter 兼容两代，已验证）；
+- 使用 Spring Cloud 的项目需同步降至 2021.0.x 线。
+
+### 已知行为差异（相对 3.5 线）
+
+- redis：不支持 `spring.data.redis.*` 配置空间与 ssl-bundle 形态（`spring.redis.ssl` 布尔仍有效）；
+- logback 1.5 → 1.2：自定义 appender/filter 生态按 1.2 API 核对（jevokit 脱敏 filter 与 sample 的 logback-spring.xml 均为 1.2 兼容写法，已预核）；
+- workflow：Camunda 7.19 官方支持矩阵仅含 H2 1.4.x，root 保持 H2 2.2.220——H2 2.2.220 下 Camunda schema 自动创建 / 流程部署 / 流程冒烟经实测兼容（R11 已关闭，降级预案归档备用）。
+
+### 测试套件行为说明（下游用户可见）
+
+sample 默认测试集（`ApplicationTest` + 8 个非 MQ 的 E2E 类）内建 `@ActiveProfiles("local")`，加载入库的 `src/test/resources/application-local.yml` 排除 RocketMQ 自动装配——无 RocketMQ 环境（9876 nameserver 不在位）时默认套件 `mvn test` 即全绿，上下文仅需本机 Redis（6379）+ H2 内存自给；`RocketMqE2ETest`（`@Tag("mq")`）不带 local profile，跑全量（`mvn test -DexcludedGroups=`）时走默认 profile、MQ 正常装配。
+
+### 修复
+
+- **jevokit-desensitization 日志脱敏链路启动挂起（验收期缺陷 DEF-1）**：logback 脱敏过滤器在日志事件中调用容器 `getBean`（"日志路径容器依赖"反模式，见文末架构备忘），Boot 2.7 线上下文刷新窗口内与 redisson 等异步 bean 创建形成三方循环等待，可致启动/JVM 挂起。修复为静态引用两阶段发布（`@PostConstruct` 发布配置类引用 + `ContextRefreshedEvent` 经容器发布代理实例保 AOP 语义），日志链路零容器依赖。**下游用户行为无变化**：引用未发布时 fail-open 直通，保持"脱敏失败绝不阻断日志输出"既有语义。
+
+### 架构备忘（维护者查证）
+
+- **R6 版本下限边界**：本线自动配置注册采用 `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`（17 个模块）。该机制自 Boot 2.7 引入——若未来再降至 2.6 及以下将失去读取支持，需整体回退 `META-INF/spring.factories` 注册方式。
+- **D2 依赖坐标的 EE8 形态（坐标 jakarta、包名 javax）**：2.7 线依赖坐标沿用 jakarta 命名空间、实际包名为 javax 的过渡版本（Jakarta EE 8 形态，2.7 时代生态普遍如此）：`jakarta.servlet-api`（javax.servlet）、`jakarta.persistence-api` 2.2.3（javax.persistence）、`jakarta.annotation-api` 1.3.5（javax.annotation）、`jakarta.jws-api` 2.1.0（javax.jws）、`jakarta.xml.bind-api` 2.3.3（javax.xml.bind）、`jakarta.validation-api` 2.0.2（javax.validation）。坐标空间保留 jakarta 为未来向 3.x 线迁移预留平滑路径；注意个别坐标版本号高于包名直觉（如 jws-api 2.1.0 实为 javax.jws 包），以 jar 实测为准。
+- **"日志/回调线程路径触碰容器"反模式（验收期 DEF-1 根因，kit 规范候选）**：logback filter 等日志链路在事件处理中调用 `SpringUtil.getBean`——上下文刷新期 main 线程持单例锁创建 bean，任意异步线程此刻打日志即阻塞在锁上；若 main 所等 future 的完成方恰为被阻塞线程，成三方循环等待、JVM 永久挂起。定式修复=静态引用两阶段发布（配置类引用先行、刷新完成后经容器发布实例）+ 日志链路未发布 fail-open + 非日志链路保持容器查找原语义。完整机理、已知边界（static 状态无 ContextClosedEvent 清理联动）与同类加固点清单见本变更 design §4 第 11 条（`openspec/changes/downgrade-spring-boot-2-7-18/design.md`）。
+- **redisson starter 双注册装配形态（redisson-spring-boot-starter 3.50.0，2.7 线特有）**：V1 `RedissonAutoConfiguration`（`META-INF/spring.factories` 注册）与 V2 `RedissonAutoConfigurationV2`（`AutoConfiguration.imports` 注册，extends V1）在 Boot 2.7.18 下双注册共存，`@ConditionalOnMissingBean` 条件背离后 V2 单 bean 生效（eng-2 实证：fat jar 与测试上下文 bean 源均确认 V2；因 V2 继承 V1，运行期栈帧类名必显 V1，勿以栈帧行类名判定装配来源）——排查 redisson 装载问题以 V2 为实际入口。
+
 ## [3.5.2.1] — 2026-10-08
 
 ### 构建（对使用方零影响）

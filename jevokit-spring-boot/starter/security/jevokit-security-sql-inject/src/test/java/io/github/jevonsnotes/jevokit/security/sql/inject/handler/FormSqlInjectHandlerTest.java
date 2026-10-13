@@ -10,7 +10,7 @@ import io.github.jevonsnotes.jevokit.configuration.security.sql.inject.SqlInject
 import io.github.jevonsnotes.jevokit.core.editor.StringPropertiesEditor;
 import io.github.jevonsnotes.jevokit.security.sql.inject.chain.SqlInjectStringPropertiesEditChain;
 
-import java.util.List;
+import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -34,7 +34,7 @@ class FormSqlInjectHandlerTest {
 
     private final SqlInjectProperties properties = new SqlInjectProperties();
     private final FormSqlInjectHandler handler = new FormSqlInjectHandler(
-            new StringPropertiesEditor(List.of(new SqlInjectStringPropertiesEditChain(properties))));
+            new StringPropertiesEditor(Arrays.asList(new SqlInjectStringPropertiesEditChain(properties))));
 
     @AfterEach
     void tearDown() {

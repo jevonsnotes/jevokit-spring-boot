@@ -12,6 +12,8 @@ import org.junit.jupiter.api.Test;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -370,31 +372,8 @@ class SecurityUtilTest {
     @DisplayName("对象字符串过滤 filterStr")
     class FilterStr {
 
-        /** 被过滤的样本对象：覆盖普通字段、静态字段、嵌套对象、集合、Map、Object[] */
-        static class Sample {
-            static final String CONSTANT = "keep-static";
-            static int counter = 7;
-            String name = "name-raw";
-            Integer count = 3;
-            Inner inner = new Inner();
-            List<String> tags = new ArrayList<>(List.of("tag-raw", "tag2-raw"));
-            Map<String, String> env = new HashMap<>(Map.of("k-raw", "v-raw"));
-            Object[] arr = new Object[]{"elem-raw", 42};
-        }
-
-        static class Inner {
-            String secret = "secret-raw";
-        }
-
-        static class Node {
-            String value;
-            Node self;
-        }
-
-        /** 回调：把 "-raw" 后缀替换为 "-clean" */
-        private static String mask(String s) {
-            return s == null ? null : s.replace("-raw", "-clean");
-        }
+        // mask 回调与 Sample/Inner/Node/ListHolder/MixedHolder fixture 类已上提至外层类：
+        // Java 8 内部类不允许声明 static 成员（release=8 编译约束），成员与语义均不变
 
         @Test
         @DisplayName("深度过滤对象内所有字符串字段，静态字段跳过，非字符串简单类型不动")
@@ -429,7 +408,7 @@ class SecurityUtilTest {
         @Test
         @DisplayName("已废弃入口 cleanObjForStr 委托 filterStr，行为一致")
         void deprecatedCleanObjForStrDelegates() {
-            assertThat(SecurityUtil.cleanObjForStr("d-raw", FilterStr::mask))
+            assertThat(SecurityUtil.cleanObjForStr("d-raw", SecurityUtilTest::mask))
                     .as("cleanObjForStr 应等价于 filterStr 的字符串回调").isEqualTo("d-clean");
         }
 
@@ -457,10 +436,6 @@ class SecurityUtilTest {
             assertThat(holder.frozen).as("不可变 List 保持原样").containsExactly("keep-raw");
         }
 
-        static class ListHolder {
-            List<String> frozen = java.util.Collections.unmodifiableList(new ArrayList<>(List.of("keep-raw")));
-        }
-
         @Test
         @DisplayName("BUG-2 修复后行为：不可变 Map/工厂集合字段不再崩溃，跳过且其余字段正常过滤")
         void immutableMapAndFactoryCollectionsAreSkippedNotCrash() {
@@ -475,33 +450,24 @@ class SecurityUtilTest {
             assertThat(holder.mutable).as("可变集合字段应正常被过滤").containsExactly("m-clean");
             assertThat(holder.unmodifiableMap).as("unmodifiableMap 字段应跳过保持原样")
                     .containsEntry("k-raw", "v-raw");
-            assertThat(holder.factoryMap).as("Map.of 字段应跳过保持原样").containsEntry("mk-raw", "mv-raw");
-            assertThat(holder.factoryList).as("List.of 字段应跳过保持原样").containsExactly("fl-raw");
-        }
-
-        static class MixedHolder {
-            String name = "name-raw";
-            List<String> mutable = new ArrayList<>(List.of("m-raw"));
-            Map<String, String> unmodifiableMap =
-                    java.util.Collections.unmodifiableMap(new HashMap<>(Map.of("k-raw", "v-raw")));
-            Map<String, String> factoryMap = Map.of("mk-raw", "mv-raw");
-            List<String> factoryList = List.of("fl-raw");
+            assertThat(holder.factoryMap).as("不可变 Map 字段应跳过保持原样").containsEntry("mk-raw", "mv-raw");
+            assertThat(holder.factoryList).as("不可变 List 字段应跳过保持原样").containsExactly("fl-raw");
         }
 
         @Test
         @DisplayName("顶层不可变集合入参同样降级跳过，不抛异常")
         void topLevelImmutableCollectionIsSkipped() {
             // given / when / then：修复前 List.of 顶层入参抛 UtilException，现应为安全直通
-            assertThat(SecurityUtil.filterStr(List.of("a-raw"), (o, f, s) -> mask(s)))
-                    .as("顶层不可变集合应原样返回").isEqualTo(List.of("a-raw"));
+            assertThat(SecurityUtil.filterStr(Collections.singletonList("a-raw"), (o, f, s) -> mask(s)))
+                    .as("顶层不可变集合应原样返回").isEqualTo(Collections.singletonList("a-raw"));
         }
 
         @Test
         @DisplayName("顶层集合/Map 入参被原地清洗")
         void topLevelCollectionAndMap() {
             // given
-            List<String> list = new ArrayList<>(List.of("a-raw", "b-raw"));
-            Map<String, String> map = new HashMap<>(Map.of("k-raw", "v-raw"));
+            List<String> list = new ArrayList<>(Arrays.asList("a-raw", "b-raw"));
+            Map<String, String> map = new HashMap<>(Collections.singletonMap("k-raw", "v-raw"));
             // when
             SecurityUtil.filterStr(list, (o, f, s) -> mask(s));
             SecurityUtil.filterStr(map, (o, f, s) -> mask(s));
@@ -509,6 +475,49 @@ class SecurityUtilTest {
             assertThat(list).as("顶层集合应被原地清洗").containsExactly("a-clean", "b-clean");
             assertThat(map).as("顶层 Map 应被原地清洗").containsEntry("k-clean", "v-clean");
         }
+    }
+
+    // ------------------------------------------------------------------
+    // filterStr fixtures（原置于 @Nested FilterStr 内；Java 8 内部类不允许 static 成员，上提至此，语义不变）
+    // ------------------------------------------------------------------
+
+    /** 被过滤的样本对象：覆盖普通字段、静态字段、嵌套对象、集合、Map、Object[] */
+    static class Sample {
+        static final String CONSTANT = "keep-static";
+        static int counter = 7;
+        String name = "name-raw";
+        Integer count = 3;
+        Inner inner = new Inner();
+        List<String> tags = new ArrayList<>(Arrays.asList("tag-raw", "tag2-raw"));
+        Map<String, String> env = new HashMap<>(Collections.singletonMap("k-raw", "v-raw"));
+        Object[] arr = new Object[]{"elem-raw", 42};
+    }
+
+    static class Inner {
+        String secret = "secret-raw";
+    }
+
+    static class Node {
+        String value;
+        Node self;
+    }
+
+    static class ListHolder {
+        List<String> frozen = java.util.Collections.unmodifiableList(new ArrayList<>(Collections.singletonList("keep-raw")));
+    }
+
+    static class MixedHolder {
+        String name = "name-raw";
+        List<String> mutable = new ArrayList<>(Collections.singletonList("m-raw"));
+        Map<String, String> unmodifiableMap =
+                java.util.Collections.unmodifiableMap(new HashMap<>(Collections.singletonMap("k-raw", "v-raw")));
+        Map<String, String> factoryMap = Collections.singletonMap("mk-raw", "mv-raw");
+        List<String> factoryList = Collections.singletonList("fl-raw");
+    }
+
+    /** 回调：把 "-raw" 后缀替换为 "-clean" */
+    private static String mask(String s) {
+        return s == null ? null : s.replace("-raw", "-clean");
     }
 
     // ------------------------------------------------------------------

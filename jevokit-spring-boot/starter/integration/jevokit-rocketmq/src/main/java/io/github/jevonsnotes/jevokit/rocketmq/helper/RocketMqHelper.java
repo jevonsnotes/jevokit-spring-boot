@@ -1,8 +1,8 @@
 package io.github.jevonsnotes.jevokit.rocketmq.helper;
 
 import cn.hutool.core.thread.ExecutorBuilder;
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.client.producer.SendCallback;

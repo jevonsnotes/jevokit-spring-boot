@@ -43,8 +43,8 @@ class ExcelE2ETest {
         URL resource = ResourceUtil.getResource("tpl/excel/importExcel.xlsx");
         MockPart part = new MockPart("file1",
                 "importExcel.xlsx",
-                IoUtil.readBytes(resource.openStream()),
-                MediaType.MULTIPART_FORM_DATA);
+                IoUtil.readBytes(resource.openStream()));
+        part.getHeaders().setContentType(MediaType.MULTIPART_FORM_DATA);
 
         // when / then
         String content = mockMvc.perform(MockMvcRequestBuilders

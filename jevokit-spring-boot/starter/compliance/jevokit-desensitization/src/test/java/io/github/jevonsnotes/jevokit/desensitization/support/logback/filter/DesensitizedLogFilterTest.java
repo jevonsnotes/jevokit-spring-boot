@@ -12,8 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-import java.util.Map;
+import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -37,9 +36,10 @@ class DesensitizedLogFilterTest {
     void setUpLogback() {
         // 装配 DesUtil 静态依赖（SM4 密钥 + 规则），与生产同通路
         DesensitizationTestSupport.minimalRunner(DesensitizationTestSupport.properties(
-                        Map.of(DstLevel.LV0, Map.of(DstType.MOBILE, List.of(".*mobile"))),
-                        List.of(),
-                        Map.of(DstLevel.LV0, List.of("DST_POWER_LV0"))))
+                        Collections.singletonMap(DstLevel.LV0, Collections.singletonMap(
+                                DstType.MOBILE, Collections.singletonList(".*mobile"))),
+                        Collections.emptyList(),
+                        Collections.singletonMap(DstLevel.LV0, Collections.singletonList("DST_POWER_LV0"))))
                 .run(context -> {
                     // 上下文就绪后 DesHelper ready = true
                 });

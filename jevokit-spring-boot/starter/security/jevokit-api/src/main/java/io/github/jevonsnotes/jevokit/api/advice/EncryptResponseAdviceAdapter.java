@@ -2,8 +2,8 @@ package io.github.jevonsnotes.jevokit.api.advice;
 
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSON;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.MethodParameter;
@@ -64,7 +64,8 @@ public class EncryptResponseAdviceAdapter implements ResponseBodyAdvice<Object>,
     @Override
     public Object beforeBodyWrite(Object body, MethodParameter returnType, MediaType selectedContentType, Class<? extends HttpMessageConverter<?>> selectedConverterType, ServerHttpRequest request, ServerHttpResponse response) {
         try {
-            if (body instanceof JSecureResponse<?> resp) {
+            if (body instanceof JSecureResponse<?>) {
+                JSecureResponse<?> resp = (JSecureResponse<?>) body;
                 fillTransInfo(JSecureContext.getRequest(), resp);
 
                 if (resp.getTarget() != null) {

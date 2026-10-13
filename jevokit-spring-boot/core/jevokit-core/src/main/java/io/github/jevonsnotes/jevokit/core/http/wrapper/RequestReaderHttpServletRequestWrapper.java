@@ -9,10 +9,10 @@ import io.github.jevonsnotes.jevokit.core.consts.HttpMethod;
 import io.github.jevonsnotes.jevokit.core.util.CollectionUtil;
 import io.github.jevonsnotes.jevokit.core.util.RequestUtil;
 
-import jakarta.servlet.ReadListener;
-import jakarta.servlet.ServletInputStream;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletRequestWrapper;
+import javax.servlet.ReadListener;
+import javax.servlet.ServletInputStream;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
 
 import java.io.*;
 import java.net.URLDecoder;
@@ -195,11 +195,11 @@ public class RequestReaderHttpServletRequestWrapper extends HttpServletRequestWr
                         value = s.substring(i + 1);
                         if (decode) {
                             try {
-                                name = URLDecoder.decode(name, StandardCharsets.UTF_8);
+                                name = URLDecoder.decode(name, StandardCharsets.UTF_8.name());
                             } catch (Exception ignored) {
                             }
                             try {
-                                value = URLDecoder.decode(value, StandardCharsets.UTF_8);
+                                value = URLDecoder.decode(value, StandardCharsets.UTF_8.name());
                             } catch (Exception ignored) {
                             }
                         }

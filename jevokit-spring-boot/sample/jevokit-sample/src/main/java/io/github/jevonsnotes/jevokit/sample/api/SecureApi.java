@@ -20,8 +20,8 @@ import io.github.jevonsnotes.jevokit.core.util.RequestUtil;
 import io.github.jevonsnotes.jevokit.okhttp.util.OkHttpUtil;
 import io.github.jevonsnotes.jevokit.sample.vo.TestVo;
 
-import jakarta.validation.Valid;
-import jakarta.servlet.http.HttpServletRequest;
+import javax.validation.Valid;
+import javax.servlet.http.HttpServletRequest;
 import java.util.Optional;
 import java.util.UUID;
 

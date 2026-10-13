@@ -1,6 +1,6 @@
 package io.github.jevonsnotes.jevokit.api;
 
-import jakarta.validation.Valid;
+import javax.validation.Valid;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

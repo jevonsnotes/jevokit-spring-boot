@@ -10,7 +10,7 @@ import io.github.jevonsnotes.jevokit.configuration.security.pathtraversal.PathTr
 import io.github.jevonsnotes.jevokit.core.editor.StringPropertiesEditor;
 import io.github.jevonsnotes.jevokit.security.pt.chain.PtStringPropertiesEditChain;
 
-import java.util.List;
+import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -34,7 +34,7 @@ class FormPathTraversalHandlerTest {
 
     private final PathTraversalProperties properties = new PathTraversalProperties();
     private final FormPathTraversalHandler handler = new FormPathTraversalHandler(
-            new StringPropertiesEditor(List.of(new PtStringPropertiesEditChain(properties))));
+            new StringPropertiesEditor(Arrays.asList(new PtStringPropertiesEditChain(properties))));
 
     @AfterEach
     void tearDown() {

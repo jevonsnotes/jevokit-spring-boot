@@ -31,6 +31,7 @@ import io.github.jevonsnotes.jevokit.workflow.vo.TaskInfoVo;
 import io.github.jevonsnotes.jevokit.workflow.vo.TaskQueryVo;
 
 import java.net.URL;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -97,7 +98,7 @@ class WorkflowE2ETest {
                                 .taskId(drafterTaskId)
                                 .assignee(drafterCode)
                                 .flowState(FlowState.SUBMIT.code())
-                                .data(Map.of("activity_num", 235))
+                                .data(Collections.singletonMap("activity_num", 235))
                                 .build()))
                         .contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(MockMvcResultMatchers.status().isOk())
@@ -136,7 +137,7 @@ class WorkflowE2ETest {
                         .andReturn()
                         .getResponse()
                         .getContentAsString(),
-                new TypeReference<>() {
+                new TypeReference<ApiResponse<List<TaskInfoVo>>>() {
                 });
         assertThat(shengJiTasks.getData()).as("省级审核岗应查到任务").isNotEmpty();
         assertThat(shengJiTasks.getData().get(0).getProcInsId())
@@ -159,7 +160,7 @@ class WorkflowE2ETest {
                 .getResponse()
                 .getContentAsString();
         ApiResponse<List<TaskInfoVo>> tasks =
-                JSONObject.parseObject(content, new TypeReference<>() {
+                JSONObject.parseObject(content, new TypeReference<ApiResponse<List<TaskInfoVo>>>() {
                 });
         assertThat(tasks.getData()).as("节点 %s 应有任务", taskDefinitionKey).isNotEmpty();
         return tasks.getData().get(0).getTaskId();

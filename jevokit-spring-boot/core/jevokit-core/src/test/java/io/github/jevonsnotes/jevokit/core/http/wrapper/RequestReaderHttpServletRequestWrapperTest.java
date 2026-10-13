@@ -41,7 +41,7 @@ class RequestReaderHttpServletRequestWrapperTest {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setMethod("GET");
         request.setCharacterEncoding("!!!not-a-charset");
-        request.setQueryString("name=" + URLEncoder.encode("张三", StandardCharsets.UTF_8));
+        request.setQueryString("name=" + URLEncoder.encode("张三", StandardCharsets.UTF_8.name()));
         RequestReaderHttpServletRequestWrapper wrapper = new RequestReaderHttpServletRequestWrapper(request);
         // when：公开路径不应抛未捕获异常
         // then：声明编码被忽略后按 UTF-8 兜底解码，值仍可正确还原

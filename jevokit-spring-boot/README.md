@@ -27,9 +27,9 @@ Table of Contents
 
 # jevokit-spring-boot
 
-![Release](https://img.shields.io/badge/release-v3.5.0.0-SNAPSHOT-blue.svg)
-![JDK](https://img.shields.io/badge/jdk-17+-green.svg)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.x-6DB33F.svg)
+![Release](https://img.shields.io/badge/release-v2.7.3.0--SNAPSHOT-blue.svg)
+![JDK](https://img.shields.io/badge/jdk-8+-green.svg)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-2.7.18-6DB33F.svg)
 
 
 
@@ -37,10 +37,33 @@ Table of Contents
 
 jevokit-spring-boot | Spring Boot | Spring | JDK
 |---|---|---|---|
-| 3.5.x | 3.5.x | 3.5.x | 17+ |
-| 2.7.x | 2.7.x | 5.3.x | 8 |
+| 3.5.x（3.5 线，`3.5.x` 分支） | 3.5.x | 6.x | 17+ |
+| 2.7.x（2.7 线，`2.7.x` 分支，本分支） | 2.7.18 | 5.3.x | 8+ |
 
 > 组件依赖从 Maven Central 获取
+
+**双线并行维护说明**
+
+- 2.7 线与 3.5 线并行维护：`2.7.x` 分支发布 2.7.3.x（对齐 Spring Boot 2.7.18），`3.5.x` 分支发布 3.5.2.x（对齐 Spring Boot 3.5.x），两线功能集对齐，**2.7.3.0 ≙ 3.5.2.2 功能全集**（3.5 线后续新增能力将择期同步至 2.7 线）。
+- 2.7 线 API 命名空间为 `javax.*`（Jakarta EE 8 形态：Maven 坐标可为 jakarta，包名保持 javax），与 Spring Boot 2.7 生态一致；3.5 线为 `jakarta.*`。
+
+**BOM 版本链**
+
+```
+jevokit-dependencies（兼容薄壳，import 坐标不变）
+  └─ jevokit-parent（全家版本管理）
+       └─ spring-boot-starter-parent 2.7.18
+```
+
+使用方 import 任一 `jevokit-dependencies` 或 `jevokit-parent` 均可获得同一套版本管理。
+
+**构建环境**
+
+| 项 | 要求 |
+|---|---|
+| 构建工具链 | JDK 17 + Maven 3.5+（经 `maven.compiler.release=8` 交叉编译，构建者无需安装 JDK 8） |
+| 运行环境 | JDK 8+（应用侧） |
+| 产物字节码 | Java 8 |
 
 ## security
 
@@ -483,7 +506,7 @@ log.error("something excetion： {}", xmlContent, e)
 ## data（数据）
 
 ### redis
-jevokit-spring-boot 基于 Spring Boot 3.5.x + JDK 17，使用 Redisson 3.49+，无需额外适配。
+jevokit-spring-boot（2.7 线）基于 Spring Boot 2.7.x，使用 Redisson 3.50（spring-data 适配线 redisson-spring-data-27），无需额外适配。
 
 #### lock
 > 缓解服务器压力，针对请求链长、易出现幂等问题的场景。

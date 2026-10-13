@@ -1,7 +1,7 @@
 package io.github.jevonsnotes.jevokit.audit.log.filter;
 
 import cn.hutool.extra.spring.SpringUtil;
-import jakarta.servlet.http.Part;
+import javax.servlet.http.Part;
 import lombok.RequiredArgsConstructor;
 import org.springframework.util.AntPathMatcher;
 import io.github.jevonsnotes.jevokit.audit.log.processor.AuditLogProcessor;
@@ -12,9 +12,9 @@ import io.github.jevonsnotes.jevokit.core.consts.HttpMethod;
 import io.github.jevonsnotes.jevokit.core.http.wrapper.RequestContentCachingRequestWrapper;
 import io.github.jevonsnotes.jevokit.core.http.wrapper.ResponseReaderHttpServletResponseWrapper;
 
-import jakarta.servlet.*;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import javax.servlet.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 import java.util.Collection;

@@ -3,7 +3,7 @@ package io.github.jevonsnotes.jevokit.sample.vo;
 import lombok.Data;
 import io.github.jevonsnotes.jevokit.core.annotation.BeanField;
 
-import jakarta.validation.constraints.NotNull;
+import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.util.Date;
 

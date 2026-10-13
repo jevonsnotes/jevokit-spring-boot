@@ -11,12 +11,12 @@ import io.github.jevonsnotes.jevokit.desensitization.consts.DstType;
 import io.github.jevonsnotes.jevokit.sample.desensitizer.CardDesensitizer;
 import io.github.jevonsnotes.jevokit.workflow.vo.TaskVo;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
-import jakarta.xml.bind.annotation.XmlAccessType;
-import jakarta.xml.bind.annotation.XmlAccessorType;
-import jakarta.xml.bind.annotation.XmlElement;
-import jakarta.xml.bind.annotation.XmlRootElement;
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
 import java.util.Map;
 
 @XmlAccessorType(XmlAccessType.FIELD)

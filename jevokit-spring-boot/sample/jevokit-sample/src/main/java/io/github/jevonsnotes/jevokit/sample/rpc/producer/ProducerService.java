@@ -1,10 +1,10 @@
 package io.github.jevonsnotes.jevokit.sample.rpc.producer;
 
-import jakarta.jws.WebService;
+import javax.jws.WebService;
 import lombok.Data;
 
-import jakarta.jws.WebParam;
-import jakarta.jws.WebResult;
+import javax.jws.WebParam;
+import javax.jws.WebResult;
 import java.io.Serializable;
 
  /**

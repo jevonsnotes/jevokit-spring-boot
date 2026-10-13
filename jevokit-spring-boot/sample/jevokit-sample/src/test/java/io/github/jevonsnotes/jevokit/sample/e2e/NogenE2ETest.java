@@ -41,9 +41,8 @@ class NogenE2ETest {
     private String seedBizNo(String scene) {
         String bizNo = "demo" + RandomUtil.randomString(8);
         log.info("nogen {}：业务类型 {}", scene, bizNo);
-        jdbcTemplate.update("""
-                INSERT INTO biz_no (biz_tag, max_id, step, mode, threhold, description) VALUES ('%s', 0, 10000, 1, '70.00', '单号%s测试demo');
-                """.formatted(bizNo, scene));
+        jdbcTemplate.update("INSERT INTO biz_no (biz_tag, max_id, step, mode, threhold, description) VALUES ('"
+                + bizNo + "', 0, 10000, 1, '70.00', '单号" + scene + "测试demo')");
         return bizNo;
     }
 

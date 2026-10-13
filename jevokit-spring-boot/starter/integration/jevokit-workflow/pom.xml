@@ -4,7 +4,7 @@
     <parent>
         <groupId>io.github.jevonsnotes</groupId>
         <artifactId>jevokit-parent</artifactId>
-        <version>3.5.2.2-SNAPSHOT</version>
+        <version>2.7.3.0-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
 
@@ -46,17 +46,20 @@
         <dependency>
             <groupId>org.redisson</groupId>
             <artifactId>redisson-spring-boot-starter</artifactId>
-<!--            <exclusions>-->
-<!--                <exclusion>-->
-<!--                    <groupId>org.redisson</groupId>-->
-<!--                    <artifactId>redisson-spring-data-32</artifactId>-->
-<!--                </exclusion>-->
-<!--            </exclusions>-->
+            <!-- SB 2.7 降级配套：starter 3.50.0 传递 redisson-spring-data-35（spring-data 3.5/Boot 3 线），
+                 与 Boot 2.7 的 spring-data 2.7.x 二进制不兼容，排除后显式引入 -27 线（版本走 root depMgmt 3.50.0）。
+                 历史痕迹：3.5 线时代此处曾以同样手法排除 -32。 -->
+            <exclusions>
+                <exclusion>
+                    <groupId>org.redisson</groupId>
+                    <artifactId>redisson-spring-data-35</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>org.redisson</groupId>-->
-<!--            <artifactId>redisson-spring-data-27</artifactId>-->
-<!--        </dependency>-->
+        <dependency>
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson-spring-data-27</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.camunda.bpm.springboot</groupId>
             <artifactId>camunda-bpm-spring-boot-starter-webapp</artifactId>

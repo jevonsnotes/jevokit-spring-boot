@@ -11,7 +11,7 @@ import io.github.jevonsnotes.jevokit.core.editor.StringPropertiesEditor;
 import io.github.jevonsnotes.jevokit.security.xss.chain.XssStringPropertiesEditChain;
 import io.github.jevonsnotes.jevokit.security.xss.cleaner.DefaultXssCleaner;
 
-import java.util.List;
+import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -35,7 +35,7 @@ class FormXssHandlerTest {
 
     private final XssProperties properties = new XssProperties();
     private final FormXssHandler handler = new FormXssHandler(
-            new StringPropertiesEditor(List.of(new XssStringPropertiesEditChain(
+            new StringPropertiesEditor(Arrays.asList(new XssStringPropertiesEditChain(
                     new DefaultXssCleaner(properties), properties))));
 
     @AfterEach

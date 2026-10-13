@@ -551,9 +551,27 @@ public class DesUtil {
     }
 
 
-    /** 取容器中的脱敏配置（静态方法惰性查找，容器未就绪返回 null 由调用方降级）。 */
+    /**
+     * 取脱敏配置：按链路分治（DEF-1 死锁防御）。
+     * <ul>
+     * <li>日志链路（PROCESS_TYPE=LOG，logback 过滤器在任意线程上触发）：只读
+     * {@link DesHelper} init()（@PostConstruct）提升的静态引用——上下文刷新窗口期任何线程的
+     * SpringUtil.getBean 都会阻塞在单例锁上形成死锁，此链路对容器零依赖；ready 门闩保证走到这里时
+     * 静态引用必已发布。</li>
+     * <li>其余链路（视图/注解切面/直接调用）：保持容器查找原语义（当前上下文配置优先），
+     * 失败（无容器/未注册）降级返回 null——isPropIgnore/des/currentAlgorithm 均已判空，
+     * 掩码算法降级 BASIC 最安全。</li>
+     * </ul>
+     */
     private static JevokitDesensitizationProperties getProperties() {
-        return SpringUtil.getBean(JevokitDesensitizationProperties.class);
+        if (isProcessLog()) {
+            return DesHelper.staticProperties;
+        }
+        try {
+            return SpringUtil.getBean(JevokitDesensitizationProperties.class);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /**

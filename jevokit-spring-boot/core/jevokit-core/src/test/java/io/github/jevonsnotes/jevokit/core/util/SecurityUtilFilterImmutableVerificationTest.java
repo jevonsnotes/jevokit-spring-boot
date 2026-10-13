@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -18,6 +19,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -66,11 +68,11 @@ class SecurityUtilFilterImmutableVerificationTest {
     }
 
     private List<ILoggingEvent> warnEvents() {
-        return appender.list.stream().filter(e -> e.getLevel() == Level.WARN).toList();
+        return appender.list.stream().filter(e -> e.getLevel() == Level.WARN).collect(Collectors.toList());
     }
 
     private List<ILoggingEvent> warnEventsStartingWith(String prefix) {
-        return warnEvents().stream().filter(e -> e.getFormattedMessage().startsWith(prefix)).toList();
+        return warnEvents().stream().filter(e -> e.getFormattedMessage().startsWith(prefix)).collect(Collectors.toList());
     }
 
     /** 回调：把 "-raw" 后缀替换为 "-clean" */
@@ -83,10 +85,10 @@ class SecurityUtilFilterImmutableVerificationTest {
     // ------------------------------------------------------------------
 
     @Test
-    @DisplayName("Set.of 顶层入参：不抛异常、原样返回、降级 warn 有输出")
+    @DisplayName("不可变 Set 顶层入参：不抛异常、原样返回、降级 warn 有输出")
     void setOfTopLevelInputSkippedWithWarn() {
-        // given：List.of 顶层已由开发用例覆盖，Set.of 走同一 processCollection 顶层分支但类不同（SetN）
-        Set<String> frozen = Set.of("a-raw", "b-raw");
+        // given：不可变 List 顶层已由开发用例覆盖，不可变 Set 走同一 processCollection 顶层分支但类不同
+        Set<String> frozen = Collections.unmodifiableSet(new HashSet<>(Arrays.asList("a-raw", "b-raw")));
         // when
         Object result = SecurityUtil.filterStr(frozen, (o, f, s) -> mask(s));
         // then
@@ -121,7 +123,7 @@ class SecurityUtilFilterImmutableVerificationTest {
 
     static class UnmodifiableSetHolder {
         String name = "name-raw";
-        Set<String> frozenSet = Collections.unmodifiableSet(new HashSet<>(Set.of("keep-raw")));
+        Set<String> frozenSet = Collections.unmodifiableSet(new HashSet<>(Collections.singleton("keep-raw")));
     }
 
     // ------------------------------------------------------------------
@@ -202,8 +204,8 @@ class SecurityUtilFilterImmutableVerificationTest {
 
     static class LegacyImmutableHolder {
         String name = "name-raw";
-        List<String> frozenList = Collections.unmodifiableList(new ArrayList<>(List.of("keep-raw")));
-        Map<String, String> frozenMap = Collections.unmodifiableMap(new HashMap<>(Map.of("k-raw", "v-raw")));
+        List<String> frozenList = Collections.unmodifiableList(new ArrayList<>(Collections.singletonList("keep-raw")));
+        Map<String, String> frozenMap = Collections.unmodifiableMap(new HashMap<>(Collections.singletonMap("k-raw", "v-raw")));
     }
 
     @Test
@@ -230,10 +232,10 @@ class SecurityUtilFilterImmutableVerificationTest {
 
     static class MutableHolder {
         String name = "name-raw";
-        List<String> list = new ArrayList<>(List.of("a-raw", "b-raw"));
-        Set<String> hashSet = new HashSet<>(Set.of("s-raw"));
-        Set<String> linkedHashSet = new LinkedHashSet<>(List.of("l1-raw", "l2-raw"));
-        Map<String, String> map = new HashMap<>(Map.of("k-raw", "v-raw"));
+        List<String> list = new ArrayList<>(Arrays.asList("a-raw", "b-raw"));
+        Set<String> hashSet = new HashSet<>(Collections.singleton("s-raw"));
+        Set<String> linkedHashSet = new LinkedHashSet<>(Arrays.asList("l1-raw", "l2-raw"));
+        Map<String, String> map = new HashMap<>(Collections.singletonMap("k-raw", "v-raw"));
     }
 
     // fixtures
@@ -242,10 +244,10 @@ class SecurityUtilFilterImmutableVerificationTest {
     }
 
     static class ListHolder {
-        List<String> list = new ArrayList<>(List.of("x-raw"));
+        List<String> list = new ArrayList<>(Collections.singletonList("x-raw"));
     }
 
     static class MapHolder {
-        Map<String, String> map = new HashMap<>(Map.of("k-raw", "v-raw"));
+        Map<String, String> map = new HashMap<>(Collections.singletonMap("k-raw", "v-raw"));
     }
 }

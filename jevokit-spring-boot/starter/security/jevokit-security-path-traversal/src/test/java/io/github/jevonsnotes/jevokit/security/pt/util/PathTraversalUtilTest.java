@@ -93,7 +93,7 @@ class PathTraversalUtilTest {
     @Test
     @DisplayName("[真] additionTaintedPatterns：绝对 Windows 路径形态被追加规则清除")
     void clearModeAppliesAdditionTaintedPatterns() {
-        properties.setAdditionTaintedPatterns(java.util.List.of("(?i)[a-z]:\\\\{1,2}"));
+        properties.setAdditionTaintedPatterns(Collections.singletonList("(?i)[a-z]:\\\\{1,2}"));
         mode(PathTraversalProperties.Mode.clear);
         String cleaned = PathTraversalUtil.clean("C:\\Windows\\system32\\config", properties.getAllTaintedPatterns());
         assertThat(cleaned)

@@ -12,7 +12,7 @@ import io.github.jevonsnotes.jevokit.api.config.JevokitApiProperties;
 import io.github.jevonsnotes.jevokit.api.consts.ApiHSignAlg;
 import io.github.jevonsnotes.jevokit.api.dto.JSRequestExecutor;
 
-import jakarta.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequest;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Optional;

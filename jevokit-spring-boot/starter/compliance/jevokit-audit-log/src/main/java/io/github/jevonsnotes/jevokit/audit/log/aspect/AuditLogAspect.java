@@ -17,8 +17,8 @@ import io.github.jevonsnotes.jevokit.configuration.audit.log.AuditLogProperties;
 import io.github.jevonsnotes.jevokit.configuration.config.IpConfiguration;
 import io.github.jevonsnotes.jevokit.core.annotation.AuditLog;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.lang.reflect.Method;
 
 /**

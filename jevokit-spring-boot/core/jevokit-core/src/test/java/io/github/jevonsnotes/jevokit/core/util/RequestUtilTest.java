@@ -4,6 +4,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -22,8 +23,8 @@ class RequestUtilTest {
         Map<String, List<String>> params = RequestUtil.decodeParams("a=1&b=2", "UTF-8");
         // then
         assertThat(params).as("应解析出全部键值对")
-                .containsEntry("a", List.of("1"))
-                .containsEntry("b", List.of("2"));
+                .containsEntry("a", Collections.singletonList("1"))
+                .containsEntry("b", Collections.singletonList("2"));
     }
 
     @Test
@@ -37,9 +38,9 @@ class RequestUtilTest {
 
     @Test
     @DisplayName("decodeParams：URL 编码的值按指定字符集解码（中文）")
-    void decodeUrlEncodedValue() {
+    void decodeUrlEncodedValue() throws java.io.UnsupportedEncodingException {
         // given："name=" + URLEncoder.encode("张三", UTF-8)
-        String encoded = "name=" + java.net.URLEncoder.encode("张三", StandardCharsets.UTF_8);
+        String encoded = "name=" + java.net.URLEncoder.encode("张三", StandardCharsets.UTF_8.name());
         // when
         Map<String, List<String>> params = RequestUtil.decodeParams(encoded, "UTF-8");
         // then

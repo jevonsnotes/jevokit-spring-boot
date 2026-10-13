@@ -47,9 +47,6 @@ public class NoGenApi {
     * @return 计时结果文本
     */
     public String test(@RequestParam("bizNo") String bizNo,@RequestParam("loop") int loop) {
-//        jdbcTemplate.update("""
-//                INSERT INTO biz_no (biz_tag, max_id, step, mode, threhold, description) VALUES ('%s', 0, 1000, 1, '70.00', '单号获取测试demo');
-//                """.formatted(bizNo));
         long start = System.currentTimeMillis();
         try {
             Supplier<String> task = () -> bzNoHelper.getNoLPad(bizNo,8,"0");
@@ -77,9 +74,6 @@ public class NoGenApi {
     * @return 计时结果文本
     */
     public String testRecycle(@RequestParam("bizNo") String bizNo,@RequestParam("loop") int loop) {
-//        jdbcTemplate.update("""
-//                INSERT INTO biz_no (biz_tag, max_id, step, mode, threhold, description) VALUES ('%s', 0, 1000, 1, '70.00', '单号获取测试demo');
-//                """.formatted(bizNo));
         long start = System.currentTimeMillis();
 
         try {
@@ -89,7 +83,7 @@ public class NoGenApi {
             }
 
             // 添加模拟数据
-            List<Boolean> list = nos.stream().parallel().map(no -> bzNoHelper.recycle(bizNo, no)).toList();
+            List<Boolean> list = nos.stream().parallel().map(no -> bzNoHelper.recycle(bizNo, no)).collect(Collectors.toList());
             Assert.isTrue(list.size() == nos.size());
 
             // 并发获取数据
