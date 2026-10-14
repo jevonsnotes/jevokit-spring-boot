@@ -53,7 +53,14 @@
         <maven.compiler.release>8</maven.compiler.release>
         <hutool.version>5.8.46</hutool.version>
         <jsoup.version>1.23.2</jsoup.version>
-        <spring.could.version>2021.0.9</spring.could.version>
+        <!-- Spring Cloud 版本属性：spring.cloud.version 为标准属性名（历史拼写笔误 could → cloud 修正）。
+             旧名 spring.could.version 降为废弃别名——值链式引用标准名（恒同值），过渡期保留一版：
+             经 parent 继承、以旧属性名覆盖 Spring Cloud 版本的使用方覆盖行为不变（版本管理引用点
+             过渡期仍走旧名，子 pom 覆盖旧名照常生效），新配置一律用 spring.cloud.version。
+             别名与旧名引用点（dependencyManagement 的 spring-cloud-dependencies import）
+             计划下个大版本（4.0 线）一并切换/移除。 -->
+        <spring.cloud.version>2021.0.9</spring.cloud.version>
+        <spring.could.version>${spring.cloud.version}</spring.could.version>
         <fastjson.version>2.0.53</fastjson.version>
         <apache.common.version>2.18.0</apache.common.version>
         <poi.version>5.4.1</poi.version>
@@ -137,7 +144,8 @@
                 <artifactId>jsoup</artifactId>
                 <version>${jsoup.version}</version>
             </dependency>
-            <!-- springCloud -->
+            <!-- springCloud（过渡期引用旧属性名 spring.could.version——废弃别名链式联动
+                 标准名 spring.cloud.version，见 properties 注释；下个大版本切标准名并删别名） -->
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-dependencies</artifactId>
@@ -451,11 +459,11 @@
             </plugins>
         </pluginManagement>
         <plugins>
-            <!--     版本管理插件       -->
+            <!--     版本管理插件（显式钉版：Boot parent 不管理此插件，不钉版解析随仓库 metadata 漂移）       -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>versions-maven-plugin</artifactId>
-<!--                <version>${versions-maven-plugin.version}</version>-->
+                <version>2.23.0</version>
                 <configuration>
                     <generateBackupPoms>false</generateBackupPoms>
                 </configuration>

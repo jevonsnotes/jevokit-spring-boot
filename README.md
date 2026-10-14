@@ -2,11 +2,11 @@
 
 A Spring Boot starter kit covering security hardening, data desensitization, audit logging, distributed locks, idempotent number generation and encrypted configuration.
 
-一套面向 Spring Boot 3.5.x / JDK 17 的后端增强组件库：安全加固（XSS / SQL 注入 / 路径遍历 / 代码注入 / 接口签名防重放）、数据脱敏、审计日志、分布式锁、幂等单号生成、配置加密、Excel 导入，以及 RocketMQ / OkHttp / Camunda 工作流集成。按需引入 starter，统一配置前缀 `jevokit.*`，即插即用。
+一套面向 Spring Boot 2.7.x / JDK 8+ 的后端增强组件库：安全加固（XSS / SQL 注入 / 路径遍历 / 代码注入 / 接口签名防重放）、数据脱敏、审计日志、分布式锁、幂等单号生成、配置加密、Excel 导入，以及 RocketMQ / OkHttp / Camunda 工作流集成。按需引入 starter，统一配置前缀 `jevokit.*`，即插即用。
 
 ![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)
-![JDK](https://img.shields.io/badge/JDK-17-orange.svg)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.x-6DB33F.svg)
+![JDK](https://img.shields.io/badge/JDK-8+-orange.svg)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-2.7.18-6DB33F.svg)
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.jevonsnotes/jevokit-dependencies.svg)](https://central.sonatype.com/artifact/io.github.jevonsnotes/jevokit-dependencies)
 
 ## 仓库结构
@@ -84,18 +84,18 @@ LICENSE                                  # Apache-2.0
 
 ## 快速开始
 
-环境要求：JDK 17+，Spring Boot 3.5.x。
+环境要求：运行环境 JDK 8+，Spring Boot 2.7.x；构建工具链 JDK 17 + Maven 3.5+（`maven.compiler.release=8` 交叉编译，产物字节码 Java 8，构建者无需安装 JDK 8）。
 
 **1. 引入 BOM**（父 pom 或任意模块的 `dependencyManagement`）：
 
 ```xml
 <dependencyManagement>
     <dependencies>
-        <!-- 3.5.2.1 已发布 Maven Central；当前主干开发版为 3.5.2.2-SNAPSHOT -->
+        <!-- 2.7 线当前开发版为 2.7.3.0-SNAPSHOT（尚未发布 Maven Central；发布后以实际发布版本引用） -->
         <dependency>
             <groupId>io.github.jevonsnotes</groupId>
             <artifactId>jevokit-dependencies</artifactId>
-            <version>3.5.2.1</version>
+            <version>2.7.3.0-SNAPSHOT</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>
@@ -103,7 +103,7 @@ LICENSE                                  # Apache-2.0
 </dependencyManagement>
 ```
 
-> BOM 的版本管理链：`jevokit-dependencies` → `jevokit-parent` → `spring-boot-starter-parent` 3.5.16。import 后同时获得 Spring Boot 官方与 jevokit 全家的版本管理，各 starter 引入时无需再写版本号。
+> BOM 的版本管理链：`jevokit-dependencies` → `jevokit-parent` → `spring-boot-starter-parent` 2.7.18。import 后同时获得 Spring Boot 官方与 jevokit 全家的版本管理，各 starter 引入时无需再写版本号。
 
 **2. 按需引入 starter**（版本随 BOM 统一对齐）：
 
@@ -136,13 +136,15 @@ jevokit:
 
 `sample/jevokit-sample` 聚合演示了各 starter 的用法，演示配置均为开箱可用的默认值（含演示密钥，生产环境必须替换）。
 
-本地启动（无需 RocketMQ，激活 `local` profile 即排除 MQ 自动装配；需本机 Redis `localhost:6379`，数据库用 H2 内存自给）：
+本地启动（无需 RocketMQ：主 `application.yml` 默认经 `spring.config.import` 导入 `application-ignore-mq.yml` 排除 RocketMQ 自动装配；需本机 Redis `localhost:6379`，数据库用 H2 内存自给）：
 
 ```bash
 cd jevokit-spring-boot/sample/jevokit-sample
-mvn spring-boot:run -Dspring-boot.run.profiles=local
-# 或打包后 java -jar --spring.profiles.active=local，或 IDE 中激活 local profile
+mvn spring-boot:run
 ```
+
+- 演示 RocketMQ 收发（`/rocketmq/test`、7 个 MQ listener，需本机 nameserver `localhost:9876`）：移除/注释主 `application.yml` 中 `spring.config.import` 下 `classpath:application-ignore-mq.yml` 一行即可恢复 MQ 装配（连接参数见同文件 `rocketmq` 段）。
+- 本机调试覆盖演示值：工作目录放置不入库的 `application-local.yml`（经 `optional:file:./application-local.yml` 导入，文件缺省不影响启动）。
 
 ## 测试与构建
 
@@ -152,15 +154,18 @@ mvn spring-boot:run -Dspring-boot.run.profiles=local
 # 1) 默认测试集（冒烟 + 非 MQ E2E）——需本机 Redis，无需 RocketMQ
 cd jevokit-spring-boot && mvn test
 
-# 2) 全量测试（含 RocketMQ E2E）——另需 RocketMQ nameserver localhost:9876
+# 2) 全量测试（含 RocketMQ E2E）——先移除主 application.yml 中 spring.config.import
+#    的 application-ignore-mq.yml 行恢复 MQ 装配，另需 RocketMQ nameserver localhost:9876
 mvn test -DexcludedGroups=
 ```
 
-说明：默认构建通过 surefire `excludedGroups=mq` 排除唯一真依赖 MQ 的用例（`@Tag("mq")`）；`-DexcludedGroups=` 传空串即不排除。
+说明：默认构建通过 surefire `excludedGroups=mq` 排除唯一真依赖 MQ 的用例（`@Tag("mq")`）；`-DexcludedGroups=` 传空串即不排除（MQ 装配恢复方式见上）。
 
 ## 版本号与变更日志
 
-版本号四段式 `A.B.C.D`：前两段对齐 Spring Boot 版本线（`3.5` ⇔ Spring Boot 3.5.x）；第三位为本项目**破坏性变更位**（不兼容改动时 +1，第四位归 0，如 3.5.0.0 → 3.5.1.0）；第四位为常规迭代位（兼容性变更 +1）。
+版本号四段式 `A.B.C.D`：前两段对齐 Spring Boot 版本线（`2.7` ⇔ Spring Boot 2.7.x）；第三位为本项目**破坏性变更位**（不兼容改动时 +1，第四位归 0，如 2.7.2.x → 2.7.3.0）；第四位为常规迭代位（兼容性变更 +1）。
+
+2.7 线与 3.5 线并行维护：`2.7.x` 分支发布 2.7.3.x（对齐 Spring Boot 2.7.18），`3.5.x` 分支发布 3.5.2.x（对齐 Spring Boot 3.5.x），两线功能集对齐；版本支持明细见 [jevokit-spring-boot/README.md](jevokit-spring-boot/README.md)。
 
 各版本变更明细见 [CHANGELOG.md](CHANGELOG.md)；GitHub Releases 与 tag 对应发布版本。
 

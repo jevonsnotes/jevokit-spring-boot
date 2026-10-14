@@ -27,6 +27,10 @@
 
 - **okhttp 模块 `httpStatusSensitive` 配置属性删除**：非 2xx 响应处理语义统一由 `errorMode` 管理——原 `sensitive=true` 使用方改配 `errorMode=throwout`（行为等价，且异常类型不再被包装降级）。该变更将同步 3.5.x 线。
 
+### 废弃（Deprecation）
+
+- **版本属性名拼写修正：`spring.could.version` → `spring.cloud.version`（parent 构建属性面）**：jevokit-parent 中 Spring Cloud 版本属性更正历史拼写笔误，`spring.cloud.version` 为标准属性名；旧名 `spring.could.version` 保留一版作为废弃别名（值链式引用标准名，恒同值），下个大版本（4.0 线）移除。兼容性：经 Maven parent 继承 jevokit-parent、以 `<spring.could.version>` 属性覆盖 Spring Cloud 版本的项目，过渡期覆盖行为不变（版本管理的 spring-cloud-dependencies import 过渡期仍引用旧名）；直接 import `jevokit-dependencies` BOM 的使用方不受影响（BOM import 按 pom 自身解析值生效，不读取使用方属性）。过渡期新配置一律使用 `spring.cloud.version`。解析结果不变：Spring Cloud 仍为 2021.0.9。
+
 ### 迁移指引
 
 **自旧版内部定制版本（2.7.2.x 线）迁移的 Boot 2.7 用户**
@@ -63,13 +67,15 @@
 - logback 1.5 → 1.2：自定义 appender/filter 生态按 1.2 API 核对（jevokit 脱敏 filter 与 sample 的 logback-spring.xml 均为 1.2 兼容写法，已预核）；
 - workflow：Camunda 7.19 官方支持矩阵仅含 H2 1.4.x，root 保持 H2 2.2.220——H2 2.2.220 下 Camunda schema 自动创建 / 流程部署 / 流程冒烟经实测兼容（R11 已关闭，降级预案归档备用）。
 
-### 测试套件行为说明（下游用户可见）
+### sample 启动与默认测试集说明（下游用户可见）
 
-sample 默认测试集（`ApplicationTest` + 8 个非 MQ 的 E2E 类）内建 `@ActiveProfiles("local")`，加载入库的 `src/test/resources/application-local.yml` 排除 RocketMQ 自动装配——无 RocketMQ 环境（9876 nameserver 不在位）时默认套件 `mvn test` 即全绿，上下文仅需本机 Redis（6379）+ H2 内存自给；`RocketMqE2ETest`（`@Tag("mq")`）不带 local profile，跑全量（`mvn test -DexcludedGroups=`）时走默认 profile、MQ 正常装配。
+sample 主 `application.yml` 默认经 `spring.config.import` 导入随制品入库的 `application-ignore-mq.yml`，默认排除 RocketMQ 官方自动装配（否则 `@RocketMQMessageListener` 监听容器启动即连 name-server，连接失败会中止上下文刷新）——无 RocketMQ 环境（9876 nameserver 不在位）时示例应用可直接启动，默认测试集（`ApplicationTest` + 8 个非 MQ 的 E2E 类）`mvn test` 即全绿，上下文仅需本机 Redis（6379）+ H2 内存自给。演示 RocketMQ 收发（`/rocketmq/test`、7 个 MQ listener）或跑全量测试（`mvn test -DexcludedGroups=` 放开 `@Tag("mq")` 的 `RocketMqE2ETest`）前，移除/注释主 `application.yml` 中对 `application-ignore-mq.yml` 的 import 行恢复装配（连接参数见同文件 `rocketmq` 段）。另经 `optional:file:./application-local.yml` 保留工作目录调试覆盖导入（不入库，文件缺省不影响启动）。
 
 ### 修复
 
 - **jevokit-desensitization 日志脱敏链路启动挂起（验收期缺陷 DEF-1）**：logback 脱敏过滤器在日志事件中调用容器 `getBean`（"日志路径容器依赖"反模式，见文末架构备忘），Boot 2.7 线上下文刷新窗口内与 redisson 等异步 bean 创建形成三方循环等待，可致启动/JVM 挂起。修复为静态引用两阶段发布（`@PostConstruct` 发布配置类引用 + `ContextRefreshedEvent` 经容器发布代理实例保 AOP 语义），日志链路零容器依赖。**下游用户行为无变化**：引用未发布时 fail-open 直通，保持"脱敏失败绝不阻断日志输出"既有语义。
+- **jevokit-security-xss javascript 协议混淆绕过堵住（安全修复）**：`HtmlSafeList` 对 `src`/`href` 的 javascript 协议检查原按解码值字面前缀匹配，`java&#9;script:`、`jav&#x0A;ascript:`、`java&#115;cript:` 等实体/控制符混淆形态可绕过判定——jsoup 解析属性时按 HTML 规范完成一次实体解码，值中残留 \t、\n 等控制符，而浏览器 URL 解析会剥除这些字符后按 `javascript:` scheme 执行，构成 XSS 注入入口。修复为规范化后判定：`Locale.ROOT` 小写 + 剥除值内 \t\r\n + trim 首尾控制符（与浏览器 URL 解析器规范化行为对齐），混淆载荷在 clear 净化 / escape 转义 / reject 判定三模式一并堵住。只收紧不弱化：相对路径、锚点、含 `&` 与 `&#` 字面量的 query、http/https URL 判定不受影响（不误伤边界有固化用例）。
+- **兼容性 API 恢复（jevokit-core）**：`OkHttpStatusRuntimeException.ofThrow(Integer, String, String)` 三参重载恢复（响应体置空串，兼容历史调用形态）；`RequestContentCachingRequestWrapper.getContentAsString()` 恢复（按请求声明字符集解码缓存体，未声明/非法字符集兜底 UTF-8，语义与表单体解析一致）——两个既有公开入口回归，使用方升级零改动。
 
 ### 架构备忘（维护者查证）
 
