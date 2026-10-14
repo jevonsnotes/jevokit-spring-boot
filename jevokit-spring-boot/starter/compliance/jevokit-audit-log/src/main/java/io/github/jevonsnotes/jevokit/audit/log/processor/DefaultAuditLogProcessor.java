@@ -5,6 +5,7 @@ import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.ReflectUtil;
 import cn.hutool.extra.spring.SpringUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationContext;
 import io.github.jevonsnotes.jevokit.audit.log.dao.AuditLogDao;
 import io.github.jevonsnotes.jevokit.audit.log.dto.AuditLogDto;
 import io.github.jevonsnotes.jevokit.configuration.audit.log.AuditLogProperties;
@@ -43,7 +44,7 @@ public class DefaultAuditLogProcessor implements AuditLogProcessor {
      */
     public void save(AuditLogDto dto) {
 
-        AuditLogProperties properties = SpringUtil.getBean(AuditLogProperties.class);
+        AuditLogProperties properties = beanIfAvailable(AuditLogProperties.class);
         if(properties != null){
             switch (properties.getPersistent().getMode()){
                 case MIXED:
@@ -66,7 +67,7 @@ public class DefaultAuditLogProcessor implements AuditLogProcessor {
      * DB 落库：无 AuditLogDao bean（无 DB 环境）时静默跳过（降级不报错）。
      */
     private void processPersistentDB(AuditLogDto dto) {
-        AuditLogDao dao = SpringUtil.getBean(AuditLogDao.class);
+        AuditLogDao dao = beanIfAvailable(AuditLogDao.class);
         if(dao != null) {
             dao.saveOrUpdate(dto);
         }
@@ -84,5 +85,19 @@ public class DefaultAuditLogProcessor implements AuditLogProcessor {
             vals[i] = ObjectUtil.defaultIfNull(ReflectUtil.getFieldValue(dto,field),"");
         }
         log.info(sb.subString(0,sb.length()-1), vals);
+    }
+
+    /**
+     * 存在即取的容器查找：bean 缺失时返回 null 而非抛 {@code NoSuchBeanDefinitionException}。
+     * <p>遗留 #1 复核：原 {@code SpringUtil.getBean} 的 {@code if(x != null)} 判定是死分支——
+     * hutool getBean 缺 bean 即抛异常，类注释承诺的"无 AuditLogDao（无 DB 环境）静默跳过降级"
+     * 实际不可达（DB 模式配了持久化但无 JdbcTemplate 时每个审计请求都会炸）。改
+     * {@code getBeanProvider().getIfAvailable()} 使既有判空降级真正生效，行为与文档一致。
+     * <p>线程定性：本处理器仅由审计过滤器/切面在请求线程调用（容器刷新完成后），查询本身
+     * 不构成 DEF-1 等待环，属降级契约修复而非死锁加固。
+     */
+    private static <T> T beanIfAvailable(Class<T> type) {
+        ApplicationContext context = SpringUtil.getApplicationContext();
+        return context == null ? null : context.getBeanProvider(type).getIfAvailable();
     }
 }

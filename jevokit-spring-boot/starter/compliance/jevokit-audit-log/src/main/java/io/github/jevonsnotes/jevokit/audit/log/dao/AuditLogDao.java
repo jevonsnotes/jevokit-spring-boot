@@ -34,12 +34,16 @@ public interface AuditLogDao extends BaseAutoDao{
      * 惰性获取 JdbcTemplate（原为接口 static 字段在类初始化期 getBean，形成类加载顺序依赖：
      * 无 DB/SpringUtil 未就绪时任何实现类加载即抛异常——终验裁定改为调用期查找）。
      * 每次调用直查，无共享可变状态；SpringUtil.getBean 自身即容器单例查找，成本可接受。
+     * <p>遗留 #1 复核定性：保持惰性查找、不静态化。调用路径为请求线程（审计落库）与迁移 Job
+     * （@EnableScheduling 的任务在 finishRefresh 即 ContextRefreshedEvent 之后才启动），
+     * 均在容器刷新完成后执行，getBean 不会与持锁刷新中的 main 线程形成 DEF-1 等待环；
+     * 静态化需引入事件发布与静态持有者（生命周期管理成本），低危下收益不抵复杂度。
      */
     static JdbcTemplate jdbcTemplate() {
         return SpringUtil.getBean(JdbcTemplate.class);
     }
 
-    /** 惰性获取审计配置（同 {@link #jdbcTemplate()} 的改造理由） */
+    /** 惰性获取审计配置（同 {@link #jdbcTemplate()} 的改造理由与遗留 #1 复核定性） */
     static AuditLogProperties properties() {
         return SpringUtil.getBean(AuditLogProperties.class);
     }

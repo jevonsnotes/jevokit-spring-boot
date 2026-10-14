@@ -12,6 +12,9 @@ public interface TokenStrategy {
      * 惰性获取 token 代理（原为接口 static 字段在类初始化期 getBean，形成类加载顺序依赖：
      * SpringUtil 未就绪时任何实现类加载即抛异常——终验裁定改为调用期查找）。
      * 每次调用直查，无共享可变状态；SpringUtil.getBean 自身即容器单例查找，成本可接受。
+     * <p>遗留 #1 复核定性：保持惰性查找、不静态化——仅由业务在刷新完成后的线程经
+     * getTokenDelegate/refreshTokenDelegate 调用，不构成 DEF-1 等待环（口径同
+     * audit-log 的 AuditLogDao.jdbcTemplate()）。
      */
     static TokenDelegate delegate() {
         return SpringUtil.getBean(TokenDelegate.class);

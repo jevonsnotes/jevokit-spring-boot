@@ -38,9 +38,9 @@ import static org.assertj.core.api.SoftAssertions.assertSoftly;
  * 线程池复用会把上个请求的事件链/源路径串到下一请求（globalKey 继承 = 两次独立调用被串成同一次链路）。
  *
  * <p>验证通路：直接以 MockHttpServletRequest/MockHttpServletResponse 调用被测 filter（真实包装/匹配逻辑），
- * {@code getEventType} 内的 {@code SpringUtil.getBean(AuditLogProperties.class)} 经
- * ApplicationContextRunner + withBean(SpringUtil) 装配最小上下文（与 desensitization 测试基座同模式，
- * 测试运行期与生产同通路）。SRC_SERVLET_PATH 在测试链内手动 setSrcServletPath 写入——模拟
+ * 经 ApplicationContextRunner 装配最小上下文（与 desensitization 测试基座同模式；getEventType 的
+ * SpringUtil.getBean 已改为注入字段直读——遗留 #1 复核——上下文仅作环境兜底）。
+ * SRC_SERVLET_PATH 在测试链内手动 setSrcServletPath 写入——模拟
  * forward 归因的生产写入方（该 API 供业务 forward 场景调用）。
  *
  * <p>断言方向：全部断言"<b>正确行为</b>"（无泄漏时应当成立）——修复前本类前三个用例红、修复后全绿。
@@ -207,10 +207,11 @@ class AuditLogFilterThreadLocalLeakTest {
         return properties;
     }
 
-    /** 满足 getEventType 内 SpringUtil.getBean(AuditLogProperties) 的最小上下文（测试运行期与生产同通路）。
-     * RefreshAutoConfiguration 注册 RefreshScope——AuditLogProperties 带 @RefreshScope，
-     * 无 RefreshScope 时运行期 getBean 报 "No Scope registered for scope name 'refresh'"
-     * （与 JSecureContextThreadLocalLeakTest 引入 RefreshAutoConfiguration 同因）。 */
+    /** 历史脚手架：曾为 getEventType 内 SpringUtil.getBean(AuditLogProperties) 提供运行期上下文；
+     *  遗留 #1 复核后 getEventType 已改为装配期注入字段直读（不再查询容器），本上下文保留
+     *  仅作测试环境兜底（与生产装配形态一致，不构成断言依赖）。
+     *  RefreshAutoConfiguration 注册 RefreshScope——AuditLogProperties 带 @RefreshScope，
+     *  无 RefreshScope 时 getBean 报 "No Scope registered for scope name 'refresh'"。 */
     private static ApplicationContextRunner minimalRunner(AuditLogProperties properties) {
         return new ApplicationContextRunner()
                 .withConfiguration(AutoConfigurations.of(RefreshAutoConfiguration.class))

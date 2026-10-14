@@ -8,6 +8,10 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.spring.SpringUtil;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ContextClosedEvent;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.EventListener;
 import io.github.jevonsnotes.jevokit.core.exception.IORuntimeException;
 import io.github.jevonsnotes.jevokit.core.exception.OkHttpRuntimeException;
 import io.github.jevonsnotes.jevokit.core.exception.OkHttpStatusRuntimeException;
@@ -51,7 +55,7 @@ import java.util.Map;
  */
 
 @Slf4j
-public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
+public class OkHttpUtil extends CloneSupport<OkHttpUtil> implements ApplicationListener<ContextRefreshedEvent> {
     private final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
     private final MediaType XML = MediaType.parse("application/xml; charset=utf-8");
     private OkHttpClient okHttpClient;
@@ -59,6 +63,11 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
     private final OkhttpProperties properties;
     //    private final ThreadLocal<Boolean> PROXY_MODE = new ThreadLocal<>();
     private OkHttpClient customOkhttpClient;
+    /** 容器就绪后提升的门面静态引用（DEF-1 定式统一，遗留 #1）：ContextRefreshedEvent 发布、
+     *  ContextClosedEvent 清理（防 spring-test 多上下文/热重启残留）。of() 家族优先消费静态引用，
+     *  未发布（刷新窗口内）回落 SpringUtil.getBean——门面仅由业务线程调用，窗口期内的调用为主线程
+     *  重入查找（安全），不存在日志链路式的外部线程等待环；静态化后刷新完成的常态路径零容器查找 */
+    private static volatile OkHttpUtil staticInstance;
 
 
      /**
@@ -848,11 +857,13 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
 //    }
 
      /**
-     * 取容器装配的门面单例（默认客户端，proxy-mode 决定直连还是代理）
+     * 取容器装配的门面单例（默认客户端，proxy-mode 决定直连还是代理）。
+     * 优先消费 ContextRefreshedEvent 提升的静态引用（刷新完成后零容器查找），
+     * 未发布（上下文刷新窗口内被调用）时回落 SpringUtil.getBean 原语义
      * @return 容器中的 OkHttpUtil 单例
      */
     public static OkHttpUtil of() {
-        return SpringUtil.getBean(OkHttpUtil.class);
+        return containerFacade();
     }
 
     /**
@@ -862,7 +873,7 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
      * @return
      */
     public static OkHttpUtil of(OkHttpClient client) {
-        OkHttpUtil bean = SpringUtil.getBean(OkHttpUtil.class).clone();
+        OkHttpUtil bean = containerFacade().clone();
         bean.customOkhttpClient = client;
         return bean;
     }
@@ -874,7 +885,9 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
      * @return
      */
     public static OkHttpUtil of(CustomOkhttpConfiguration config) {
-        OkHttpUtil bean = SpringUtil.getBean(OkHttpUtil.class).clone();
+        OkHttpUtil bean = containerFacade().clone();
+        // configuration/pool 为定制构建期依赖：定制客户端只发生在刷新完成后的业务线程
+        // （遗留 #1 复核定性：无刷新窗口的外部线程调用路径，不构成 DEF-1 等待环，保持运行期查找）
         JevokitOkhttpConfiguration configuration = SpringUtil.getBean(JevokitOkhttpConfiguration.class);
         ConnectionPool pool = SpringUtil.getBean(ConnectionPool.class);
         //初始化非代理客户端
@@ -897,7 +910,8 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
      * @return 携带 customOkhttpClient 的新门面副本，后续调用全部走该定制客户端
      */
     public static OkHttpUtil ofProxy(CustomOkhttpProxyConfiguration config) {
-        OkHttpUtil bean = SpringUtil.getBean(OkHttpUtil.class).clone();
+        OkHttpUtil bean = containerFacade().clone();
+        // 定制构建期依赖保持运行期查找（定性同 of(CustomOkhttpConfiguration)，遗留 #1 复核）
         JevokitOkhttpConfiguration configuration = SpringUtil.getBean(JevokitOkhttpConfiguration.class);
         ConnectionPool pool = SpringUtil.getBean(ConnectionPool.class);
         OkHttpClient.Builder basicBuilder = configuration.createBasicBuilder(pool);
@@ -912,9 +926,33 @@ public class OkHttpUtil extends CloneSupport<OkHttpUtil> {
      * @return 强制使用代理客户端的新门面副本
      */
     public static OkHttpUtil ofProxy() {
-        OkHttpUtil bean = SpringUtil.getBean(OkHttpUtil.class).clone();
+        OkHttpUtil bean = containerFacade().clone();
         bean.customOkhttpClient = bean.okHttpProxyClient;
         return bean;
+    }
+
+    /**
+     * 取门面单例：静态引用（ContextRefreshedEvent 提升）优先，未发布回落 SpringUtil.getBean。
+     * 回落仅发生在上下文刷新窗口内的调用（常态为业务线程在刷新完成后调用，静态引用必已发布）。
+     */
+    private static OkHttpUtil containerFacade() {
+        OkHttpUtil facade = staticInstance;
+        return facade != null ? facade : SpringUtil.getBean(OkHttpUtil.class);
+    }
+
+    /** 上下文刷新完成回调：把容器门面单例提升为静态引用（of() 家族此后零容器查找）。
+     *  经容器取而非记 this，与容器单例（含后续克隆源）保持同一实例。 */
+    @Override
+    public void onApplicationEvent(ContextRefreshedEvent event) {
+        staticInstance = event.getApplicationContext().getBean(OkHttpUtil.class);
+    }
+
+    /** 上下文关闭回调：清理静态引用（与发布配对，防 spring-test 多上下文/热重启残留——
+     *  与 DesHelper 同定式，遗留 #1+#2 统一）。清理后 of() 回落 getBean 原语义，行为不变；
+     *  多上下文为"最后刷新者胜出、任一关闭即清理"（静态字段进程级单值，与发布侧一致）。 */
+    @EventListener(ContextClosedEvent.class)
+    public void onContextClosed(ContextClosedEvent event) {
+        staticInstance = null;
     }
 
     /**

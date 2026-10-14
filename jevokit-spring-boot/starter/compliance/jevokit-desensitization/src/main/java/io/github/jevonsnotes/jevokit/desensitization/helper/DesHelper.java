@@ -11,7 +11,9 @@ import javax.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.EventListener;
 import io.github.jevonsnotes.jevokit.core.lang.Callback;
 import io.github.jevonsnotes.jevokit.core.lang.CallbackR;
 import io.github.jevonsnotes.jevokit.core.util.CloneUtil;
@@ -39,10 +41,14 @@ import java.util.regex.Pattern;
 public class DesHelper implements ApplicationListener<ContextRefreshedEvent> {
     private final JevokitDesensitizationProperties properties;
     private final SensitizationPowerInterceptor sensitizationPowerInterceptor;
-    /** 就绪标志：init()（@PostConstruct）发布。volatile——日志链路在 netty 等非容器线程上读取 */
+    /** 就绪标志：init()（@PostConstruct）发布，ContextClosedEvent 清理（与发布配对，见 onContextClosed）。
+     *  volatile——日志链路在 netty 等非容器线程上读取 */
     private static volatile boolean ready;
-    public static JevokitDesensitizationProperties staticProperties;
-    public static SensitizationPowerInterceptor staticSensitizationPowerInterceptor;
+    /** init() 提升的静态配置引用。volatile——非容器线程直读（DesUtil 日志链路），
+     *  且关闭清理（遗留 #2）后置空必须对读方可见 */
+    public static volatile JevokitDesensitizationProperties staticProperties;
+    /** init() 提升的静态权限拦截器引用。volatile 同上（checkPower 由任意线程调用） */
+    public static volatile SensitizationPowerInterceptor staticSensitizationPowerInterceptor;
     /** init() 提升的静态实例：日志链路专用实例源（见 getInstance 的死锁防御注释） */
     private static volatile DesHelper staticInstance;
 
@@ -225,6 +231,22 @@ public class DesHelper implements ApplicationListener<ContextRefreshedEvent> {
         staticInstance = event.getApplicationContext().getBean(DesHelper.class);
     }
 
+    /** 上下文关闭回调：清理 init()/刷新发布提升的全部静态引用（遗留 #2，与发布配对的生命周期闭环）。
+     *  <p>动机：spring-test 多上下文、热重启等场景下，旧上下文的静态引用若不清理，会在下一上下文
+     *  刷新完成前被当作"就绪"实例继续使用（陈旧配置、已销毁实例——DEF-1 刷新窗口的放大器）。
+     *  清理后各入口回到既有语义：desensitizeLog/desensitizeView fail-fast（not ready）、
+     *  对象日志链路 fail-open 跳过、checkPower 安全默认 false（无权限），绝不进入容器查找。
+     *  <p>写序约定：先清普通引用、最后落 volatile ready——读方一律以 ready 为门闩；
+     *  多上下文语义为"最后刷新者胜出、任一关闭即清理"（静态字段为进程级单值，与发布侧一致）。
+     *  单上下文生命周期内顺序不变：刷新发布 → 关闭清理，中间窗口静态引用始终可用。 */
+    @EventListener(ContextClosedEvent.class)
+    public void onContextClosed(ContextClosedEvent event) {
+        staticInstance = null;
+        staticProperties = null;
+        staticSensitizationPowerInterceptor = null;
+        ready = false;
+    }
+
 
 
 
@@ -305,8 +327,15 @@ public class DesHelper implements ApplicationListener<ContextRefreshedEvent> {
     public static boolean checkPower(DstLevel level){
         if(level != null) {
             if(ready){
-                List<String> keys = getProperties().getLevelPowerKey().get(level);
-                return staticSensitizationPowerInterceptor.check(level,keys);
+                // 引用快照后再用：onContextClosed 清理可能并发置空静态引用（遗留 #2），
+                // 判空不满足时按安全默认（无权限）返回，绝不 NPE 阻断权限判定
+                JevokitDesensitizationProperties snapshot = getProperties();
+                SensitizationPowerInterceptor interceptor = staticSensitizationPowerInterceptor;
+                if(snapshot != null && interceptor != null) {
+                    List<String> keys = snapshot.getLevelPowerKey().get(level);
+                    return interceptor.check(level,keys);
+                }
+                log.debug("DesHelper static refs cleared (context closed)");
             } else {
                 log.debug("DesHelper not ready");
             }

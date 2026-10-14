@@ -11,6 +11,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import java.util.Collections;
 
@@ -31,18 +32,20 @@ class DesensitizedLogFilterTest {
     /** 采集过滤后事件的 appender（观测点） */
     private ListAppender<ILoggingEvent> observer;
     private Logger logger;
+    /** 测试期保持存活的脱敏上下文（遗留 #2 起 ContextClosedEvent 即清理静态引用——
+     *  与生产一致：应用运行期间容器存活、脱敏就绪；close 移至 tearDown） */
+    private AnnotationConfigApplicationContext desensitizationContext;
 
     @BeforeEach
     void setUpLogback() {
-        // 装配 DesUtil 静态依赖（SM4 密钥 + 规则），与生产同通路
-        DesensitizationTestSupport.minimalRunner(DesensitizationTestSupport.properties(
-                        Collections.singletonMap(DstLevel.LV0, Collections.singletonMap(
-                                DstType.MOBILE, Collections.singletonList(".*mobile"))),
-                        Collections.emptyList(),
-                        Collections.singletonMap(DstLevel.LV0, Collections.singletonList("DST_POWER_LV0"))))
-                .run(context -> {
-                    // 上下文就绪后 DesHelper ready = true
-                });
+        // 装配 DesUtil 静态依赖（SM4 密钥 + 规则），与生产同通路。
+        // 旧形态"启动上下文→runner 关闭→继续消费静态残留"在关闭即清理契约下不再成立——
+        // 改持有存活上下文（同 minimalRunner 的 bean 套件），close 在 tearDown
+        desensitizationContext = DesensitizationTestSupport.liveMinimalContext(DesensitizationTestSupport.properties(
+                Collections.singletonMap(DstLevel.LV0, Collections.singletonMap(
+                        DstType.MOBILE, Collections.singletonList(".*mobile"))),
+                Collections.emptyList(),
+                Collections.singletonMap(DstLevel.LV0, Collections.singletonList("DST_POWER_LV0"))));
 
         LoggerContext ctx = (LoggerContext) LoggerFactory.getILoggerFactory();
         logger = ctx.getLogger(DesensitizedLogFilterTest.class);
@@ -61,6 +64,11 @@ class DesensitizedLogFilterTest {
     void tearDownLogback() {
         logger.detachAppender(observer);
         observer.stop();
+        if (desensitizationContext != null) {
+            // ContextClosedEvent → DesHelper 静态引用清理（用例间零残留）
+            desensitizationContext.close();
+            desensitizationContext = null;
+        }
     }
 
     @Test
