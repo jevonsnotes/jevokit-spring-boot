@@ -556,7 +556,10 @@
 
     <!-- Central 发布（#11）：签名与发布仅 release profile 激活（-Prelease），
          日常构建零签名零发布开销。gpg 口令取 settings.xml 的 gpg.passphrase server；
-         sample 模块 maven.deploy.skip=true 会同时抑制 central-publishing（不发布示例应用）；
+         sample 不发布靠发布命令 -pl '!sample/jevokit-sample' 排除——central-publishing 0.8.0
+         不读取 maven.deploy.skip（插件类无该属性，干跑实证：sample 留在 reactor 内时其产物
+         仍会进 bundle 暂存区 target/central-deferred），sample 的 maven.deploy.skip=true
+         仅抑制 maven-deploy-plugin；
          BOM 薄壳（jevokit-dependencies）经本 profile 一并签名发布——单 reactor 单 deployment。 -->
     <profiles>
         <profile>
