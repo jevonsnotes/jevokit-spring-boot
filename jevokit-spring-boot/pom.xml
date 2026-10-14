@@ -556,10 +556,9 @@
 
     <!-- Central 发布（#11）：签名与发布仅 release profile 激活（-Prelease），
          日常构建零签名零发布开销。gpg 口令取 settings.xml 的 gpg.passphrase server；
-         sample 不发布靠发布命令 -pl '!sample/jevokit-sample' 排除——central-publishing 0.8.0
-         不读取 maven.deploy.skip（插件类无该属性，干跑实证：sample 留在 reactor 内时其产物
-         仍会进 bundle 暂存区 target/central-deferred），sample 的 maven.deploy.skip=true
-         仅抑制 maven-deploy-plugin；
+         sample 不发布由 release profile 的 excludeArtifacts 按 artifactId 常驻排除
+         （0.8.0 不读取 maven.deploy.skip，该属性仅抑制 maven-deploy-plugin；
+         -pl '!sample/jevokit-sample' 可保留作双保险，与 excludeArtifacts 兼容不冲突）；
          BOM 薄壳（jevokit-dependencies）经本 profile 一并签名发布——单 reactor 单 deployment。 -->
     <profiles>
         <profile>
@@ -591,6 +590,12 @@
                         <extensions>true</extensions>
                         <configuration>
                             <publishingServerId>central</publishingServerId>
+                            <!-- sample 按 artifactId 常驻排除出 bundle（0.8.0 原生参数，release/SNAPSHOT
+                                 双路径过滤；sources/javadoc/pom 与主构件同 artifactId 一并剔除，双路径干跑
+                                 实证）：发布命令无需 -pl 排除 sample，保留 -pl 仅作双保险（与参数兼容不冲突） -->
+                            <excludeArtifacts>
+                                <excludeArtifacts>jevokit-sample</excludeArtifacts>
+                            </excludeArtifacts>
                         </configuration>
                     </plugin>
                 </plugins>

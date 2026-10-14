@@ -1,6 +1,6 @@
 # 发布 Maven Central 操作手册（jevokit-spring-boot）
 
-> 面向 `io.github.jevonsnotes` 命名空间首发（版本 `3.5.0.0`）。发布主体：单 reactor（jevokit-spring-boot/，jevokit-parent）下的 18 个库模块 + BOM 薄壳（jevokit-dependencies）+ sample（不发布）。sample 应用不发布：发布命令以 `-pl '!sample/jevokit-sample'` 排除（central-publishing 0.8.0 不读取 `maven.deploy.skip`，该属性仅抑制 maven-deploy-plugin，详见"单 bundle 发布序"注意项）。
+> 面向 `io.github.jevonsnotes` 命名空间首发（版本 `3.5.0.0`）。发布主体：单 reactor（jevokit-spring-boot/，jevokit-parent）下的 18 个库模块 + BOM 薄壳（jevokit-dependencies）+ sample（不发布）。sample 应用不发布：release profile 的 central-publishing `excludeArtifacts` 按 artifactId 常驻排除（0.8.0 原生参数；它不读取 `maven.deploy.skip`，该属性仅抑制 maven-deploy-plugin，详见"单 bundle 发布序"注意项）。
 
 ## 前置条件（每次发布前逐项核对）
 
@@ -19,7 +19,7 @@
 ```bash
 cd jevokit-spring-boot
 mvn -Prelease clean install -DskipTests   # 干跑校验：签名产物齐全即可（只 install 不 deploy）
-mvn -Prelease clean deploy -pl '!sample/jevokit-sample'   # 真发布（sample 的 E2E 依赖本机 Redis，发布时直接排除；其本就不入 bundle）
+mvn -Prelease clean deploy -DskipTests   # 真发布（sample 由 excludeArtifacts 自动排除出 bundle，无需 -pl；-DskipTests 为既有有意形态，测试覆盖由日常构建承担）
 ```
 
 deploy 结束后去 Portal 对该 deployment 点一次 **Publish** 即可（现在只有一个 deployment，无先后依赖）。
@@ -29,7 +29,7 @@ deploy 结束后去 Portal 对该 deployment 点一次 **Publish** 即可（现�
 - central-publishing 插件必须配 `<extensions>true</extensions>`（jevokit-parent 已配，BOM 壳经继承同样生效）：缺了它 publish 目标不绑定 deploy 生命周期，**BUILD SUCCESS 但静默零上传**
 - 日志必须出现 `publish (injected-central-publishing)` 字样，才算真的走了发布；deploy 结束时应有 `Uploaded bundle successfully ... deploymentId: ...`
 - 校验失败时 CLI 只有 `failed while publishing` 一句话，**具体错误清单只在 Portal deployment 页面**（如 `Project name is missing`），先看页面再对症修，别盲试
-- sample 不发布**必带** `-pl '!sample/jevokit-sample'`：central-publishing 0.8.0 不读取 `maven.deploy.skip`（插件类无该属性，javap 全类扫描 + 干跑实证：sample 留在 reactor 内时其产物仍会进 bundle 暂存区 `target/central-deferred`）；其 pom 的 `maven.deploy.skip=true` 仅抑制 maven-deploy-plugin，且它的 E2E 依赖本机 Redis，本就应排除
+- sample 由 release profile 的 `excludeArtifacts`（jevokit-parent 已配）按 artifactId 常驻排除出 bundle：0.8.0 原生参数，release/SNAPSHOT 双路径过滤，sources/javadoc/pom 随主构件同 artifactId 一并剔除（`maven.deploy.skip` 0.8.0 不读取，该属性仅抑制 maven-deploy-plugin）。命令无需 -pl；`-pl '!sample/jevokit-sample'` 可保留作双保险（与参数兼容不冲突），保留它会同时跳过 sample 的编译与测试
 - 失败重试会产生多个 deployment：不完整/失败的记得在 Portal Drop，只 Publish 最终完整的那个
 - 首次发布若 Central 校验慢，去 https://central.sonatype.com 的 Publishing Portal 看构件状态
 
@@ -63,7 +63,7 @@ git push origin v3.5.0.0
 
 ```bash
 cd jevokit-spring-boot
-mvn clean deploy -Prelease -DskipPublishing=true -DskipTests -pl '!sample/jevokit-sample'
+mvn clean deploy -Prelease -DskipPublishing=true -DskipTests
 ```
 
 为什么必须是 deploy 形态：gpg:sign 绑定在 **verify** 阶段，`clean package` 到不了签名（实测 package 后 `.asc` 为 0）；deploy 干跑一层覆盖 打包 → javadoc → 签名 → bundle 组装 → 跳过上传 全链路。
@@ -77,7 +77,7 @@ mvn clean deploy -Prelease -DskipPublishing=true -DskipTests -pl '!sample/jevoki
    - ③ 两步序少半步：BOM 已并入单 reactor，单 deployment 无先后依赖（结构性消解）
    - ④ 模块缺 name：`for f in $(find . -name pom.xml); do grep -L "<name>" $f; done` 零输出
    - ⑤ 旧 BOM 假绿：干跑本身是 clean 全量构建，BOM 为 reactor 内模块，天然免疫
-3. **`-pl '!sample/jevokit-sample'` 必带**（见"单 bundle 发布序"注意项）。
+3. **bundle 无 sample**：核对 bundle 暂存区（`target/central-deferred`）无 `jevokit-sample` 目录、其余 20 模块齐全——`excludeArtifacts` 常驻排除生效即无需 -pl（`-pl` 可选双保险，见"单 bundle 发布序"注意项）。
 
 ## 构建产物核对单（发布前干跑即验）
 
