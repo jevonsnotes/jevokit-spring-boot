@@ -1,6 +1,5 @@
 package io.github.jevonsnotes.jevokit.redis.config;
 
-import cn.hutool.extra.spring.SpringUtil;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -220,6 +219,11 @@ public class JevokitRedisConfiguration {
     public class CacheRedisConfig extends CachingConfigurerSupport {
         private final StringRedisTemplate redisTemplate;
         private final RedisCacheConfiguration redisCacheConfiguration;
+        /** 装配期注入的全局键生成器（遗留 #1 复核：原 keyGenerator() 运行期 SpringUtil.getBean——
+         *  该方法由缓存基础设施在刷新期基础设施装配/首次缓存操作时回调，查找不构成 DEF-1 等待环
+         *  （主线程重入或刷新完成后请求线程），但构造注入语义等价且彻底消除运行期查找，
+         *  创建顺序由依赖图保证（globalKeyGenerator 为同配置类内无依赖 @Bean）） */
+        private final GlobalKeyGenerator globalKeyGenerator;
 
         @Override
         /**
@@ -259,7 +263,7 @@ public class JevokitRedisConfiguration {
         * @return 全局键生成器
         */
         public KeyGenerator keyGenerator() {
-            return SpringUtil.getBean(GlobalKeyGenerator.class);
+            return globalKeyGenerator;
         }
 
 

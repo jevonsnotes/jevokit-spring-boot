@@ -6,7 +6,6 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.lang.func.Func1;
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.extra.spring.SpringUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RAtomicLong;
@@ -299,7 +298,10 @@ public class BzNoHelper {
      * @param bizTag
      */
     private void dbAsync(String bizTag,long currentNo) {
-        BizNo config = _this().getConfig(bizTag);
+        // 遗留 #1 复核：原经 _this()=SpringUtil.getBean(BzNoHelper.class) 自引用取容器单例——
+        // 单例装配下与 this 恒同，每次发号一次容器查找纯冗余；发号/dbAsync 均在刷新完成后的
+        // 请求或内部 executor 线程执行，不构成 DEF-1 等待环，查找一并消除
+        BizNo config = getConfig(bizTag);
         Assert.notNull(config, "业务号序列未配置");
         long maxId = getMaxId(bizTag);
         if (currentNo >= maxId
@@ -393,12 +395,5 @@ public class BzNoHelper {
     */
     private String getRecycleKey(String bizTag) {
         return KEY_CACHE_RECYCLE.computeIfAbsent(bizTag, t -> String.format(BzNoHelper.PATTERN_RECYCLE, t));
-    }
-
-    /**
-    * 自引用（克隆场景保留原实例语义）。
-    */
-    private BzNoHelper _this(){
-        return SpringUtil.getBean(BzNoHelper.class);
     }
 }

@@ -1,6 +1,5 @@
 package io.github.jevonsnotes.jevokit.audit.log.filter;
 
-import cn.hutool.extra.spring.SpringUtil;
 import jakarta.servlet.http.Part;
 import lombok.RequiredArgsConstructor;
 import org.springframework.util.AntPathMatcher;
@@ -87,7 +86,9 @@ public class AuditLogFilter implements Filter {
      * @return 命中的事件类型；未命中返回 null（该请求不做审计）
      */
     private String getEventType(HttpServletRequest request) {
-        AuditLogProperties properties = SpringUtil.getBean(AuditLogProperties.class);
+        // 装配期注入字段直读（遗留 #1 复核：原运行期 SpringUtil.getBean 纯冗余——doFilter 只在
+        // 容器刷新完成后的请求线程执行，不构成 DEF-1 等待环，但注入字段语义等价且零查找成本；
+        // @RefreshScope 代理形态下字段同样透传规则热更新）
         Map<HttpMethod, Map<String, List<String>>> eventTypesPatterns = properties.getEventTypes().getPatterns();
         if (eventTypesPatterns != null) {
             for (Map.Entry<HttpMethod, Map<String, List<String>>> entry : eventTypesPatterns.entrySet()) {

@@ -21,6 +21,9 @@ public interface NoGenDao {
 
     /**
     * 按业务标签查配置行（通用 SQL，方言无关）。
+    * <p>遗留 #1 复核定性：调用期 SpringUtil.getBean 保持现状——仅由 BzNoHelper 在刷新完成后
+    * 的业务线程调用（发号/配置回源），不构成 DEF-1 等待环；定性理由同
+    * audit-log 的 AuditLogDao.jdbcTemplate()（惰性查找统一口径）。
     */
     default BizNo getBizNo(String bizTag){
         JdbcTemplate jdbcTemplate = SpringUtil.getBean(JdbcTemplate.class);

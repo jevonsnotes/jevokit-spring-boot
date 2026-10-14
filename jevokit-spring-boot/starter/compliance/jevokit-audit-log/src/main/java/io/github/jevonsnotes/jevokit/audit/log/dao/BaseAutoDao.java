@@ -30,6 +30,9 @@ public interface BaseAutoDao {
 
     /**
      * 按指定列等值查询单条审计记录（内部窄接口，条件字段名须为白名单列）。
+     * <p>遗留 #1 复核定性：调用期 SpringUtil.getBean 保持现状——调用方为请求线程（审计查询）
+     * 与迁移 Job（finishRefresh 后启动），均在容器刷新完成后执行，不构成 DEF-1 等待环；
+     * 定性理由同 {@link AuditLogDao#jdbcTemplate()}。
      *
      * @param columnName 查询列名
      * @param localKey   列值

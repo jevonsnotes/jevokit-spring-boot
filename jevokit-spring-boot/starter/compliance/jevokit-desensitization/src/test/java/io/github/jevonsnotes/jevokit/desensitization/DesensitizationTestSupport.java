@@ -3,6 +3,7 @@ package io.github.jevonsnotes.jevokit.desensitization;
 import cn.hutool.extra.spring.SpringUtil;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import io.github.jevonsnotes.jevokit.core.util.SecurityUtil;
 import io.github.jevonsnotes.jevokit.desensitization.config.JevokitDesensitizationProperties;
 import io.github.jevonsnotes.jevokit.desensitization.consts.DstLevel;
@@ -71,6 +72,25 @@ public final class DesensitizationTestSupport {
                 .withBean(JevokitDesensitizationProperties.class, () -> properties)
                 .withBean(DesHelper.class,
                         () -> new DesHelper(properties, new DefaultSensitizationPowerInterceptor()));
+    }
+
+    /**
+     * 与 {@link #minimalRunner(JevokitDesensitizationProperties)} 同套件 bean 的"存活上下文"变体：
+     * 注册同一组 bean 并 refresh 后交还调用方，由调用方在用例结束时 {@code close()}。
+     * <p>为什么需要：DesHelper 静态引用在 ContextClosedEvent 即清理（关闭即清理，不再残留）——
+     * 需要跨 runner 生命周期消费静态引用（如 logback 过滤器在上下文之外打日志）
+     * 的用例必须持有存活上下文，与生产"应用运行期间容器存活"语义一致。
+     */
+    public static AnnotationConfigApplicationContext liveMinimalContext(JevokitDesensitizationProperties properties) {
+        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+        context.registerBean("cryptoKeyInitializer", InitializingBean.class,
+                () -> () -> SecurityUtil.init(null, null, null, TEST_SM4_KEY));
+        context.registerBean(SpringUtil.class);
+        context.registerBean(JevokitDesensitizationProperties.class, () -> properties);
+        context.registerBean(DesHelper.class,
+                () -> new DesHelper(properties, new DefaultSensitizationPowerInterceptor()));
+        context.refresh();
+        return context;
     }
 
     /** 反射重置 SecurityUtil 静态密钥字段（init 注入后无公开清除入口，须如此隔离用例间状态） */
