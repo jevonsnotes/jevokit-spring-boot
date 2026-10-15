@@ -4,6 +4,8 @@
 
 ## [未发布]
 
+## [3.5.2.2] — 2026-10-14
+
 ### 破坏性变更（Breaking）
 
 - **jevokit-okhttp 删除 `jevokit.ok.http.http-status-sensitive` 配置项**：非 2xx 响应处理语义统一由 `errorMode` 管理——原 `http-status-sensitive: true` 使用方改配 `error-mode: throwout`（行为等价，非 2xx 抛 OkHttpStatusRuntimeException 且携带 code/url/body）；quiet/log 模式吞错语义不变（文本路径返回错误体、字节/流路径返回 null）
