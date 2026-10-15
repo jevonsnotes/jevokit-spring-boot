@@ -78,6 +78,11 @@ sample 主 `application.yml` 默认经 `spring.config.import` 导入随制品入
 - **jevokit-desensitization 日志脱敏链路启动挂起（验收期缺陷 DEF-1）**：logback 脱敏过滤器在日志事件中调用容器 `getBean`（"日志路径容器依赖"反模式，见文末架构备忘），Boot 2.7 线上下文刷新窗口内与 redisson 等异步 bean 创建形成三方循环等待，可致启动/JVM 挂起。修复为静态引用两阶段发布（`@PostConstruct` 发布配置类引用 + `ContextRefreshedEvent` 经容器发布代理实例保 AOP 语义），日志链路零容器依赖。**下游用户行为无变化**：引用未发布时 fail-open 直通，保持"脱敏失败绝不阻断日志输出"既有语义。
 - **jevokit-security-xss javascript 协议混淆绕过堵住（安全修复）**：`HtmlSafeList` 对 `src`/`href` 的 javascript 协议检查原按解码值字面前缀匹配，`java&#9;script:`、`jav&#x0A;ascript:`、`java&#115;cript:` 等实体/控制符混淆形态可绕过判定——jsoup 解析属性时按 HTML 规范完成一次实体解码，值中残留 \t、\n 等控制符，而浏览器 URL 解析会剥除这些字符后按 `javascript:` scheme 执行，构成 XSS 注入入口。修复为规范化后判定：`Locale.ROOT` 小写 + 剥除值内 \t\r\n + trim 首尾控制符（与浏览器 URL 解析器规范化行为对齐），混淆载荷在 clear 净化 / escape 转义 / reject 判定三模式一并堵住。只收紧不弱化：相对路径、锚点、含 `&` 与 `&#` 字面量的 query、http/https URL 判定不受影响（不误伤边界有固化用例）。
 - **兼容性 API 恢复（jevokit-core）**：`OkHttpStatusRuntimeException.ofThrow(Integer, String, String)` 三参重载恢复（响应体置空串，兼容历史调用形态）；`RequestContentCachingRequestWrapper.getContentAsString()` 恢复（按请求声明字符集解码缓存体，未声明/非法字符集兜底 UTF-8，语义与表单体解析一致）——两个既有公开入口回归，使用方升级零改动。
+- **jevokit-audit-log 审计降级契约修复**：`DefaultAuditLogProcessor` 类注释承诺"DB 模式下无 `AuditLogDao`（无 DB 环境）时静默跳过"，实际代码中 hutool `getBean` 缺 bean 即抛 `NoSuchBeanDefinitionException`——原 `if(x != null)` 判空为死分支，无 DB 环境的每个审计请求都会抛异常。改 `getBeanProvider().getIfAvailable()` 判空降级后，"无 DB 环境静默跳过"的既有契约真正生效。
+
+### 内部改进（对使用方零影响）
+
+- **运行期 `getBean` 同类加固与静态状态生命周期管理**：全仓运行期 `SpringUtil.getBean` 逐一定性处置——3 处消除（`AuditLogFilter` 事件匹配改装配期注入字段直读、`BzNoHelper` 单例自引用 `_this()` 消除、`JevokitRedisConfiguration` 缺省键生成器构造注入替代）、4 处保持惰性方法并附定性注释（`AuditLogDao`/`BaseAutoDao`/`NoGenDao`/`TokenStrategy`，调用均在容器刷新完成后，不构成等待环）、2 处按两阶段发布定式改造（`OkHttpUtil` 静态门面 of() 家族：`ContextRefreshedEvent` 发布/`ContextClosedEvent` 清理，公共 API 不变）。
 
 ### 架构备忘（维护者查证）
 
