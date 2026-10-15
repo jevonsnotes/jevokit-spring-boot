@@ -44,6 +44,8 @@ mvn versions:set -DnewVersion=3.5.0.0 -DgenerateBackupPoms=false
 mvn versions:set -DnewVersion=3.5.0.1-SNAPSHOT -DgenerateBackupPoms=false
 ```
 
+注意：`versions:set` 只翻 pom，CHANGELOG 翻牌靠人工——发布 commit 时同步翻牌 CHANGELOG 段标题（`## [未发布]` → `## [正式版本号] — 发布日期`），并在其上新建空 `## [未发布]` 段作为下一开发期新条目落点。漏翻的后果：发布内容长期挂在"未发布"段下，读者无法对应版本号。
+
 ## 发布后动作
 
 1. **GitHub tag**：
