@@ -52,7 +52,7 @@ class ConfigurationPropertiesBindingTest {
     class Crypto {
 
         @Test
-        @DisplayName("默认不配置任何密钥（替代历史内置默认密钥的安全语义），startup-check 默认 true")
+        @DisplayName("默认不配置任何密钥（替代历史内置默认密钥的安全语义），startup-check 默认 true，charset 默认 UTF-8")
         void defaultsAreNull() {
             runner.run(context -> {
                 CryptoProperties props = context.getBean(CryptoProperties.class);
@@ -61,21 +61,26 @@ class ConfigurationPropertiesBindingTest {
                 assertThat(props.getAesKey()).as("aes-key 默认 null").isNull();
                 assertThat(props.getSm4Key()).as("sm4-key 默认 null").isNull();
                 assertThat(props.isStartupCheck()).as("startup-check 默认 true（启动校验从严）").isTrue();
+                assertThat(props.getCharset()).as("charset 默认 UTF-8（签名字节口径不跟随 JVM 默认字符集）")
+                        .isEqualTo("UTF-8");
             });
         }
 
         @Test
-        @DisplayName("kebab-case 键绑定")
+        @DisplayName("kebab-case 键绑定（含 charset）")
         void kebabBinding() {
             runner.withPropertyValues(
                             "jevokit.crypto.aes-key=aes-0123456789ab",
                             "jevokit.crypto.sm4-key=sm4-0123456789a",
-                            "jevokit.crypto.startup-check=false")
+                            "jevokit.crypto.startup-check=false",
+                            "jevokit.crypto.charset=GBK")
                     .run(context -> {
                         CryptoProperties props = context.getBean(CryptoProperties.class);
                         assertThat(props.getAesKey()).as("aes-key 应绑定").isEqualTo("aes-0123456789ab");
                         assertThat(props.getSm4Key()).as("sm4-key 应绑定").isEqualTo("sm4-0123456789a");
                         assertThat(props.isStartupCheck()).as("startup-check=false 应绑定").isFalse();
+                        assertThat(props.getCharset()).as("charset=GBK 应绑定（GBK 存量对接两端同配）")
+                                .isEqualTo("GBK");
                     });
         }
     }

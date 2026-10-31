@@ -1,6 +1,7 @@
 package io.github.jevonsnotes.jevokit.configuration.config;
 
 import cn.hutool.crypto.asymmetric.RSA;
+import cn.hutool.crypto.asymmetric.SM2;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -15,16 +16,19 @@ import io.github.jevonsnotes.jevokit.core.editor.StringPropertiesEditor;
 import io.github.jevonsnotes.jevokit.core.util.SecurityUtil;
 
 import java.lang.reflect.Field;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * {@link JevokitCoreConfiguration} 装配测试（ApplicationContextRunner，starter 项目惯例）：
- * crypto 属性绑定 → {@link SecurityUtil} 注入链路、startup-check 启动校验（默认拦缺失键/关闭后延迟失败）、
+ * crypto 属性绑定 → {@link SecurityUtil} 注入链路（含 charset 字符集：默认 UTF-8 / GBK 注入 / 非法值启动失败）、
+ * startup-check 启动校验（默认拦缺失键/关闭后延迟失败）、
  * 宽松键名绑定、SpringUtil 的 ConditionalOnMissingBean 回退、StringPropertiesEditor 装配。
  *
- * <p>SecurityUtil 为静态有状态：每条用例前后反射重置密钥字段，
+ * <p>SecurityUtil 为静态有状态：每条用例前后反射重置密钥与字符集字段，
  * 避免"先跑绑定用例再跑未绑定用例"时被污染（上下文关闭不会回收已注入的静态密钥）。
  */
 @DisplayName("JevokitCoreConfiguration 装配")
@@ -36,11 +40,16 @@ class JevokitCoreConfigurationTest {
 
     private static final String RSA_PUBLIC_KEY;
     private static final String RSA_PRIVATE_KEY;
+    private static final String SM2_PUBLIC_KEY;
+    private static final String SM2_PRIVATE_KEY;
 
     static {
         RSA rsa = new RSA();
         RSA_PUBLIC_KEY = rsa.getPublicKeyBase64();
         RSA_PRIVATE_KEY = rsa.getPrivateKeyBase64();
+        SM2 sm2 = new SM2();
+        SM2_PUBLIC_KEY = sm2.getPublicKeyBase64();
+        SM2_PRIVATE_KEY = sm2.getPrivateKeyBase64();
     }
 
     private final ApplicationContextRunner runner = new ApplicationContextRunner()
@@ -167,6 +176,59 @@ class JevokitCoreConfigurationTest {
                 });
     }
 
+    @Test
+    @DisplayName("crypto 链路：charset 未配置时注入默认 UTF-8（与既有全 UTF-8 对接行为一致）")
+    void charsetDefaultsToUtf8WhenNotConfigured() {
+        runner.withPropertyValues(
+                        "jevokit.crypto.startup-check=false",
+                        "jevokit.crypto.sm4-key=" + SM4_KEY)
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    assertThat(SecurityUtil.getCharset())
+                            .as("未配置 charset 时应注入默认 UTF-8").isEqualTo(StandardCharsets.UTF_8);
+                });
+    }
+
+    @Test
+    @DisplayName("crypto 链路：jevokit.crypto.charset=GBK 绑定并注入 SecurityUtil，中文明文 SM2 签验同口径通过")
+    void charsetConfigInjectedIntoSecurityUtil() {
+        runner.withPropertyValues(
+                        "jevokit.crypto.startup-check=false",
+                        "jevokit.crypto.charset=GBK")
+                .run(context -> {
+                    // given：上下文启动完成时 cryptoKeyInitializer（InitializingBean）已执行
+                    assertThat(context).hasNotFailed();
+                    // then：charset 完成绑定与注入
+                    CryptoProperties props = context.getBean(CryptoProperties.class);
+                    assertThat(props.getCharset()).as("charset=GBK 应完成绑定").isEqualTo("GBK");
+                    assertThat(SecurityUtil.getCharset()).as("charset 应注入 SecurityUtil")
+                            .isEqualTo(Charset.forName("GBK"));
+                    // and：同口径（同进程模拟两端同配 GBK）中文明文签验往返通过
+                    String signature = SecurityUtil.sm2Base64Sign(PLAIN, SM2_PRIVATE_KEY);
+                    assertThat(SecurityUtil.sm2Base64Verify(PLAIN, signature, SM2_PUBLIC_KEY))
+                            .as("GBK 口径下 SM2 中文签验往返应通过").isTrue();
+                });
+    }
+
+    @Test
+    @DisplayName("crypto 链路：charset 配非法值启动即失败（fail-fast），且不受 startup-check=false 影响")
+    void invalidCharsetFailsStartupIndependentlyOfStartupCheck() {
+        runner.withPropertyValues(
+                        "jevokit.crypto.startup-check=false",
+                        "jevokit.crypto.charset=not-a-charset")
+                .run(context -> {
+                    // then：字符集校验不归 startup-check 管——配错即启动失败
+                    assertThat(context).as("charset 非法值应使启动失败").hasFailed();
+                    // 断言 cause 链上含字符集注入的 ISE 即可：其底层还会包 IllegalCharsetNameException /
+                    // UnsupportedCharsetException（JDK 原生异常）作为根因，不宜对最深层类型做 brittle 断言
+                    assertThat(context.getStartupFailure())
+                            .as("失败应源于字符集注入的 IllegalStateException")
+                            .hasCauseInstanceOf(IllegalStateException.class);
+                    assertThat(stackTraceOf(context.getStartupFailure()))
+                            .contains("jevokit.crypto.charset");
+                });
+    }
+
     // ------------------------- startup-check 启动校验 -------------------------
 
     @Test
@@ -275,7 +337,7 @@ class JevokitCoreConfigurationTest {
         });
     }
 
-    /** 反射重置 SecurityUtil 静态密钥字段（上下文关闭不会回收已注入密钥） */
+    /** 反射重置 SecurityUtil 静态密钥与字符集字段（上下文关闭不会回收已注入值；字符集回默认 UTF-8） */
     private static void resetSecurityUtilKeys() {
         for (String fieldName : new String[]{"rsaPublicKey", "rsaPrivateKey", "aesKey", "sm4Key"}) {
             try {
@@ -285,6 +347,13 @@ class JevokitCoreConfigurationTest {
             } catch (ReflectiveOperationException e) {
                 throw new IllegalStateException("重置 SecurityUtil 静态字段失败：" + fieldName, e);
             }
+        }
+        try {
+            Field field = SecurityUtil.class.getDeclaredField("charset");
+            field.setAccessible(true);
+            field.set(null, StandardCharsets.UTF_8);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("重置 SecurityUtil 静态字段失败：charset", e);
         }
     }
 

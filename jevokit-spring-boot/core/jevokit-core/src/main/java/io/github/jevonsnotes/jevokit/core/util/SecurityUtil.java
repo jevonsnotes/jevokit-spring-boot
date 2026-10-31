@@ -18,6 +18,8 @@ import io.github.jevonsnotes.jevokit.core.lang.CallbackPR;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Collection;
@@ -27,13 +29,18 @@ import java.util.Set;
 
 /**
  * 加解密与对象字符串过滤工具（AES/SM4/RSA/SM2 + 递归字符串清洗）。
- * <p>使用方式：启动阶段先经 {@link #init(String, String, String, String)} 注入密钥（通常由装配层读 jevokit.crypto.* 配置后调用），
+ * <p>使用方式：启动阶段先经 {@link #init(String, String, String, String, String)} 注入密钥与字符集
+ * （通常由装配层读 jevokit.crypto.* 配置后调用），
  * 之后直接使用各无参重载（如 {@link #aesEncrypt(String)}、{@link #sm4cbcDecrypt(String)}、{@link #rsaEncrypt(String)}）；
  * 显式传密钥的重载免配置，适合多租户等密钥不固定的场景。
  * <p>关键约束：未注入密钥的算法调用无参重载会抛 IllegalStateException（消息含具体配置键），
  * 外部模块读取注入密钥须走 {@link #getSm4Key()} 等统一入口（同为 requireKey 语义，勿直读 Spring 配置）；
  * RSA 无参方向为"私钥加密、公钥解密"（保持既有签名语义，非标准方向），显式密钥重载则是标准方向；
  * {@link #filterStr(Object, CallBackP3R)} 会原地递归修改对象树，遇到不可变集合/Map 时告警跳过该字段而非中断。
+ * <p>字符集口径：SM2 签名/验签原文取字节与 AES/SM4 密钥字符串转字节统一走注入字符集
+ * {@link #getCharset()}（默认 UTF-8，对应配置 jevokit.crypto.charset），不跟随 JVM 默认字符集；
+ * 验签互通要求签名方与验签方两端字符集配置一致（含非 ASCII 报文任一端不同即验签失败）。
+ * SM4/AES 密文内的明文编码由底层实现固定为 UTF-8，不受该配置影响。
  */
 @Slf4j
 public class SecurityUtil {
@@ -46,6 +53,8 @@ public class SecurityUtil {
     private static volatile String rsaPrivateKey;
     private static volatile String aesKey;
     private static volatile String sm4Key;
+    /** 注入字符集（SM2 签名原文与 AES/SM4 密钥取字节的统一口径），默认 UTF-8；经 {@link #init} 注入，与密钥同生命周期 */
+    private static volatile Charset charset = StandardCharsets.UTF_8;
     private final static ThreadLocal<Set<Object>> FILTER_CACHE = new ThreadLocal<>();
 
     static {
@@ -57,9 +66,8 @@ public class SecurityUtil {
     }
 
     /**
-     * 注入加解密密钥，替代已移除的内置默认密钥（原内置密钥随源码泄露，视为不可信，禁止再用于新数据）。
-     * 通常由装配层读取 jevokit.crypto.* 配置后调用，也可在应用启动阶段自行调用；重复调用以最后一次为准。
-     * 各参数独立生效：仅注入所需算法的密钥即可，未注入算法对应的无参方法将抛出 IllegalStateException。
+     * 注入加解密密钥（字符集保持现状不变，兼容旧调用入口，语义等价于 {@link #init(String, String, String, String, String)}
+     * 的 charset 传 null）。
      *
      * @param rsaPublicKey  RSA 公钥（Base64），对应配置 jevokit.crypto.rsa-public-key
      * @param rsaPrivateKey RSA 私钥（Base64），对应配置 jevokit.crypto.rsa-private-key
@@ -67,6 +75,24 @@ public class SecurityUtil {
      * @param sm4Key        SM4 密钥（16 字节），对应配置 jevokit.crypto.sm4-key
      */
     public static void init(String rsaPublicKey, String rsaPrivateKey, String aesKey, String sm4Key) {
+        init(rsaPublicKey, rsaPrivateKey, aesKey, sm4Key, null);
+    }
+
+    /**
+     * 注入加解密密钥与字符集，替代已移除的内置默认密钥（原内置密钥随源码泄露，视为不可信，禁止再用于新数据）。
+     * 通常由装配层读取 jevokit.crypto.* 配置后调用，也可在应用启动阶段自行调用；重复调用以最后一次为准。
+     * 各参数独立生效：仅注入所需算法的密钥即可，未注入算法对应的无参方法将抛出 IllegalStateException；
+     * charset 传 null/空白时保持当前字符集不变（与密钥的"空白忽略"语义对齐），默认 UTF-8。
+     *
+     * @param rsaPublicKey  RSA 公钥（Base64），对应配置 jevokit.crypto.rsa-public-key
+     * @param rsaPrivateKey RSA 私钥（Base64），对应配置 jevokit.crypto.rsa-private-key
+     * @param aesKey        AES 密钥（16/24/32 字节），对应配置 jevokit.crypto.aes-key
+     * @param sm4Key        SM4 密钥（16 字节），对应配置 jevokit.crypto.sm4-key
+     * @param charset       字符集名（如 UTF-8 / GBK），对应配置 jevokit.crypto.charset；
+     *                      决定 SM2 签名/验签原文取字节与 AES/SM4 密钥字符串转字节的口径，
+     *                      验签互通要求两端配置一致；非法字符集名立即抛 IllegalStateException（fail-fast）
+     */
+    public static void init(String rsaPublicKey, String rsaPrivateKey, String aesKey, String sm4Key, String charset) {
         if (StrUtil.isNotBlank(rsaPublicKey)) {
             SecurityUtil.rsaPublicKey = rsaPublicKey.trim();
         }
@@ -79,6 +105,39 @@ public class SecurityUtil {
         if (StrUtil.isNotBlank(sm4Key)) {
             SecurityUtil.sm4Key = sm4Key.trim();
         }
+        if (StrUtil.isNotBlank(charset)) {
+            try {
+                SecurityUtil.charset = Charset.forName(charset.trim());
+            } catch (RuntimeException e) {
+                // Charset.forName 对非法名抛 IllegalCharsetNameException、未支持名抛 UnsupportedCharsetException，
+                // 统一包装为带配置键的 ISE：字符集配错属装配错误，应在启动期暴露而非留到首次签名才爆
+                throw new IllegalStateException("crypto charset invalid: " + CFG_PREFIX + "charset=" + charset, e);
+            }
+        }
+    }
+
+    /**
+     * 获取注入的字符集（SM2 签名/验签原文取字节与 AES/SM4 密钥字符串转字节的统一口径，默认 UTF-8）。
+     * <p>字符集体系唯一入口语义：与 {@link #getSm4Key()} 同生命周期（经 init 注入、以最后一次为准），
+     * 显式传密钥的重载方法族同样按本口径取字节（不另设 per-call 字符集参数，保证"同一应用内全链路同一口径"）。
+     * 验签互通要求签名方与验签方两端配置一致：任一端不同，含非 ASCII（如中文）字符的报文即验签失败，
+     * 纯 ASCII 报文两种字符集字节相同、不受影响。
+     *
+     * @return 注入的字符集（未注入或被重置时回退 UTF-8）
+     */
+    public static Charset getCharset() {
+        Charset cs = charset;
+        return cs == null ? StandardCharsets.UTF_8 : cs;
+    }
+
+    /**
+     * 按注入字符集取字节（SM2 签名原文与 AES/SM4 密钥转换的统一出口，消除平台默认字符集依赖）
+     *
+     * @param val 字符串值（签名原文或密钥）
+     * @return 按注入字符集编码的字节
+     */
+    private static byte[] charsetBytes(String val) {
+        return val.getBytes(getCharset());
     }
 
     /**
@@ -129,25 +188,26 @@ public class SecurityUtil {
     }
 
     /**
-     * 获取aes密文（显式密钥，免配置）
+     * 获取aes密文（显式密钥，免配置；密钥按注入字符集转字节，见 {@link #getCharset()}）
      *
      * @param val 明文
      * @param key 密钥（16/24/32 字节）
      * @return 密文
      */
     public static String aesEncrypt(String val, String key) {
-        return SecureUtil.aes(key.getBytes()).encryptBase64(val);
+        return SecureUtil.aes(charsetBytes(key)).encryptBase64(val);
     }
 
     /**
-     * 获取aes明文（显式密钥，免配置）
+     * 获取aes明文（显式密钥，免配置；密钥按注入字符集转字节，见 {@link #getCharset()}；
+     * 明文编码由底层固定 UTF-8，不受字符集配置影响）
      *
      * @param val 密文
      * @param key 密钥（16/24/32 字节）
      * @return 明文
      */
     public static String aesDecrypt(String val, String key) {
-        return SecureUtil.aes(key.getBytes()).decryptStr(val);
+        return SecureUtil.aes(charsetBytes(key)).decryptStr(val);
     }
 
     /**
@@ -160,14 +220,14 @@ public class SecurityUtil {
         return sm4cbcEncrypt(val, requireKey(sm4Key, CFG_PREFIX + "sm4-key"));
     }
     /**
-     * sm4cbc 加密 （偏向盐长度16）
+     * sm4cbc 加密 （偏向盐长度16；密钥按注入字符集转字节，见 {@link #getCharset()}；明文编码由底层固定 UTF-8）
      * @param val 明文
      * @param key 密钥
      * @return 密文
      */
     public static String sm4cbcEncrypt(String val,String key) {
         byte[] iv = random.generateSeed(16);
-        SM4 alg = new SM4(Mode.CBC, Padding.PKCS5Padding, key.getBytes(), iv);
+        SM4 alg = new SM4(Mode.CBC, Padding.PKCS5Padding, charsetBytes(key), iv);
         byte[] encByte = alg.encrypt(val);
         return Base64.encode(ArrayUtil.addAll(iv, encByte));
     }
@@ -182,7 +242,7 @@ public class SecurityUtil {
     }
 
     /**
-     * sm4cbc 解密 （偏向盐长度16）
+     * sm4cbc 解密 （偏向盐长度16；密钥按注入字符集转字节，见 {@link #getCharset()}；明文编码由底层固定 UTF-8）
      * @param val 密文
      * @param key 密钥
      * @return 明文
@@ -191,7 +251,7 @@ public class SecurityUtil {
         if(StrUtil.isBlank(val)) return val;
         byte[] decode = Base64.decode(val);
         byte[] iv = ArrayUtil.sub(decode, 0, 16);
-        SM4 alg = new SM4(Mode.CBC, Padding.PKCS5Padding, key.getBytes(), iv);
+        SM4 alg = new SM4(Mode.CBC, Padding.PKCS5Padding, charsetBytes(key), iv);
         byte[] contentRes = ArrayUtil.sub(decode, 16, decode.length);
 
         return alg.decryptStr(contentRes);
@@ -253,7 +313,7 @@ public class SecurityUtil {
     }
 
     /**
-     * sm2验签
+     * sm2验签（原文按注入字符集取字节，见 {@link #getCharset()}；验签互通要求两端字符集配置一致）
      * @param val 明文字符串
      * @param signature 签名base64
      * @param pubKey 公钥
@@ -262,18 +322,18 @@ public class SecurityUtil {
     public static boolean sm2Base64Verify(String val,String signature,String pubKey) {
         if(val == null) return false;
         SM2 sm2 = new SM2(null,pubKey);
-        return sm2.verify(val.getBytes(),Base64.decode(signature));
+        return sm2.verify(charsetBytes(val),Base64.decode(signature));
     }
 
     /**
-     * sm2签名
+     * sm2签名（原文按注入字符集取字节，见 {@link #getCharset()}；验签互通要求两端字符集配置一致）
      * @param val 明文字符串
      * @param priKey 私钥
      * @return 签名base64
      */
     public static String sm2Base64Sign(String val,String priKey) {
         SM2 sm2 = new SM2(priKey,null);
-        byte[] sign = sm2.sign(val.getBytes());
+        byte[] sign = sm2.sign(charsetBytes(val));
 
         return Base64.encode(sign);
     }

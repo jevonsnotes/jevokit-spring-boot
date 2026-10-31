@@ -20,12 +20,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import io.github.jevonsnotes.jevokit.api.annotation.JSecureApi;
+import io.github.jevonsnotes.jevokit.api.client.JSecureClient;
+import io.github.jevonsnotes.jevokit.api.client.JsonChannel;
 import io.github.jevonsnotes.jevokit.api.config.JevokitApiConfiguration;
 import io.github.jevonsnotes.jevokit.api.context.JSecureContext;
-import io.github.jevonsnotes.jevokit.api.dto.JSRequestExecutor;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureRequest;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureResponse;
-import io.github.jevonsnotes.jevokit.api.util.JSecureApiUtil;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -238,11 +238,12 @@ class JSecureContextThreadLocalLeakTest {
     // helpers
     // ------------------------------------------------------------------
 
-    /** 造一个已 prepare 的真实执行器（按指定终端自身密钥组装头签名 + SM4 加密体 + SM2 体签名）。 */
-    private JSRequestExecutor<EchoPayload, EchoPayload> prepared(String clientId, String name) {
+    /** 造一个已 prepare 的真实 JSON 通道（按指定终端自身密钥组装头签名 + SM4 加密体 + SM2 体签名）。 */
+    private JsonChannel<EchoPayload, EchoPayload> prepared(String clientId, String name) {
         EchoPayload payload = new EchoPayload();
         payload.setName(name);
-        return JSecureApiUtil.getExecutor(clientId, URL_SECURE_ECHO, payload, EchoPayload.class)
+        return JSecureClient.of(clientId)
+                .post(URL_SECURE_ECHO, payload, EchoPayload.class)
                 .transType(TRANS_TYPE)
                 .prepare();
     }

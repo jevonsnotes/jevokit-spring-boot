@@ -54,7 +54,7 @@ LICENSE                                  # Apache-2.0
 | `jevokit-security-code-inject-spring-boot-starter` | 代码注入检测：规则命名空间 + `CodeInjectUtil.isSafe(...)` 判定动态内容 |
 | `jevokit-security-web-fixed-spring-boot-starter` | 已知漏洞加固：禁用 `HttpInvokerServiceExporter`（CVE-2016-1000027） |
 | `jevokit-security-all-spring-boot-starter` | 上述安全防护聚合，一键引入 |
-| `jevokit-api-spring-boot-starter` | JSecure 接口安全：加签验签、防重放、SM2/SM4 国密混合加解密、统一请求响应体（`@JSecureApi`） |
+| `jevokit-api-spring-boot-starter` | JSecure 接口安全：加签验签、防重放、SM2/SM4 国密混合加解密、统一请求响应体（`@JSecureApi`）、文件上传协议化（push 直传 / pull 白名单拉取 / refer 引用已有，摘要校验完整性） |
 | `jevokit-jasypt-spring-boot-starter` | 配置加密：`ENC(...)` 密文自动解密，支持指定盐值/加密器 |
 
 ### 合规（starter/compliance）

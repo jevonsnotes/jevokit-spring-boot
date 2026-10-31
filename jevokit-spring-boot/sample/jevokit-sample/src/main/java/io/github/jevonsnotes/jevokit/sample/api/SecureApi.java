@@ -6,22 +6,30 @@ import com.alibaba.fastjson2.JSONObject;
 import com.alibaba.fastjson2.TypeReference;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import io.github.jevonsnotes.jevokit.api.annotation.JSecureApi;
+import io.github.jevonsnotes.jevokit.api.client.JSecureClient;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureRequest;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureResponse;
+import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadDto;
+import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDto;
 import io.github.jevonsnotes.jevokit.api.util.JSecureApiUtil;
 import io.github.jevonsnotes.jevokit.core.lang.ApiResponse;
 import io.github.jevonsnotes.jevokit.core.util.HttpUtil;
 import io.github.jevonsnotes.jevokit.core.util.RequestUtil;
 import io.github.jevonsnotes.jevokit.okhttp.util.OkHttpUtil;
 import io.github.jevonsnotes.jevokit.sample.vo.TestVo;
+import io.github.jevonsnotes.jevokit.sample.vo.UploadOrderVo;
 
 import jakarta.validation.Valid;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -68,6 +76,31 @@ public class SecureApi {
         return JSecureResponse.ok(res);
     }
 
+    @JSecureApi(transType = {"T030422"})
+    @PostMapping("/upload")
+    @ResponseBody
+    /**
+    * JSecure 文件上传演示（meta + files 双参数形态）：meta part 装加密信封
+    * （业务数据 + 文件摘要清单），文件 part 明文传输、由协议链无感校验完整性
+    * （push 按摘要比对 / pull 域名白名单 / refer 钩子校验，详见 jevokit-api README）。
+    * @param meta 协议信封（业务体 JSecureUploadDto：报销单 + 文件清单）
+    * @param files push 模式的文件 part（filename = fileId 对齐；纯 pull/refer 请求无此 part）
+    * @return JSecure 响应包装（受理条目数/文件 part 数）
+    */
+    public JSecureResponse<String> upload(
+            @RequestPart("meta") @Valid JSecureRequest<JSecureUploadDto<UploadOrderVo, JSecureUploadFileDto>> meta,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files) {
+        JSecureUploadDto<UploadOrderVo, JSecureUploadFileDto> upload = meta.getTarget();
+        int declared = upload.getFiles() == null ? 0 : upload.getFiles().size();
+        int bound = files == null ? 0 : files.size();
+        // 走到这里时协议校验已全部通过：摘要清单与文件 part 一一对齐且摘要一致
+        log.info("JSecure 上传受理：orderNo={}, 声明文件数={}, 实际文件 part 数={}",
+                upload.getBusinessData().getOrderNo(), declared, bound);
+        upload.getFiles().forEach(file -> log.info("文件条目：fileId={}, fileType={}, fetchMode={}, fileName={}（仅展示，永不落盘）",
+                file.getFileId(), file.getFileType(), file.getFetchMode(), file.getFileName()));
+        return JSecureResponse.ok("accepted:" + declared + "/" + bound);
+    }
+
     @RequestMapping("/test2")
     @ResponseBody
     /**
@@ -89,8 +122,8 @@ public class SecureApi {
         TestVo data = new TestVo();
         data.setName("demo");
 
-        JSecureResponse<TestVo> gzDemo = JSecureApiUtil
-                .getExecutor("gz_demo","http://localhost:18080/secure/test",data,TestVo.class)
+        JSecureResponse<TestVo> gzDemo = JSecureClient.of("gz_demo")
+                .post("http://localhost:18080/secure/test", data, TestVo.class)
                 .transNo(UUID.randomUUID().toString())
                 .transType("TN0000001")
                 .execute((url,json, headers) -> OkHttpUtil.of().postJson(url, json, headers));

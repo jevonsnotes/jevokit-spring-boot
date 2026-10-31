@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -57,6 +58,7 @@ class SecurityUtilTest {
         setStaticField("rsaPrivateKey", null);
         setStaticField("aesKey", null);
         setStaticField("sm4Key", null);
+        setStaticField("charset", StandardCharsets.UTF_8);
     }
 
     @AfterEach
@@ -359,6 +361,89 @@ class SecurityUtilTest {
             // then
             assertThat(SecurityUtil.sm2Base64Verify(PLAIN, signature, otherPublicKey))
                     .as("他钥公钥验签应失败").isFalse();
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // 字符集注入（SM2 签名字节口径 / AES、SM4 密钥转换口径）
+    // ------------------------------------------------------------------
+
+    @Nested
+    @DisplayName("字符集注入")
+    class CharsetInjection {
+
+        @Test
+        @DisplayName("默认字符集为 UTF-8（getCharset 统一读取入口）")
+        void defaultCharsetIsUtf8() {
+            assertThat(SecurityUtil.getCharset()).as("未注入字符集时应为默认 UTF-8").isEqualTo(StandardCharsets.UTF_8);
+        }
+
+        @Test
+        @DisplayName("GBK 互通正向：注入 GBK 后中文明文 SM2 签/验往返通过，SM4/AES 中文加解密往返不受影响")
+        void gbkCharsetRoundTrip() {
+            // given：注入 GBK 字符集（模拟两端同为 GBK 的存量对接）
+            SecurityUtil.init(null, null, null, null, "GBK");
+            // then：getCharset 反映注入值
+            assertThat(SecurityUtil.getCharset()).as("init 应注入 GBK 字符集").isEqualTo(Charset.forName("GBK"));
+
+            // and：SM2 中文明文签验往返（签名与验签同口径取字节）
+            String signature = SecurityUtil.sm2Base64Sign(PLAIN, SM2_PRIVATE_KEY);
+            assertThat(SecurityUtil.sm2Base64Verify(PLAIN, signature, SM2_PUBLIC_KEY))
+                    .as("GBK 口径下 SM2 中文签验往返应通过").isTrue();
+
+            // and：SM4 中文加解密往返（明文编码由底层固定 UTF-8，仅密钥转换走注入字符集——密钥为 ASCII，字节不变）
+            SecurityUtil.init(null, null, null, SM4_KEY);
+            assertThat(SecurityUtil.sm4cbcDecrypt(SecurityUtil.sm4cbcEncrypt(PLAIN)))
+                    .as("GBK 口径下 SM4 中文加解密往返应不受影响").isEqualTo(PLAIN);
+
+            // and：AES 显式密钥往返同理
+            assertThat(SecurityUtil.aesDecrypt(SecurityUtil.aesEncrypt(PLAIN, AES_KEY), AES_KEY))
+                    .as("GBK 口径下 AES 中文加解密往返应不受影响").isEqualTo(PLAIN);
+        }
+
+        @Test
+        @DisplayName("两端不一致负向：GBK 签 → UTF-8 验必失败（配置语义 = 签名字节口径），切回 GBK 验通过（阳性对照）")
+        void charsetMismatchBetweenSignAndVerifyFails() {
+            // given：签名端注入 GBK 完成签名
+            SecurityUtil.init(null, null, null, null, "GBK");
+            String signature = SecurityUtil.sm2Base64Sign(PLAIN, SM2_PRIVATE_KEY);
+            // when：验签端为 UTF-8（模拟两端字符集配置不一致）
+            SecurityUtil.init(null, null, null, null, "UTF-8");
+            // then：中文明文验签必失败——证明 charset 配置决定的是签名原文的字节口径
+            assertThat(SecurityUtil.sm2Base64Verify(PLAIN, signature, SM2_PUBLIC_KEY))
+                    .as("GBK 签 UTF-8 验（中文明文）应验签失败").isFalse();
+
+            // and（阳性对照）：切回 GBK 同口径验签通过，证明失败源于字符集差异而非签名本身无效
+            SecurityUtil.init(null, null, null, null, "GBK");
+            assertThat(SecurityUtil.sm2Base64Verify(PLAIN, signature, SM2_PUBLIC_KEY))
+                    .as("切回 GBK 同口径验签应通过").isTrue();
+        }
+
+        @Test
+        @DisplayName("非法字符集名 init 即抛 IllegalStateException 并指明配置键（fail-fast），且不改变已注入字符集")
+        void invalidCharsetFailsFast() {
+            assertThatThrownBy(() -> SecurityUtil.init(null, null, null, null, "not-a-charset"))
+                    .as("非法字符集名应在注入时快速失败")
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("jevokit.crypto.charset");
+            // and：失败的注入不产生副作用（字符集保持默认）
+            assertThat(SecurityUtil.getCharset()).as("失败注入后字符集应保持默认 UTF-8")
+                    .isEqualTo(StandardCharsets.UTF_8);
+        }
+
+        @Test
+        @DisplayName("charset 空白/不传保持当前值（与密钥的空白忽略语义对齐）：4 参 init 与空白 5 参 init 均不变更")
+        void blankCharsetKeepsCurrent() {
+            // given：先注入 GBK
+            SecurityUtil.init(null, null, null, null, "GBK");
+            // when：4 参 init（旧入口兼容）与空白 charset 的 5 参 init
+            SecurityUtil.init(null, null, null, SM4_KEY);
+            SecurityUtil.init(null, null, null, null, "  ");
+            // then：字符集保持 GBK，密钥正常注入
+            assertThat(SecurityUtil.getCharset()).as("空白/缺省 charset 不应变更已注入字符集")
+                    .isEqualTo(Charset.forName("GBK"));
+            assertThat(SecurityUtil.sm4cbcDecrypt(SecurityUtil.sm4cbcEncrypt(PLAIN)))
+                    .as("密钥注入不受字符集参数缺省影响").isEqualTo(PLAIN);
         }
     }
 

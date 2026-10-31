@@ -22,7 +22,7 @@ import java.util.List;
  * stringPropertiesEditor——收集容器内全部 {@link StringPropertiesSupportChain} 实现（各安全 starter 提供的清洗链）
  * 组成 StringPropertiesEditor，作用于 Spring 属性绑定的字符串进出方向；
  * springUtil——hutool 的静态 Bean 获取器（@ConditionalOnMissingBean 允许应用自备）；
- * cryptoKeyInitializer——容器就绪后把 jevokit.crypto.* 配置灌入 SecurityUtil，
+ * cryptoKeyInitializer——容器就绪后把 jevokit.crypto.* 配置（四密钥 + charset 字符集，默认 UTF-8）灌入 SecurityUtil，
  * 并按 jevokit.crypto.startup-check（默认 true）做启动期缺密钥校验（详见方法注释）。
  */
 @Slf4j
@@ -53,8 +53,11 @@ public class JevokitCoreConfiguration {
     }
 
     /**
-     * 将 jevokit.crypto.* 配置注入 SecurityUtil（原内置默认密钥已移除），随后按开关执行启动校验。
+     * 将 jevokit.crypto.* 配置（含字符集 charset）注入 SecurityUtil（原内置默认密钥已移除），随后按开关执行启动校验。
      * 各算法独立生效：未配置的算法对应无参方法在使用时抛 IllegalStateException。
+     * <p>字符集注入：charset（默认 UTF-8）决定 SM2 签名/验签原文取字节与 AES/SM4 密钥转字节的口径，
+     * 不再跟随 JVM 默认字符集；非法字符集名在 SecurityUtil.init 内即抛 IllegalStateException 使启动失败
+     * （fail-fast，该校验不受 startup-check 开关管辖——字符集配错属装配错误，任何模式下都应在启动期暴露）。
      * <p>启动校验（jevokit.crypto.startup-check，默认 true）：init 后检查四个密钥，任一缺失（含空白值，
      * 与 init 忽略空白参数的语义对齐）即抛 IllegalStateException 使启动失败，异常消息一次性列出全部
      * 缺失配置键并提示关闭方式——避免"配漏一个键，生产运行期才逐个爆"的挤牙膏式延迟失败。
@@ -65,7 +68,7 @@ public class JevokitCoreConfiguration {
     public InitializingBean cryptoKeyInitializer(CryptoProperties cryptoProperties) {
         return () -> {
             SecurityUtil.init(cryptoProperties.getRsaPublicKey(), cryptoProperties.getRsaPrivateKey(),
-                    cryptoProperties.getAesKey(), cryptoProperties.getSm4Key());
+                    cryptoProperties.getAesKey(), cryptoProperties.getSm4Key(), cryptoProperties.getCharset());
             if (cryptoProperties.isStartupCheck()) {
                 List<String> missingKeys = missingCryptoKeys(cryptoProperties);
                 if (!missingKeys.isEmpty()) {
@@ -76,11 +79,12 @@ public class JevokitCoreConfiguration {
                             + " the failure to first use.");
                 }
             }
-            log.info("SecurityUtil crypto keys initialized: rsa-public-key={}, rsa-private-key={}, aes-key={}, sm4-key={}",
+            log.info("SecurityUtil crypto keys initialized: rsa-public-key={}, rsa-private-key={}, aes-key={}, sm4-key={}, charset={}",
                     cryptoProperties.getRsaPublicKey() != null,
                     cryptoProperties.getRsaPrivateKey() != null,
                     cryptoProperties.getAesKey() != null,
-                    cryptoProperties.getSm4Key() != null);
+                    cryptoProperties.getSm4Key() != null,
+                    SecurityUtil.getCharset().name());
         };
     }
 

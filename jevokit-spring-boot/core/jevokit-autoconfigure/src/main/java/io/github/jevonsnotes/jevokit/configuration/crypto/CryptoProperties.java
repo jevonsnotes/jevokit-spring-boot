@@ -28,6 +28,16 @@ public class CryptoProperties {
     private String sm4Key;
 
     /**
+     * 报文签名与密钥编码字符集（默认 UTF-8），对应注入 {@code SecurityUtil.init(..., charset)}：
+     * SM2 签名/验签原文取字节、AES/SM4 密钥字符串转字节的统一口径（不跟随 JVM 默认字符集，
+     * 消除"GBK 平台 + 中文报文验签必失败"的平台依赖）。
+     * <p><b>验签互通要求两端配置一致</b>：签名方与验签方任一端字符集不同，含非 ASCII（如中文）
+     * 字符的报文即验签失败（纯 ASCII 报文字节相同、不受影响）；GBK 存量对接需两端同时配 GBK。
+     * 非法字符集名应用启动即失败（fail-fast）。SM4/AES 密文内的明文编码由底层固定 UTF-8，不受本配置影响。
+     */
+    private String charset = "UTF-8";
+
+    /**
      * 启动校验开关（默认 true）：开启时任一密钥缺失，应用启动即失败，
      * 异常消息一次性列出全部缺失配置键（fail-fast，配漏在启动期暴露而非生产运行期）。
      * 关闭时退回零负担模式——缺配置不拦启动，延迟到首次使用无参 API 时才抛 IllegalStateException
@@ -67,6 +77,14 @@ public class CryptoProperties {
 
     public void setSm4Key(String sm4Key) {
         this.sm4Key = sm4Key;
+    }
+
+    public String getCharset() {
+        return charset;
+    }
+
+    public void setCharset(String charset) {
+        this.charset = charset;
     }
 
     public boolean isStartupCheck() {

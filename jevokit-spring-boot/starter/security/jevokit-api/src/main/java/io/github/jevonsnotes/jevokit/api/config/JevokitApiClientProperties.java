@@ -5,7 +5,9 @@ import lombok.Data;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * api访问token配置
@@ -74,6 +76,24 @@ public class JevokitApiClientProperties {
      * 允许访问的客户端ip
      */
     private List<String> allowIp = new ArrayList<>();
+    /**
+     * 上传文件大小上限（字节）：单文件 push 元数据预检与 pull 下载预检共用，缺省 50MB（保守值）。
+     */
+    private long uploadMaxSize = DEFAULT_UPLOAD_MAX_SIZE;
+    /**
+     * 上传文件格式白名单（终端级）：key = fileType（如 invoice/id_card），value = 允许的 format 列表
+     * （如 [pdf,jpg,png]）。缺省空 Map = 不限制；一旦配置则 fail-closed：条目 fileType 必须有映射且
+     * format 在列表内，否则拒绝。
+     */
+    private Map<String, List<String>> uploadFormatWhitelist = new HashMap<>();
+    /**
+     * pull 模式允许拉取的域名白名单（SSRF 硬防线）：支持精确域名（files.partner.com）与通配子域
+     * （*.partner.com）。缺省空且有 pull 请求即拒绝（fail-fast，不静默放行）。
+     */
+    private List<String> fetchUrlWhitelist = new ArrayList<>();
+
+    /** 上传单文件大小缺省上限：50MB。 */
+    public static final long DEFAULT_UPLOAD_MAX_SIZE = 50L * 1024 * 1024;
     /**
      * 空则使用secretKey
      * @return 返回密钥

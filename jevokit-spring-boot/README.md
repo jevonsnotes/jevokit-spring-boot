@@ -191,6 +191,9 @@ JasyptUtil.decrypt() //解密
 - 支持MD5/SHA256+SM2+SM4自动混合加解密、加签验签、防重放。
 - 规范请求体和返回体，统一处理异常
 - 规范接口文档，统一对接模板
+- 支持文件上传协议化：meta 加密信封（业务参数+文件摘要清单）+ 文件 part 按摘要校验完整性（push 直传 / pull 白名单拉取 / refer 引用已有）
+
+[组件详细文档（机制/用法/配置/安全）](starter/security/jevokit-api/README.md)
 
 [接口文档规范模板](https://doc.weixin.qq.com/doc/w3_ABAAAAbBAD8CNXjwPXxFaRMSEsnAt?scode=ALwAHAe_AAs4OxCsYQABAAAAbBAD8)（内部文档，需替换为实际链接） 
 

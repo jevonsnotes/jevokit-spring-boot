@@ -14,10 +14,10 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import io.github.jevonsnotes.jevokit.api.client.JSecureClient;
 import io.github.jevonsnotes.jevokit.api.config.JevokitApiClientProperties;
 import io.github.jevonsnotes.jevokit.api.config.JevokitApiProperties;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureResponse;
-import io.github.jevonsnotes.jevokit.api.util.JSecureApiUtil;
 import io.github.jevonsnotes.jevokit.sample.JevokitSampleApplication;
 import io.github.jevonsnotes.jevokit.sample.vo.TestVo;
 import cn.hutool.extra.spring.SpringUtil;
@@ -28,7 +28,7 @@ import java.util.UUID;
  * api 模块（JSecureApi）E2E 正向链路（原 MockTest.testSecureApi 拆分）。
  *
  * <p>默认测试集（无需 MQ）：内建 @ActiveProfiles("local") 排除 RocketMQ 自动装配，环境仅需 Redis 在位 + H2 内存自给。
- * 客户端签名/防重放/加解密由 JSecureApiUtil 构造，经 MockMvc 打到本应用
+ * 客户端签名/防重放/加解密由 JSecureClient（JSON 通道）构造，经 MockMvc 打到本应用
  * /secure/test，验证服务端拦截器-加解密-响应链路（负路径切片测试见 api 模块）。
  */
 @Slf4j
@@ -44,9 +44,9 @@ class SecureApiE2ETest {
     @Test
     @DisplayName("JSecureApiUtil 构造合规请求：/secure/test 验签通过并正常解密响应")
     void secureApiHappyPathThroughMockMvc() {
-        // given：JSecureApiUtil 的静态 getClient 走 SpringUtil 拿全局 JevokitApiProperties，
-        // 复用应用上下文中的 client-demo-1，但覆盖其 SM4 密钥——演示 secret demo-sm4-secret
-        // 非 16 字节，JSRequestExecutor 的 SM4 加密会抛 CryptoException（SM4 128-bit 硬约束）；
+        // given：JSecureClient 的 prepare 按 clientId 走 JSecureApiUtil.getClient 取
+        // 全局 JevokitApiProperties 中的 client-demo-1，但覆盖其 SM4 密钥——演示 secret demo-sm4-secret
+        // 非 16 字节，JSON 通道的 SM4 加密会抛 CryptoException（SM4 128-bit 硬约束）；
         // allow-path 已含 /secure/test，IP 准入（192.0.2.*）在 MockMvc 下取本机回环放行，
         // transType 取 SecureApi @JSecureApi 声明的 T030421。
         // （原 MockTest 的 gz_demo 客户端已随演示配置重构消失，属陈旧 fixture）
@@ -62,8 +62,8 @@ class SecureApiE2ETest {
         client.getAllowIp().add("127.0.0.1");
 
         TestVo demo = TestVo.builder().name("demo").build();
-        JSecureResponse<TestVo> response = JSecureApiUtil
-                .getExecutor("client-demo-1", "/secure/test", demo, TestVo.class)
+        JSecureResponse<TestVo> response = JSecureClient.of("client-demo-1")
+                .post("/secure/test", demo, TestVo.class)
                 .transNo(UUID.randomUUID().toString())
                 .transType("T030421")
                 .execute((url, json, headers) -> {

@@ -38,6 +38,17 @@ jevokit:
           - 192.0.2.*
         allow-path:
           - /secure/test
+          - /secure/upload
+        # ---- 文件上传（JSecure 上传协议）演示配置：生产必须按业务收紧/替换 ----
+        # 单文件大小上限（字节）：演示 5MB（缺省组件默认 50MB）
+        upload-max-size: 5242880
+        # format 白名单（key=fileType）：配置后 fail-closed，未列 fileType/格式一律拒；生产必须按业务收紧
+        upload-format-whitelist:
+          invoice: [pdf, jpg, png]
+          id_card: [jpg, png]
+        # pull 拉取域名白名单（SSRF 硬防线）：演示放行本机回环；生产必须替换为真实源站域名
+        fetch-url-whitelist:
+          - 127.0.0.1
         print:
           request-ciphertext: true
           request-plaintext: true

@@ -18,9 +18,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import io.github.jevonsnotes.jevokit.api.annotation.JSecureApi;
+import io.github.jevonsnotes.jevokit.api.client.JSecureClient;
+import io.github.jevonsnotes.jevokit.api.client.JsonChannel;
 import io.github.jevonsnotes.jevokit.api.config.JevokitApiConfiguration;
 import io.github.jevonsnotes.jevokit.api.consts.ApiHSignAlg;
-import io.github.jevonsnotes.jevokit.api.dto.JSRequestExecutor;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureRequest;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureResponse;
 import io.github.jevonsnotes.jevokit.api.util.JSecureApiUtil;
@@ -41,7 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *   <li>access token 错误/缺失 → 拦截器 HTTP 403（路径级访问门，与签名管线独立）。</li>
  * </ol>
  *
- * <p>客户端侧请求由 {@link JSecureApiUtil#getExecutor} 真实构造（MD5 头签名
+ * <p>客户端侧请求由 {@link JSecureClient} JSON 通道真实构造（MD5 头签名
  * = timestamp + secretKey + nonce，SM4 体加密 + SM2 体签名），负路径仅在传输前
  * 定点篡改对应头，其余要素保持合规——失败原因可归因到被篡改的那一项。
  *
@@ -97,7 +98,7 @@ class SecureApiNegativePathTest {
     @Test
     @DisplayName("请求头签名被篡改：code=999，消息含「请求头验签失败」")
     void tamperedHeaderSignatureRejected() {
-        JSRequestExecutor<EchoPayload, EchoPayload> executor = prepared("sig-tamper");
+        JsonChannel<EchoPayload, EchoPayload> executor = prepared("sig-tamper");
         executor.getHeaders().put("x-api-signature", "deadbeef");
 
         JSecureResponse<EchoPayload> response = executor.execute(this::postViaMockMvc);
@@ -112,7 +113,7 @@ class SecureApiNegativePathTest {
     @Test
     @DisplayName("同一 nonce 二次请求：首次 code=0，重放 code=999「重复请求或已失效」")
     void replayedNonceRejected() {
-        JSRequestExecutor<EchoPayload, EchoPayload> executor = prepared("replay");
+        JsonChannel<EchoPayload, EchoPayload> executor = prepared("replay");
 
         JSecureResponse<EchoPayload> first = executor.execute(this::postViaMockMvc);
         assertThat(first.getCode()).as("首次请求应成功（对照）").isEqualTo("0");
@@ -129,7 +130,7 @@ class SecureApiNegativePathTest {
     @Test
     @DisplayName("时间戳早于 10 分钟窗口：code=999「重复请求或已失效」（头签名对旧时间戳仍合规）")
     void staleTimestampRejected() {
-        JSRequestExecutor<EchoPayload, EchoPayload> executor = prepared("stale-ts");
+        JsonChannel<EchoPayload, EchoPayload> executor = prepared("stale-ts");
         // 只动时间戳：用旧时间戳重算合规头签名（timestamp+secret+nonce），
         // 确保拒绝可归因于时间戳过期而非签名不匹配
         String staleTimestamp = String.valueOf(System.currentTimeMillis() / 1000 - 700);
@@ -172,11 +173,12 @@ class SecureApiNegativePathTest {
     // helpers
     // ------------------------------------------------------------------
 
-    /** 造一个已 prepare 的真实执行器（合规头签名 + SM4 加密体 + SM2 体签名） */
-    private JSRequestExecutor<EchoPayload, EchoPayload> prepared(String name) {
+    /** 造一个已 prepare 的真实 JSON 通道（合规头签名 + SM4 加密体 + SM2 体签名） */
+    private JsonChannel<EchoPayload, EchoPayload> prepared(String name) {
         EchoPayload payload = new EchoPayload();
         payload.setName(name);
-        return JSecureApiUtil.getExecutor(CLIENT_ID, "/secure/echo", payload, EchoPayload.class)
+        return JSecureClient.of(CLIENT_ID)
+                .post("/secure/echo", payload, EchoPayload.class)
                 .transNo(UUID.randomUUID().toString())
                 .transType(TRANS_TYPE)
                 .prepare();

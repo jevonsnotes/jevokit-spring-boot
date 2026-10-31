@@ -4,6 +4,10 @@
 
 ## [未发布]
 
+### 破坏性变更（Breaking）
+
+- **SM2 签名字符集配置化（`jevokit.crypto.charset`，默认 UTF-8）**：`SecurityUtil` 的 SM2 签名/验签原文取字节与 AES/SM4 密钥字符串转字节不再跟随 JVM 默认字符集（平台相关，GBK 平台 + 中文报文必验签失败），统一由新增配置 `jevokit.crypto.charset` 决定（`CryptoProperties` 新增 `charset` 字段并注入 `SecurityUtil.init`；非法字符集名应用启动即失败，该 fail-fast 不受 `startup-check` 开关管辖）。行为变更说明：JVM 默认字符集即 UTF-8 的环境（JDK 18+、主流 Linux 部署）行为不变；JVM 默认字符集非 UTF-8 的环境（如 Windows JDK 17 + zh_CN 即 GBK），SM2 签名字节口径由"跟随 JVM 默认"变为"默认 UTF-8"。迁移指引：中文报文且签名两端同为非 UTF-8 默认字符集的存量对接（原"碰巧两端都是 GBK"能互通的场景），升级后需两端显式配置相同字符集（如 `jevokit.crypto.charset=GBK`）；验签互通始终要求两端配置一致，任一端不同、含非 ASCII 报文即验签失败（纯 ASCII 报文两种字符集字节相同，不受影响）。SM4/AES 密文内的明文编码由底层固定 UTF-8，不受本配置影响；RSA 密钥为 Base64 解析、不涉字符集转换，亦不受影响
+
 ## [3.5.2.2] — 2026-10-14
 
 ### 破坏性变更（Breaking）

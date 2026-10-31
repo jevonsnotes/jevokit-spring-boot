@@ -23,8 +23,11 @@ import io.github.jevonsnotes.jevokit.api.config.JevokitApiClientProperties;
 import io.github.jevonsnotes.jevokit.api.config.JevokitApiProperties;
 import io.github.jevonsnotes.jevokit.api.context.JSecureContext;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureRequest;
+import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadDto;
 import io.github.jevonsnotes.jevokit.api.exception.JSecureApiException;
 import io.github.jevonsnotes.jevokit.api.service.IPreventReplayAttack;
+import io.github.jevonsnotes.jevokit.api.upload.JSecureUploadLogMasker;
+import io.github.jevonsnotes.jevokit.api.upload.JSecureUploadVerifier;
 import io.github.jevonsnotes.jevokit.api.util.ApiUtil;
 import io.github.jevonsnotes.jevokit.api.util.JSecureApiUtil;
 import io.github.jevonsnotes.jevokit.core.util.ClassUtil;
@@ -52,6 +55,7 @@ import java.util.Optional;
 public class DecryptRequestAdviceAdapter extends RequestBodyAdviceAdapter {
     private final JevokitApiProperties properties;
     private final IPreventReplayAttack iPreventReplayAttack;
+    private final JSecureUploadVerifier uploadVerifier;
     private final AntPathMatcher antPathMatcher = new AntPathMatcher();
 
     /**
@@ -105,11 +109,11 @@ public class DecryptRequestAdviceAdapter extends RequestBodyAdviceAdapter {
 
             // 防重放校验 nonce timestamp
             if (client.isPreventReplay()) {
-                Assert.isFalse(iPreventReplayAttack.checkReplay(getNonce(client, inputMessage), getTimestamp(client, inputMessage)), () -> new JSecureApiException("重复请求或已失效，请调整相关访问参数"));
+                Assert.isFalse(iPreventReplayAttack.checkReplay(getNonce(client), getTimestamp(client)), () -> new JSecureApiException("重复请求或已失效，请调整相关访问参数"));
             }
             // 请求头验签
             if (client.isVerify()) {
-                verifyHeader(inputMessage, client);
+                verifyHeader(client);
             }
 
             //获取明文
@@ -155,10 +159,29 @@ public class DecryptRequestAdviceAdapter extends RequestBodyAdviceAdapter {
             }
 
             if (log.isDebugEnabled() || (client != null && client.getPrint().isRequestPlaintext())) {
-                log.info("{}, request plaintext content: {}", JSecureContext.getLogPrefix(), jsr != null ? JSON.toJSONString(jsr.toPlaintextDto()) : null);
+                log.info("{}, request plaintext content: {}", JSecureContext.getLogPrefix(), JSON.toJSONString(plaintextForPrint(jsr)));
             }
         }
 
+    }
+
+    /**
+     * 构造日志用明文形态：普通请求裁剪为仅明文报文；上传请求（target 为 JSecureUploadDto）的
+     * 文件摘要清单先经 {@link JSecureUploadLogMasker} 脱敏（fetchToken 前掩码、url 查询串遮蔽）再打印。
+     *
+     * @param jsr 当前协议请求（可为 null）
+     * @return 可安全出日志的明文形态；jsr 为 null 时返回 null
+     */
+    private Object plaintextForPrint(JSecureRequest<?> jsr) {
+        if (jsr == null) {
+            return null;
+        }
+        if (jsr.getTarget() instanceof JSecureUploadDto<?, ?> upload) {
+            JSecureRequest<?> masked = jsr.toPlaintextDto();
+            masked.setView(JSecureUploadLogMasker.maskedJson(upload));
+            return masked;
+        }
+        return jsr.toPlaintextDto();
     }
 
     /**
@@ -247,14 +270,13 @@ public class DecryptRequestAdviceAdapter extends RequestBodyAdviceAdapter {
     /**
      * 请求头验签
      *
-     * @param inputMessage 输入消息
      * @param client       终端配置
      * @return 验证结果
      */
-    private void verifyHeader(HttpInputMessage inputMessage, JevokitApiClientProperties client) {
-        String timestamp = getTimestamp(client, inputMessage);
-        String nonce = getNonce(client, inputMessage);
-        String signature = getSignature(client, inputMessage);
+    private void verifyHeader(JevokitApiClientProperties client) {
+        String timestamp = getTimestamp(client);
+        String nonce = getNonce(client);
+        String signature = getSignature(client);
         boolean result = JSecureApiUtil.checkHeaderSignature(signature, client.getHeader().getSignAlg(), timestamp, nonce, client.getSecretKey());
         if (!result) {
             throw new JSecureApiException("请求头验签失败");
@@ -300,31 +322,58 @@ public class DecryptRequestAdviceAdapter extends RequestBodyAdviceAdapter {
 //    }
 
     /**
-     * 取请求头时间戳（头名按终端前缀拼接；缺失抛协议异常，防重放与验签都依赖它）。
+     * 取请求头时间戳（从根请求取；头名按终端前缀拼接；缺失抛协议异常，防重放与验签都依赖它）。
+     *
+     * <p>@RequestBody 与 @RequestPart（multipart meta part）共用本方法：@RequestPart 路径下
+     * inputMessage 是 part 包装器（仅含 Content-Type/Content-Disposition），协议头只在根请求上，
+     * 故统一经 {@link JSecureApiUtil#getCurrentRequest()} 取值；@RequestBody 路径下根请求与
+     * inputMessage 指向同一请求，行为不变。
      */
-    private String getTimestamp(JevokitApiClientProperties client, HttpInputMessage inputMessage) {
-        List<String> headers = inputMessage.getHeaders().get(ApiUtil.rebuildHeader(client.getHeader().getTimestampName(), client.getHeader().getPrefix()));
-        Assert.isTrue(CollectionUtil.isNotEmpty(headers), () -> new JSecureApiException("请求头时间戳为空"));
-        return headers.get(0);
+    private String getTimestamp(JevokitApiClientProperties client) {
+        String header = protocolHeader(client, client.getHeader().getTimestampName());
+        Assert.isTrue(StrUtil.isNotBlank(header), () -> new JSecureApiException("请求头时间戳为空"));
+        return header;
     }
 
     /**
-     * 取请求头随机码（缺失抛协议异常，防重放与验签都依赖它）。
+     * 取请求头随机码（从根请求取；缺失抛协议异常，防重放与验签都依赖它）。
      */
-    private String getNonce(JevokitApiClientProperties client, HttpInputMessage inputMessage) {
-        List<String> headers = inputMessage.getHeaders().get(ApiUtil.rebuildHeader(client.getHeader().getNonceName(), client.getHeader().getPrefix()));
-        Assert.isTrue(CollectionUtil.isNotEmpty(headers), () -> new JSecureApiException("请求头随机码为空"));
-        return headers.get(0);
+    private String getNonce(JevokitApiClientProperties client) {
+        String header = protocolHeader(client, client.getHeader().getNonceName());
+        Assert.isTrue(StrUtil.isNotBlank(header), () -> new JSecureApiException("请求头随机码为空"));
+        return header;
     }
 
     /**
-     * 取请求头签名值（缺失抛协议异常）。
+     * 取请求头签名值（从根请求取；缺失抛协议异常）。
      */
-    private String getSignature(JevokitApiClientProperties client, HttpInputMessage inputMessage) {
-        List<String> headers = inputMessage.getHeaders().get(ApiUtil.rebuildHeader(client.getHeader().getSignatureName(), client.getHeader().getPrefix()));
-        Assert.isTrue(CollectionUtil.isNotEmpty(headers), () -> new JSecureApiException("请求头签名为空"));
-        return headers.get(0);
+    private String getSignature(JevokitApiClientProperties client) {
+        String header = protocolHeader(client, client.getHeader().getSignatureName());
+        Assert.isTrue(StrUtil.isNotBlank(header), () -> new JSecureApiException("请求头签名为空"));
+        return header;
     }
 
+    /**
+     * 从根请求读协议头单值（头名按终端前缀拼接；无请求上下文返回 null，由调用方判定缺失）。
+     */
+    private String protocolHeader(JevokitApiClientProperties client, String headerNameBody) {
+        String headerName = ApiUtil.rebuildHeader(headerNameBody, client.getHeader().getPrefix());
+        return JSecureApiUtil.getCurrentRequest().map(request -> request.getHeader(headerName)).orElse(null);
+    }
+
+    /**
+     * 读体后的无感校验钩子：target 为上传业务体（JSecureUploadDto）时执行上传完整性校验
+     * （元数据层 + push 内容层），不通过抛 JSecureApiException 走协议信封出口；
+     * 其余（普通 JSON 端点）原样透传，行为不变。
+     */
+    @Override
+    public Object afterBodyRead(Object body, HttpInputMessage inputMessage, MethodParameter parameter,
+                                Type targetType, Class<? extends HttpMessageConverter<?>> converterType) {
+        Object result = super.afterBodyRead(body, inputMessage, parameter, targetType, converterType);
+        if (result instanceof JSecureRequest<?> jsr && jsr.getTarget() instanceof JSecureUploadDto<?, ?> upload) {
+            uploadVerifier.verifyUpload(upload, JSecureContext.getCurrentClientThrowIfInvalid());
+        }
+        return result;
+    }
 
 }
