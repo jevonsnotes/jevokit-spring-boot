@@ -172,15 +172,15 @@ public class JSecureUploadVerifier {
 
         Map<String, UploadFilePart> partsByFileId = new LinkedHashMap<>();
         for (UploadFilePart part : fileParts) {
-            Assert.isFalse(partsByFileId.containsKey(part.fileName()),
-                    () -> new JSecureApiException("文件 part 文件名重复：" + part.fileName()));
-            partsByFileId.put(part.fileName(), part);
+            Assert.isFalse(partsByFileId.containsKey(part.fileId()),
+                    () -> new JSecureApiException("文件 part 的 fileId 重复（wire filename）：" + part.fileId()));
+            partsByFileId.put(part.fileId(), part);
         }
         for (JSecureUploadFileDto entry : pushEntries) {
             UploadFilePart part = partsByFileId.get(entry.getFileId());
-            Assert.notNull(part, () -> new JSecureApiException("缺少文件 part（filename=%s）".formatted(entry.getFileId())));
+            Assert.notNull(part, () -> new JSecureApiException("缺少文件 part（fileId=%s，即 wire 上 filename 属性的期望值）".formatted(entry.getFileId())));
             Assert.isTrue(part.size() == entry.getSize(), () -> new JSecureApiException(
-                    "文件大小与声明不符（filename=%s，声明 %d，实际 %d）".formatted(entry.getFileId(), entry.getSize(), part.size())));
+                    "文件大小与声明不符（fileId=%s，声明 %d，实际 %d）".formatted(entry.getFileId(), entry.getSize(), part.size())));
             String actualDigest;
             try (InputStream in = part.openStream()) {
                 actualDigest = JSecureUploadUtil.digestHex(in, entry.getDigestAlg());
@@ -188,7 +188,7 @@ public class JSecureUploadVerifier {
                 throw new JSecureApiException("文件读取失败（filename=" + entry.getFileId() + "）：" + e.getMessage(), e);
             }
             Assert.isTrue(actualDigest.equalsIgnoreCase(StrUtil.trimToEmpty(entry.getDigest())),
-                    () -> new JSecureApiException("文件摘要校验失败（filename=" + entry.getFileId() + "）"));
+                    () -> new JSecureApiException("文件摘要校验失败（fileId=" + entry.getFileId() + "）"));
         }
     }
 
@@ -257,11 +257,17 @@ public class JSecureUploadVerifier {
         }
     }
 
-    /** 文件 part 统一视图（jakarta Part 与 Spring MultipartFile 的共同抽象）。 */
+    /**
+     * 文件 part 统一视图（jakarta Part 与 Spring MultipartFile 的共同抽象）。
+     * <p>命名约定：按协议用途命名而非传输字段名——multipart 的 filename 属性（Content-Disposition）
+     * 由协议约定承载 fileId（对齐键），故本视图的 {@link #fileId()} 即取该属性；业务原始文件名在信封
+     * {@code JSecureUploadFileDto.fileName}，与本视图无关（不参与对齐）。
+     */
     private interface UploadFilePart {
         String partName();
 
-        String fileName();
+        /** 对齐键 fileId（取 wire 上 Content-Disposition 的 filename 属性，客户端组包时写入）。 */
+        String fileId();
 
         long size();
 
@@ -276,7 +282,7 @@ public class JSecureUploadVerifier {
         }
 
         @Override
-        public String fileName() {
+        public String fileId() {
             return part.getSubmittedFileName();
         }
 
@@ -299,7 +305,7 @@ public class JSecureUploadVerifier {
         }
 
         @Override
-        public String fileName() {
+        public String fileId() {
             return file.getOriginalFilename();
         }
 
