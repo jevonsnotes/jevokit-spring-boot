@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import io.github.jevonsnotes.jevokit.api.annotation.JSecureApi;
+import io.github.jevonsnotes.jevokit.api.client.JSecureClient;
 import io.github.jevonsnotes.jevokit.api.config.JevokitApiConfiguration;
 import io.github.jevonsnotes.jevokit.api.consts.ApiHSignAlg;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureRequest;
@@ -120,6 +121,48 @@ class JSecureProtocolDemoTest {
         // 服务端返回 String target → 响应明文为 JSON 字符串字面量（带引号）
         assertThat(view).as("声明 2 个文件、发送 2 个 part，服务端应受理 2/2")
                 .isEqualTo("\"accepted:2/2\"");
+    }
+
+    // ===================== 双客户端 A/B 对照（同服务端同数据，两条实现路径都通） =====================
+
+    @Test
+    @DisplayName("双通道 A/B：同端点同业务数据，JSecureClient 与自实现 demo 先后请求均受理且结果一致")
+    void bothClientImplementationsAcceptedBySameServer() {
+        // —— JSON 通道 A/B：/secure/echo，同业务数据 ——
+        // 注意入参语义差异：JSecureClient.post 收【对象】（内部序列化）；demo.postJson 收【明文 JSON 串】
+        // A：jevokit 自家客户端（JSecureClient 门面，hutool 加密签名）
+        JSecureResponse<Map> respA = JSecureClient.of(CLIENT_ID)
+                .post(baseUrl() + "/secure/echo", Map.of("name", "ab-compare", "中文", "对照"), Map.class)
+                .transNo("t-ab-json-A").transType(TRANS_TYPE)
+                .execute();
+        assertThat(respA.getCode()).as("JSecureClient JSON 通道应受理").isEqualTo("0");
+        // B：自实现 demo（纯 BouncyCastle + fastjson2，独立实现路径）
+        String viewB = demo().postJson(baseUrl() + "/secure/echo",
+                "{\"name\":\"ab-compare\",\"中文\":\"对照\"}", "t-ab-json-B", TRANS_TYPE);
+        // 两条路径对同一请求拿到等价业务结果（A 的 target 与 B 的明文含同字段值）
+        assertThat(String.valueOf(respA.getTarget().get("name"))).isEqualTo("ab-compare");
+        assertThat(viewB).contains("ab-compare").contains("对照");
+
+        // —— 上传通道 A/B：/secure/upload，同业务数据 + 同文件内容 ——
+        byte[] fileA = "AB-对照-发票字节".getBytes(StandardCharsets.UTF_8);
+        byte[] fileB = "AB-对照-证件字节".getBytes(StandardCharsets.UTF_8);
+        // A：JSecureClient 上传通道（自动算摘要组 multipart）
+        JSecureResponse<String> uploadA = JSecureClient.of(CLIENT_ID)
+                .upload(baseUrl() + "/secure/upload", Map.of("orderNo", "SO-AB-001"), String.class)
+                .transNo("t-ab-upload-A").transType(TRANS_TYPE)
+                .add(fileA, "ab-inv", "invoice", "发票.pdf")
+                .add(fileB, "ab-idc", "id_card", "身份证.jpg")
+                .execute();
+        assertThat(uploadA.getCode()).as("JSecureClient 上传通道应受理").isEqualTo("0");
+        // B：自实现 demo 手工 multipart（独立组装）
+        String uploadB = demo().uploadFiles(baseUrl() + "/secure/upload",
+                "{\"orderNo\":\"SO-AB-001\"}", "t-ab-upload-B", TRANS_TYPE,
+                List.of(
+                        new JSecureProtocolDemo.UploadFile("ab-inv", "invoice", "发票.pdf", "pdf", fileA),
+                        new JSecureProtocolDemo.UploadFile("ab-idc", "id_card", "身份证.jpg", "jpg", fileB)));
+        // 两实现受理结果一致（同端点同数据同文件数）
+        assertThat(uploadA.getTarget()).as("A 路径受理结果").isEqualTo("accepted:2/2");
+        assertThat(uploadB).as("B 路径受理结果应与 A 一致").isEqualTo("\"accepted:2/2\"");
     }
 
     // ===================== 字节级互验（与 jevokit 的 hutool 实现双向一致） =====================
