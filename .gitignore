@@ -60,3 +60,6 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Postman 联调临时物（生成器自动重建，不入库）
+postman-demo/

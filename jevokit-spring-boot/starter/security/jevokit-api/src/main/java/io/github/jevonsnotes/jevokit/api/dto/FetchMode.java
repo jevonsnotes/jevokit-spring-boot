@@ -14,7 +14,7 @@ package io.github.jevonsnotes.jevokit.api.dto;
 public enum FetchMode {
     /** 随请求 multipart 直传，服务端做元数据 + 内容（size/digest）双层校验。 */
     push,
-    /** 文件在第三方 URL：元数据校验 + fetch-url-whitelist 域名白名单；下载由业务显式发起。 */
+    /** 文件在第三方 URL：元数据校验 + upload-fetch-url-whitelist 域名白名单；下载由业务显式发起。 */
     pull,
     /** 引用系统内已存在文件：由 JSecureUploadFileRefChecker 钩子校验存在性。 */
     refer

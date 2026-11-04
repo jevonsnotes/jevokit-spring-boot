@@ -3,7 +3,7 @@ package io.github.jevonsnotes.jevokit.api.upload;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSON;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadDto;
-import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDto;
+import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDetailDto;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,15 +35,15 @@ public final class JSecureUploadLogMasker {
      * @param upload 上传业务体
      * @return 脱敏后的新 DTO（原对象不变）
      */
-    public static JSecureUploadDto<Object, JSecureUploadFileDto> maskedCopy(JSecureUploadDto<?, ?> upload) {
-        JSecureUploadDto<Object, JSecureUploadFileDto> copy = new JSecureUploadDto<>();
+    public static JSecureUploadDto<Object, JSecureUploadFileDetailDto> maskedCopy(JSecureUploadDto<?, ?> upload) {
+        JSecureUploadDto<Object, JSecureUploadFileDetailDto> copy = new JSecureUploadDto<>();
         copy.setBusinessData(upload.getBusinessData());
-        if (upload.getFiles() != null) {
-            List<JSecureUploadFileDto> files = new ArrayList<>(upload.getFiles().size());
-            for (JSecureUploadFileDto file : upload.getFiles()) {
+        if (upload.getFileDetails() != null) {
+            List<JSecureUploadFileDetailDto> files = new ArrayList<>(upload.getFileDetails().size());
+            for (JSecureUploadFileDetailDto file : upload.getFileDetails()) {
                 files.add(maskFile(file));
             }
-            copy.setFiles(files);
+            copy.setFileDetails(files);
         }
         return copy;
     }
@@ -51,8 +51,8 @@ public final class JSecureUploadLogMasker {
     /**
      * 单条文件元数据脱敏副本。
      */
-    private static JSecureUploadFileDto maskFile(JSecureUploadFileDto file) {
-        JSecureUploadFileDto copy = new JSecureUploadFileDto();
+    private static JSecureUploadFileDetailDto maskFile(JSecureUploadFileDetailDto file) {
+        JSecureUploadFileDetailDto copy = new JSecureUploadFileDetailDto();
         copy.setFileId(file.getFileId());
         copy.setFileType(file.getFileType());
         copy.setUsage(file.getUsage());

@@ -17,7 +17,7 @@ public class DemoUploadRefChecker implements JSecureUploadFileRefChecker {
     private static final Set<String> ARCHIVED_FILE_IDS = Set.of("archived-001", "archived-002");
 
     @Override
-    public boolean exists(io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDto file) {
+    public boolean exists(io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDetailDto file) {
         return ARCHIVED_FILE_IDS.contains(file.getFileId());
     }
 }

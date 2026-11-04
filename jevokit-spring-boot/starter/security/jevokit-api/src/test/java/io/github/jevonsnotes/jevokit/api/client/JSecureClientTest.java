@@ -27,7 +27,7 @@ import io.github.jevonsnotes.jevokit.api.config.JevokitApiConfiguration;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureRequest;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureResponse;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadDto;
-import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDto;
+import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDetailDto;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadRequest;
 import io.github.jevonsnotes.jevokit.api.exception.JSecureApiException;
 import io.github.jevonsnotes.jevokit.core.util.SecurityUtil;
@@ -66,7 +66,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
         "jevokit.api.client[0].prevent-replay=false",
         "jevokit.api.client[0].decrypt=true",
         "jevokit.api.client[0].encrypt=true",
-        "jevokit.api.client[0].fetch-url-whitelist[0]=*.partner.com",
+        "jevokit.api.client[0].upload-fetch-url-whitelist[0]=*.partner.com",
 })
 @DisplayName("JSecureClient 统一门面")
 class JSecureClientTest {
@@ -344,9 +344,9 @@ class JSecureClientTest {
         @JSecureApi(transType = TRANS_TYPE)
         @PostMapping("/secure/upload")
         public JSecureResponse<String> upload(
-                @RequestPart("meta") @Valid JSecureRequest<JSecureUploadDto<Map<String, Object>, JSecureUploadFileDto>> meta,
+                @RequestPart("meta") @Valid JSecureRequest<JSecureUploadDto<Map<String, Object>, JSecureUploadFileDetailDto>> meta,
                 @RequestPart(value = "files", required = false) List<MultipartFile> files) {
-            int declared = meta.getTarget().getFiles() == null ? 0 : meta.getTarget().getFiles().size();
+            int declared = meta.getTarget().getFileDetails() == null ? 0 : meta.getTarget().getFileDetails().size();
             int bound = files == null ? 0 : files.size();
             return JSecureResponse.ok("accepted:" + declared + "/" + bound);
         }

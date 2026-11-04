@@ -27,7 +27,8 @@ jevokit:
       header: JEVOKIT_API_ACCESS_TOKEN
     client:
       - id: client-demo-1
-        secret-key: demo-sm4-secret
+        secret-key: demo-sm4-secret # 请求头签名盐（MD5 原料 timestamp+secretKey+nonce，长度不限）
+        secret-key-sm4: DemoSm4Key123456 # 业务报文 SM4 密钥（16 字节演示；头签名盐与 SM4 密钥分离配置，生产各自替换）
         private-key: MIGTAgEAMBMGByqGSM49AgEGCCqBHM9VAYItBHkwdwIBAQQgk5B6bcSXNwvtfd6nufsDHEPOu8N2hHKJMBW5blZP2eSgCgYIKoEcz1UBgi2hRANCAASxO58/zvEseRlMZtRlojzn7m4jAaZPTDSOalPCSk3nnGW0GmEu2ZhfWDNH+Nq8wA6BLodb2gwI9NF+F1Mp3p9R
         public-key: MFkwEwYHKoZIzj0CAQYIKoEcz1UBgi0DQgAEsTufP87xLHkZTGbUZaI85+5uIwGmT0w0jmpTwkpN55xltBphLtmYX1gzR/javMAOgS6HW9oMCPTRfhdTKd6fUQ==
         prevent-replay: false
@@ -36,18 +37,29 @@ jevokit:
         encrypt: true
         allow-ip:
           - 192.0.2.*
+          - 127.0.0.1 # 本机回环（Postman/curl 本机联调；E2E 测试同源）
         allow-path:
           - /secure/test
           - /secure/upload
         # ---- 文件上传（JSecure 上传协议）演示配置：生产必须按业务收紧/替换 ----
-        # 单文件大小上限（字节）：演示 5MB（缺省组件默认 50MB）
+        # 单文件大小上限（字节）：演示 5MB（缺省组件默认 50MB）；上限恒生效——校验开关也不豁免
         upload-max-size: 5242880
+        # 单请求文件条目数上限（push/pull/refer 合计）：缺省 20（保守值）；0 或负数 = 不限制
+        upload-max-file-count: 20
         # format 白名单（key=fileType）：配置后 fail-closed，未列 fileType/格式一律拒；生产必须按业务收紧
         upload-format-whitelist:
           invoice: [pdf, jpg, png]
           id_card: [jpg, png]
+        # 摘要算法允许范围：可选 sha256/sm3/md5；缺省空 = 三种皆可，配置后 fail-closed
+        # （演示放开全集，生产建议收紧为 [sha256, sm3]；配了 [sm3] 则客户端 sha256/md5 摘要即拒）
+        upload-digest-algorithms: [sha256, sm3, md5]
+        # 摘要校验开关（缺省 true）：false = 跳过 push 摘要比对、pull 拉取复核与 digest 必填；
+        # 大小校验开关（缺省 true）：false = 跳过 size 必填与"声明=实际"比对。
+        # 两个开关都不豁免 upload-max-size 上限（配多少就是多少）与 pull 下载的内存封底
+        upload-digest-verify: true
+        upload-size-verify: true
         # pull 拉取域名白名单（SSRF 硬防线）：演示放行本机回环；生产必须替换为真实源站域名
-        fetch-url-whitelist:
+        upload-fetch-url-whitelist:
           - 127.0.0.1
         print:
           request-ciphertext: true
@@ -218,6 +230,12 @@ spring:
     redis:
       host: localhost
       port: 6379
+
+# 容器 multipart 限值须与终端 upload-max-size 配平（max-file-size ≤ upload-max-size，失当启动打 WARN）；
+# 此处演示放开到 20MB（协议层 client-demo-1 仍按其 upload-max-size=5MB 把关）
+spring.servlet.multipart:
+  max-file-size: 20MB
+  max-request-size: 25MB
 
 #server:
 #  servlet:

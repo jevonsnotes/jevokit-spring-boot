@@ -45,6 +45,14 @@ public class JevokitApiConfiguration {
         return new JevokitApiWebMvcConfigurer(properties);
     }
 
+    /** 注册上传配置启动期顾问（校验开关弱化/算法范围笔误/容器限值配平失当打 WARN 留痕）。 */
+    @Bean
+    public io.github.jevonsnotes.jevokit.api.upload.JSecureUploadStartupAdvisor jsecureUploadStartupAdvisor(
+            JevokitApiProperties properties,
+            ObjectProvider<org.springframework.boot.autoconfigure.web.servlet.MultipartProperties> multipartProperties) {
+        return new io.github.jevonsnotes.jevokit.api.upload.JSecureUploadStartupAdvisor(properties, multipartProperties);
+    }
+
     /** 注册请求体解密适配器（协议入站链路；afterBodyRead 阶段无感执行上传校验）。 */
     @Bean
     public DecryptRequestAdviceAdapter decryptRequestAdviceAdapter(JevokitApiProperties properties,

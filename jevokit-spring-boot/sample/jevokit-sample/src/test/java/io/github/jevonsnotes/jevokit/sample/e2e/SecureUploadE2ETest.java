@@ -113,7 +113,7 @@ class SecureUploadE2ETest {
     }
 
     @Test
-    @DisplayName("pull 受理：127.0.0.1 在 fetch-url-whitelist 内，元数据层通过 code=0（下载时机属业务）")
+    @DisplayName("pull 受理：127.0.0.1 在 upload-fetch-url-whitelist 内，元数据层通过 code=0（下载时机属业务）")
     void pullEntryAccepted() throws Exception {
         JSecureUploadRequest request = upload()
                 .transNo(UUID.randomUUID().toString())

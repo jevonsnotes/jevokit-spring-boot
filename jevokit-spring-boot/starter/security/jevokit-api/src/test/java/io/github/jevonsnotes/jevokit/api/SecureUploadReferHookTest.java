@@ -27,7 +27,7 @@ import io.github.jevonsnotes.jevokit.api.config.JevokitApiConfiguration;
 import io.github.jevonsnotes.jevokit.api.config.JevokitApiClientProperties;
 import io.github.jevonsnotes.jevokit.api.config.JevokitApiProperties;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadDto;
-import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDto;
+import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDetailDto;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadRequest;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureRequest;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureResponse;
@@ -144,9 +144,9 @@ class SecureUploadReferHookTest {
         @JSecureApi
         @PostMapping("/secure/upload-mixed")
         public JSecureResponse<String> upload(
-                @RequestPart("meta") @Valid JSecureRequest<JSecureUploadDto<String, JSecureUploadFileDto>> meta,
+                @RequestPart("meta") @Valid JSecureRequest<JSecureUploadDto<String, JSecureUploadFileDetailDto>> meta,
                 @RequestPart(value = "files", required = false) List<MultipartFile> files) {
-            int declared = meta.getTarget().getFiles() == null ? 0 : meta.getTarget().getFiles().size();
+            int declared = meta.getTarget().getFileDetails() == null ? 0 : meta.getTarget().getFileDetails().size();
             int bound = files == null ? 0 : files.size();
             return JSecureResponse.ok("accepted:" + declared + "/" + bound);
         }

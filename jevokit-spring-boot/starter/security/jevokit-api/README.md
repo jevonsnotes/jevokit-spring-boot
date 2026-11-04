@@ -16,6 +16,7 @@ meta part 装加密信封（业务参数 + 文件摘要清单），文件 part �
   - [场景三：pull URL 拉取](#场景三pull-url-拉取)
   - [场景四：refer 引用已有文件](#场景四refer-引用已有文件)
   - [场景五：混合上传](#场景五混合上传)
+  - [场景六：加密上传（客户端无感加密 + 服务端无感解密）](#场景六加密上传客户端无感加密--服务端无感解密)
   - [自定义传输载体（execute 注入回调）](#自定义传输载体execute-注入回调)
   - [客户端异常语义](#客户端异常语义)
   - [双泛型 DTO 扩展指南](#双泛型-dto-扩展指南)
@@ -62,7 +63,7 @@ multipart 请求的协议形态：**meta part 装加密信封，文件 part 明�
 
 ```
 POST /secure/upload                      （multipart/form-data）
-├─ part "meta"   （application/json）    JSecureRequest 信封：SM4 加密的 {businessData, files[]}
+├─ part "meta"   （application/json）    JSecureRequest 信封：SM4 加密的 {businessData, fileDetails[]}
 ├─ part "files"  （filename = fileId）   文件字节 1（明文）
 ├─ part "files"  （filename = fileId）   文件字节 2（明文，同名 part 各自 filename 不同）
 └─ 根请求头                              x-api-client-id / timestamp / nonce / signature（与 JSON 通道一致）
@@ -102,8 +103,8 @@ sequenceDiagram
 
 | 层 | 触发条件 | 校验内容 | 失败示例消息 |
 |---|---|---|---|
-| 元数据层 | 所有请求（不碰文件字节） | fileId 唯一非空且**字符集白名单**（仅允许字母、数字与 `. _ -`，长度 1-128）；digestAlg ∈ {sha256, sm3}；format 终端白名单（fail-closed）；size 终端上限；push 必填完整（fileId/fileType/fileName/size/digest）；**push 条目数 = 文件 part 数**（多余/缺少双向都拒）；**meta part 不重复**（同名 >1 即拒，防 first-wins 静默歧义） | `文件标识 fileId 非法（仅允许字母、数字与 . _ -…）`、`文件格式不在白名单：txt`、`meta part 重复（2 个同名 part）…`、`push 文件数(2)与文件 part 数(3)不一致` |
-| 内容层 | 仅 push | 按 filename=fileId 找文件 part（找不到拒）→ 比对声明 size → 流式摘要比对（按 digestAlg） | `文件摘要校验失败（filename=inv-1）` |
+| 元数据层 | 所有请求（不碰文件字节） | fileId 唯一非空且**字符集白名单**（仅允许字母、数字与 `. _ -`，长度 1-128）；digestAlg ∈ 协议全集 {sha256, sm3, md5} 且在终端 `upload-digest-algorithms` 允许范围内（配置后 fail-closed）；format 终端白名单（fail-closed）；size 声明合法性与 upload-max-size 上限恒检；push 必填完整（fileId/fileType/fileName/size/digest，size/digest 必填可分别被 upload-size-verify / upload-digest-verify 关闭豁免）；**push 条目数 = 文件 part 数**（多余/缺少双向都拒）；**meta part 不重复**（同名 >1 即拒，防 first-wins 静默歧义） | `文件标识 fileId 非法（仅允许字母、数字与 . _ -…）`、`文件格式不在白名单：txt`、`meta part 重复（2 个同名 part）…`、`push 文件数(2)与文件 part 数(3)不一致` |
+| 内容层 | 仅 push | 按 filename=fileId 找文件 part（找不到拒）→ 实际字节数上限恒检 → 比对声明 size（upload-size-verify=false 跳过）→ 流式摘要比对（按 digestAlg；upload-digest-verify=false 跳过） | `文件摘要校验失败（filename=inv-1）` |
 | pull | fetchMode=pull | 元数据层 + **url 域名白名单**（不在白名单拒；未配置白名单且有 pull 请求直接拒，fail-fast） | `pull 文件地址不在白名单：https://…` |
 | refer | fetchMode=refer | 元数据层 + 业务钩子 `JSecureUploadFileRefChecker.exists()`（容器无钩子 Bean 而出现 refer 条目即拒） | `refer 文件不存在：archived-001` |
 | 边界 | target 是上传 DTO 但请求非 multipart | 装配错误 fail-fast（提示改用 meta+files 双参数形态） | `上传接口必须以 multipart 请求…` |
@@ -142,8 +143,10 @@ OrderVo order = resp.getTarget();          // 已解密验签的业务返回
 JSecureResponse<String> upload = JSecureClient.of(clientId)
         .upload("https://server-host/secure/upload", orderBiz, String.class)
         .transNo("t-002")
-        .add(invoiceFile, "inv-1", "invoice")          // push：自动算 size/format/digest
-        .pull("oss-1", fileUrl, size, digest)          // pull：URL 拉取
+        .digestAlg("sm3")                              // 摘要算法（缺省 sha256；须在服务端
+                                                      // upload-digest-algorithms 允许范围内）
+        .add(invoiceFile, "inv-1", "invoice")          // push：自动算 size/format/digest（按上述算法）
+        .pull("oss-1", fileUrl, size, digest)          // pull：URL 拉取（digest 按同算法声明）
         .refer("idc-10086")                            // refer：引用已有
         .execute();
 ```
@@ -183,6 +186,7 @@ JSecureResponse<String> upload = JSecureClient.of(clientId)
 | 文件在合作方存储（OSS/文件服务器），报文先行、服务端取件 | 上传通道 pull | [场景三](#场景三pull-url-拉取) |
 | 文件此前已上传归档，本次仅引用关联 | 上传通道 refer | [场景四](#场景四refer-引用已有文件) |
 | 一次请求混合上述多种文件来源 | 上传通道混用 | [场景五](#场景五混合上传) |
+| 文件需加密传输（无 TLS 内网段/密文归档），两端零改造 | `add(..., true)` 无感加密 + 服务端单参数收明文 | [场景六](#场景六加密上传客户端无感加密--服务端无感解密) |
 
 ### 场景一：JSON 接口（非文件）
 
@@ -252,17 +256,17 @@ if (resp.getCode().equals("0")) {
 @RequestMapping("/secure")
 public class SecureUploadApi {
 
-    /** 双泛型：B=业务数据类型，F=文件条目类型（无扩展直接用 JSecureUploadFileDto） */
+    /** 双泛型：B=业务数据类型，F=文件条目类型（无扩展直接用 JSecureUploadFileDetailDto） */
     @JSecureApi
     @PostMapping("/upload")
     public JSecureResponse<String> upload(
-            @RequestPart("meta") @Valid JSecureRequest<JSecureUploadDto<UploadOrderVo, JSecureUploadFileDto>> meta,
+            @RequestPart("meta") @Valid JSecureRequest<JSecureUploadDto<UploadOrderVo, JSecureUploadFileDetailDto>> meta,
             @RequestPart(value = "files", required = false) List<MultipartFile> files) {
         // 走到这里协议校验已全部通过：摘要清单与文件 part 一一对齐且摘要一致
-        JSecureUploadDto<UploadOrderVo, JSecureUploadFileDto> upload = meta.getTarget();
+        JSecureUploadDto<UploadOrderVo, JSecureUploadFileDetailDto> upload = meta.getTarget();
         log.info("orderNo={}, 声明文件数={}, 实际文件 part 数={}",
                 upload.getBusinessData().getOrderNo(),
-                upload.getFiles().size(), files == null ? 0 : files.size());
+                upload.getFileDetails().size(), files == null ? 0 : files.size());
         // 持久化注意：fileName 仅展示、永不落盘，存储名用服务端生成值（见安全篇）
         return JSecureResponse.ok("accepted");
     }
@@ -298,7 +302,7 @@ JSecureResponse<String> response = JSecureClient.of("upload-partner")     // 终
 Content-Disposition: form-data; name="meta"
 Content-Type: application/json
 
-{"transNo":"7c1e…","transType":null,"signature":"MEUCIQ…","data":"U2FsdGVk…（SM4 密文：{\"businessData\":{…},\"files\":[…]）}"}
+{"transNo":"7c1e…","transType":null,"signature":"MEUCIQ…","data":"U2FsdGVk…（SM4 密文：{\"businessData\":{…},\"fileDetails\":[…]）}"}
 --boundary
 Content-Disposition: form-data; name="files"; filename="inv-1"
 Content-Type: application/octet-stream
@@ -316,7 +320,7 @@ Content-Type: application/octet-stream
 
 ```java
 // 服务端端点与场景二相同（fetchMode 在条目里声明，服务端按模式分支校验）
-// 客户端：声明远端文件（域名必须在终端 fetch-url-whitelist 内）
+// 客户端：声明远端文件（域名必须在终端 upload-fetch-url-whitelist 内）
 JSecureResponse<String> response = JSecureClient.of("upload-partner")
         .upload("https://server-host/secure/upload", biz, String.class)
         .transNo(UUID.randomUUID().toString())
@@ -325,7 +329,7 @@ JSecureResponse<String> response = JSecureClient.of("upload-partner")
         .execute();
 
 // 业务侧需要文件内容的时机显式拉取（同步/异步/重试是业务决策，框架不做时机决策）：
-byte[] content = jSecureFileFetcher.fetch(meta.getTarget().getFiles().get(0));
+byte[] content = jSecureFileFetcher.fetch(meta.getTarget().getFileDetails().get(0));
 // fetch 内部：白名单复核 → X-Fetch-Token 透传（条目声明了才发）→ size 预检 → 流式摘要复核 → 返回字节
 ```
 
@@ -336,7 +340,7 @@ byte[] content = jSecureFileFetcher.fetch(meta.getTarget().getFiles().get(0));
 @Component
 public class InvoiceFileRefChecker implements JSecureUploadFileRefChecker {
     @Override
-    public boolean exists(JSecureUploadFileDto file) {
+    public boolean exists(JSecureUploadFileDetailDto file) {
         return invoiceAttachmentMapper.selectCountByFileId(file.getFileId()) > 0;
     }
 }
@@ -364,6 +368,44 @@ JSecureResponse<String> response = JSecureClient.of("upload-partner")
         .execute();
 // 校验按条目各自的模式分层执行；push 条目数仍须等于文件 part 数
 ```
+
+### 场景六：加密上传（客户端无感加密 + 服务端无感解密）
+
+文件机密性要求高于通道保障（无 TLS 的内网段、密文需长期归档）时，`add(..., true)` 一步启用——
+明文进来、明文出去，加密解密都在协议层内部完成：
+
+```java
+// 客户端：传明文，第 5 参 encrypt=true
+JSecureResponse<String> response = JSecureClient.of("upload-partner")
+        .upload("https://server-host/secure/upload", biz, String.class)
+        .transNo(UUID.randomUUID().toString())
+        .add(plainBytes, "inv-1", "invoice", "发票.pdf", true)   // SM4-CBC 内部加密
+        .execute();
+```
+
+内部行为：明文以**终端 SM4 密钥**做 SM4-CBC 加密（随机 16 字节 IV 前缀，风格与协议信封一致），
+密文字节作为文件 part；`digest` 按**加密前明文**计算、`size` 为密文字节数（wire 实际大小）、
+条目置 `encrypted=true`（在签名信封内，不可伪造）。
+
+```java
+// 服务端：姿势一（推荐）——单 meta 参数，校验链解密后从条目直接拿明文
+@JSecureApi
+@PostMapping("/upload")
+public JSecureResponse<Receipt> upload(
+        @RequestPart("meta") @Valid JSecureRequest<JSecureUploadDto<OrderBiz, JSecureUploadFileDetailDto>> meta) {
+    byte[] plain = meta.getTarget().getFileDetails().get(0).getPlainContent();   // 已解密、已复核
+}
+// 姿势一不写 files 参数：文件 part 无须绑定，part 名也无需固定（服务端识别一切非 meta 的文件 part）
+// 姿势二（兼容）：保留 List<MultipartFile> 双参数——files 拿到的是密文原文，明文仍从条目取
+```
+
+校验链对加密条目的处理：size 比对（密文字节）→ 终端密钥解密（密文损坏/密钥不符即拒）→
+按**解密后明文**复核 digest → 明文字节填充 `plainContent`。`upload-digest-verify=false` 只豁免
+摘要复核，**解密与 plainContent 填充恒执行**（业务依赖明文视图）。
+
+边界：加密条目仅支持 push（pull/refer 条目声明 `encrypted=true` 即拒）；明文上传（缺省 false）
+行为完全不变；CBC 无自身认证性——传输完整性由 digest 复核兜底（改密文必坏明文、摘要必失配），
+长期归档场景建议通道层 TLS 或业务侧再加固。
 
 ### 自定义传输载体（execute 注入回调）
 
@@ -410,17 +452,17 @@ JSecureResponse<String> upload = JSecureClient.of(clientId)
 
 ### 双泛型 DTO 扩展指南
 
-`JSecureUploadDto<B, F extends JSecureUploadFileDto>` 两个泛型都可扩展：
+`JSecureUploadDto<B, F extends JSecureUploadFileDetailDto>` 两个泛型都可扩展：
 
 ```java
 /** B：业务数据自由定义 */
 @Data
 public class UploadOrderVo { private String orderNo; private Double amount; }
 
-/** F：文件条目可加业务字段（继承 JSecureUploadFileDto） */
+/** F：文件条目可加业务字段（继承 JSecureUploadFileDetailDto） */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class InvoiceFileDto extends JSecureUploadFileDto {
+public class InvoiceFileDto extends JSecureUploadFileDetailDto {
     private Integer invoicePageNo;   // 业务扩展字段
 }
 
@@ -456,7 +498,7 @@ JSecureResponse<String> response = JSecureClient.of(clientId)
 @JSecureApi
 @PostMapping("/upload")
 public JSecureResponse<String> upload(
-        @RequestPart("meta") @Valid JSecureRequest<JSecureUploadDto<Map<String, Object>, JSecureUploadFileDto>> meta,
+        @RequestPart("meta") @Valid JSecureRequest<JSecureUploadDto<Map<String, Object>, JSecureUploadFileDetailDto>> meta,
         @RequestPart(value = "files", required = false) List<MultipartFile> files) {
     Map<String, Object> biz = meta.getTarget().getBusinessData();
     …
@@ -551,19 +593,21 @@ null 均可）——对接方用 Jackson/Gson 亦可，参考实现用 fastjson2
 ```
 POST（multipart/form-data，boundary 任意，协议头挂根请求）
 ├─ part "meta"   Content-Type: application/json（不带 filename！）
-│    内容 = 请求信封 JSON，其中 data 为 {"businessData":<业务JSON>,"files":[<摘要清单>]} 的 SM4 密文
+│    内容 = 请求信封 JSON，其中 data 为 {"businessData":<业务JSON>,"fileDetails":[<文件明细清单>]} 的 SM4 密文
 └─ part "files"  filename = fileId（对齐键，仅 [A-Za-z0-9._-]，1-128 字符）
      Content-Type: application/octet-stream，文件字节明文传输
 ```
 
-摘要清单条目字段（文件完整性契约，push 模式）：
+文件明细条目字段（fileDetails 数组元素，文件完整性契约，push 模式）：
 
 ```json
 {"fileId":"inv-1","fileType":"invoice","fileName":"发票.pdf","format":"pdf",
  "size":123,"digest":"<sha256 hex 小写>","digestAlg":"sha256","fetchMode":"push"}
 ```
 
-（push 条目数必须等于文件 part 数；`format` 取小写扩展名，终端配了 format 白名单则必须命中。）
+（push 条目数必须等于文件 part 数；`format` 取小写扩展名，终端配了 format 白名单则必须命中。
+`digestAlg` 可选 sha256 / sm3 / md5，缺省 sha256；终端配了 `upload-digest-algorithms` 则必须落在允许范围内，否则拒绝并提示允许清单。
+注意 md5 抗碰撞弱（chosen-prefix 碰撞已可廉价预制），仅适合遗留互操作与误传检测，不应作为防恶意替换或存证/对账依据——生产建议范围收紧为 `[sha256, sm3]`。）
 
 #### 参考实现（单文件，可直接发给对接方）
 
@@ -619,30 +663,44 @@ jevokit:
         allow-ip: ["203.0.113.*"]             # IP 白名单
 
         # ---------- 文件上传（本组件新增键） ----------
-        upload-max-size: 5242880              # 单文件大小上限（字节），缺省 50MB（保守值）
+        upload-max-size: 5242880              # 单文件大小上限（字节），缺省 50MB（保守值）；
+                                            # 上限恒生效——校验开关也不豁免（配多少就是多少）；
+                                            # 容器限值须配平：spring.servlet.multipart.max-file-size
+                                            # ≤ 本值（失当启动打 WARN——容器先落盘协议层才拒）
+        upload-max-file-count: 20             # 单请求文件条目数上限（合计），缺省 20；0/负数=不限制
+        upload-digest-algorithms: [sha256, sm3]  # 摘要算法允许范围；缺省空=全集 sha256/sm3/md5，
+                                            # 配置后 fail-closed（客户端用范围外算法即拒并提示允许清单）
+        upload-digest-verify: true            # 摘要校验开关；false=跳过 push 摘要比对、
+                                            # pull 拉取复核与 digest 必填（可信内网评估后关闭）
+        upload-size-verify: true              # 大小一致性开关；false=跳过 size 必填与"声明=实际"比对
         upload-format-whitelist:              # format 白名单：key=fileType；缺省空=不限制；
           invoice: [pdf, jpg, png]            #   配置后 fail-closed（未列 fileType/格式一律拒）
           id_card: [jpg, png]
-        fetch-url-whitelist:                  # pull 域名白名单（SSRF 硬防线）：
+        upload-fetch-url-whitelist:                  # pull 域名白名单（SSRF 硬防线）：
           - files.partner.com                 #   精确域名或 *.partner.com 通配子域；
           - "*.oss.partner.com"               #   缺省空=所有 pull 请求一律拒（fail-fast）
 ```
 
 | 配置键 | 类型 | 缺省 | 说明 |
 |---|---|---|---|
-| `jevokit.api.client[].upload-max-size` | long | 50MB（52428800） | 单文件大小上限，push 元数据预检与 pull 下载预检共用 |
+| `jevokit.api.client[].upload-max-size` | long | 50MB（52428800） | 单文件大小上限，push 元数据预检与 pull 下载预检共用；**恒生效不受校验开关豁免**。容器配平：`spring.servlet.multipart.max-file-size` 须 ≤ 本值（失当启动打 WARN：容器会先把超限字节全额落临时盘、协议层才拒绝，资源消耗面=容器限值） |
+| `jevokit.api.client[].upload-max-file-count` | int | 20 | 单请求文件条目数上限（push/pull/refer 合计）：防"N 个单文件均合法"的聚合流量放大；0 或负数 = 不限制 |
 | `jevokit.api.client[].upload-format-whitelist.<fileType>[n]` | Map<String, List<String>> | 空（不限制） | format 白名单，配置后 fail-closed（含 format 为空的情形即无扩展名文件必拒）；未配置不校验 format（无扩展名文件可 push）；push 必查、pull 声明了才查、refer 不查 |
-| `jevokit.api.client[].fetch-url-whitelist[n]` | List<String> | 空（pull 全拒） | pull 拉取域名白名单，支持 `*.domain` 通配 |
+| `jevokit.api.client[].upload-digest-algorithms[n]` | List<String> | 空（全集 sha256/sm3/md5） | 摘要算法允许范围，配置后 fail-closed：条目 digestAlg 范围外即拒（消息带允许清单）；配置笔误名与全集求交后收窄（fail-closed 方向，不扩权）；缺省算法仍是 sha256（条目不声明 digestAlg 按 sha256）。**md5 抗碰撞弱，仅遗留互操作场景显式放开，生产建议 [sha256, sm3]** |
+| `jevokit.api.client[].upload-digest-verify` | boolean | true | 摘要校验开关；false 跳过：push 摘要比对、pull 拉取后复核、push digest 必填。关闭后传输完整性仅剩 size 防线（若 size 开关也关则无内容校验），仅可信内网/大文件场景评估后关闭 |
+| `jevokit.api.client[].upload-size-verify` | boolean | true | 大小一致性开关；false 跳过：push size 必填、"声明=实际"比对（push part 实际字节数与 pull 下载后字节数）。**不豁免 upload-max-size 上限**（上限与 pull 下载内存封底恒生效） |
+| `jevokit.api.client[].upload-fetch-url-whitelist[n]` | List<String> | 空（pull 全拒） | pull 拉取域名白名单，支持 `*.domain` 通配 |
 | `jevokit.crypto.charset` | String | `UTF-8` | SM2 签名/验签原文与 AES/SM4 密钥字符串取字节的字符集（jevokit-core 层配置，签名链路 `sm2Base64Sign`/`sm2Base64Verify` 与 jevokit-api 信封签验共用同一口径；3.5.3.0 新增，替代"跟随 JVM 默认字符集"旧行为）。**验签互通要求两端配置一致**：任一端不同，含非 ASCII（中文）报文即验签失败（纯 ASCII 报文不受影响）；GBK 存量对接需两端同配 `GBK`；非法字符集名应用启动即失败（fail-fast）。SM4/AES 密文内的明文编码由底层固定 UTF-8，不受本配置影响 |
 
 上述演示值（16 字节演示密钥、演示域名）仅为开箱可跑，**生产必须替换**。既有配置键（access 令牌门、client 密钥组、header 前缀、print 开关等）见主 README [api 小节](../../README.md#api)。
 
 ## 安全篇
 
-- **SSRF 白名单（pull 硬防线）**：pull 条目 url 的域名必须在终端 `fetch-url-whitelist` 内，未配置白名单而有 pull 请求直接拒绝（fail-fast，不静默放行）；拉取时二次复核白名单，且仅允许 http/https、**禁止跟随重定向**（3xx 即拒，防 302 跳出白名单域），下载字节数按声明 size 封顶。
+- **SSRF 白名单（pull 硬防线）**：pull 条目 url 的域名必须在终端 `upload-fetch-url-whitelist` 内，未配置白名单而有 pull 请求直接拒绝（fail-fast，不静默放行）；拉取时二次复核白名单，且仅允许 http/https、**禁止跟随重定向**（3xx 即拒，防 302 跳出白名单域），下载字节数按声明 size 封顶。白名单域名的 DNS 解析须受控（A 记录被改指内网/回环即白名单被"合法绕过"，必要时可加固为解析后 IP 拒私网段）。
+- **pull 完整性依赖调用方如实声明 digest**：不声明 digest 的 pull 条目，`fetch()` 拉回内容仅有 size 一道弱核验，源站内容被换不可检测——对完整性有要求的 pull 场景必须声明 digest。
 - **fileId 字符集白名单（双道防线）**：fileId 即文件 part 的 filename（对齐键），客户端入口（`add`/`pull`/`refer`/`entry`）与服务端元数据层按同一口径校验——仅允许字母、数字与 `. _ -`，长度 1-128；含引号（filename 走私）、CRLF（part 头注入）、中文/斜杠/超长等一律拒绝。服务端一道防的是绕过客户端白名单的自定义载体/手工报文。
 - **meta part 唯一性**：同名 meta part 数量 >1 即拒（Spring `@RequestPart` 对同名 part 取第一个、第二个被无声忽略，属 first-wins 静默歧义，安全组件不受理不可确信的报文）。
-- **fileName 永不落盘**：`JSecureUploadFileDto.fileName` 仅为展示用途（原始名可能含路径穿越片段 `../../`、非法字符或超长内容），持久化命名一律使用服务端生成的新名（如 `fileId + 服务端序号 + 白名单内扩展名`），并在展示时对原始名做 XSS 转义。
+- **fileName 永不落盘**：`JSecureUploadFileDetailDto.fileName` 仅为展示用途（原始名可能含路径穿越片段 `../../`、非法字符或超长内容），持久化命名一律使用服务端生成的新名（如 `fileId + 服务端序号 + 白名单内扩展名`），并在展示时对原始名做 XSS 转义。
 - **fetchToken 脱敏**：协议链路日志（请求明文打印）输出摘要清单时自动脱敏——fetchToken 前 4 后 4 明文、中间掩码；url 查询串（常含签名/临时凭证）整体遮蔽为 `?***`。业务对象本身不受影响。
 - **裸奔检测（启动期防线）**：`@JSecureApi` 方法若以裸 `MultipartFile` 收参（不走加密信封、无摘要校验，即静默裸奔），应用**启动即失败**并给出修复指引（改用 meta+files 双参数形态）。检测覆盖单值 / `List` / 数组三种参数形态；普通（非 JSecure）multipart 端点不受影响。
 - **完整性（防调包/篡改/增删）**：push 条目数与文件 part 数双向相等；`filename = fileId` 一一对齐；size 与摘要逐个流式复核——两文件互换 fileId（调包）、字节篡改、偷加/漏发文件 part 均拒。

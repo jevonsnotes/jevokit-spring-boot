@@ -32,7 +32,7 @@ import io.github.jevonsnotes.jevokit.api.config.JevokitApiClientProperties;
 import io.github.jevonsnotes.jevokit.api.config.JevokitApiProperties;
 import io.github.jevonsnotes.jevokit.api.dto.FetchMode;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadDto;
-import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDto;
+import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDetailDto;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadRequest;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureRequest;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureResponse;
@@ -101,7 +101,7 @@ class SecureUploadEdgeTest {
                 .add(content, "empty-1", "invoice", "空文件.pdf"));
 
         // 客户端组装侧：size=0 且 digest 为空串的 sha256（不是空值）
-        JSecureUploadFileDto entry = decryptEntries(request).get(0);
+        JSecureUploadFileDetailDto entry = decryptEntries(request).get(0);
         assertThat(entry.getSize()).isZero();
         assertThat(entry.getDigest())
                 .as("0 字节文件摘要应为 sha256(空) 而非空串")
@@ -119,7 +119,7 @@ class SecureUploadEdgeTest {
     @DisplayName("push size 少报必拒：声明 100 实际 200 字节，code=999「大小与声明不符」")
     void pushSizeUnderstatedRejected() throws Exception {
         byte[] content = "x".repeat(200).getBytes(StandardCharsets.UTF_8);
-        JSecureUploadFileDto lying = pushEntry("file-lie", "invoice", "发票.pdf", "pdf", 100L,
+        JSecureUploadFileDetailDto lying = pushEntry("file-lie", "invoice", "发票.pdf", "pdf", 100L,
                 JSecureUploadUtil.digestHex(content, "sha256"), "sha256");
         JSecureUploadRequest request = buildRequest(builder -> builder.entry(lying, content));
         perform(request)
@@ -131,7 +131,7 @@ class SecureUploadEdgeTest {
     @DisplayName("push size 多报必拒：声明 999 实际 9 字节，code=999「大小与声明不符」")
     void pushSizeOverstatedRejected() throws Exception {
         byte[] content = "123456789".getBytes(StandardCharsets.UTF_8);
-        JSecureUploadFileDto lying = pushEntry("file-lie2", "invoice", "发票.pdf", "pdf", 999L,
+        JSecureUploadFileDetailDto lying = pushEntry("file-lie2", "invoice", "发票.pdf", "pdf", 999L,
                 JSecureUploadUtil.digestHex(content, "sha256"), "sha256");
         JSecureUploadRequest request = buildRequest(builder -> builder.entry(lying, content));
         perform(request)
@@ -151,7 +151,7 @@ class SecureUploadEdgeTest {
         JSecureUploadRequest request = buildRequest(builder -> builder
                 .add(content, "file-1", "invoice", evilName));
 
-        JSecureUploadFileDto entry = decryptEntries(request).get(0);
+        JSecureUploadFileDetailDto entry = decryptEntries(request).get(0);
         assertThat(entry.getFileName()).as("fileName 应原样保留（仅展示语义）").isEqualTo(evilName);
         assertThat(entry.getFormat()).isEqualTo("pdf");
 
@@ -246,7 +246,7 @@ class SecureUploadEdgeTest {
     @DisplayName("files 字段为 null（手工信封）：与空列表同语义，必受理 code=0")
     void nullFilesFieldAccepted() throws Exception {
         Map<String, Object> biz = Map.of("orderNo", "SO-NULL-FILES");
-        JSecureUploadDto<Map<String, Object>, JSecureUploadFileDto> upload =
+        JSecureUploadDto<Map<String, Object>, JSecureUploadFileDetailDto> upload =
                 new JSecureUploadDto<>(biz, null);
         JSecureRequest<Object> envelope = new JSecureRequest<>();
         envelope.setTransNo("t-null-files");
@@ -289,14 +289,20 @@ class SecureUploadEdgeTest {
     }
 
     @Test
-    @DisplayName("50 个文件条目：全量对齐可用（code=0，50/50），无数量上限误伤")
+    @DisplayName("50 个文件条目：全量对齐可用（code=0，50/50）——upload-max-file-count=0 放开条目数上限")
     void fiftyPushEntriesAccepted() throws Exception {
-        JSecureUploadRequest request = buildRequest(builder -> {
-            for (int i = 1; i <= 50; i++) {
-                builder.add(("content-" + i).getBytes(StandardCharsets.UTF_8), "file-" + i, "invoice", "发票-" + i + ".pdf");
-            }
-        });
-        assertAcceptedCounts(perform(request), 50, 50);
+        int original = client().getUploadMaxFileCount();
+        try {
+            client().setUploadMaxFileCount(0);   // 0 = 不限制（缺省 20 会拦 50 条，见条目数上限用例）
+            JSecureUploadRequest request = buildRequest(builder -> {
+                for (int i = 1; i <= 50; i++) {
+                    builder.add(("content-" + i).getBytes(StandardCharsets.UTF_8), "file-" + i, "invoice", "发票-" + i + ".pdf");
+                }
+            });
+            assertAcceptedCounts(perform(request), 50, 50);
+        } finally {
+            client().setUploadMaxFileCount(original);
+        }
     }
 
     // ------------------------------------------------------------------
@@ -342,17 +348,17 @@ class SecureUploadEdgeTest {
     }
 
     /** 服务端同源配方解出构建产物里的文件清单（断言客户端组装形态用）。 */
-    private List<JSecureUploadFileDto> decryptEntries(JSecureUploadRequest request) {
+    private List<JSecureUploadFileDetailDto> decryptEntries(JSecureUploadRequest request) {
         com.alibaba.fastjson2.JSONObject envelope = com.alibaba.fastjson2.JSONObject.parseObject(request.getMetaJson());
         String view = io.github.jevonsnotes.jevokit.core.util.SecurityUtil
                 .sm4cbcDecrypt(envelope.getString("data"), client().getSecretKeySm4());
-        return com.alibaba.fastjson2.JSONObject.parseObject(view, JSecureUploadDto.class).getFiles();
+        return com.alibaba.fastjson2.JSONObject.parseObject(view, JSecureUploadDto.class).getFileDetails();
     }
 
     /** 手工构造 push 条目（size 谎报等"作弊"场景）。 */
-    private JSecureUploadFileDto pushEntry(String fileId, String fileType, String fileName, String format,
+    private JSecureUploadFileDetailDto pushEntry(String fileId, String fileType, String fileName, String format,
                                            Long size, String digest, String digestAlg) {
-        JSecureUploadFileDto entry = new JSecureUploadFileDto();
+        JSecureUploadFileDetailDto entry = new JSecureUploadFileDetailDto();
         entry.setFileId(fileId);
         entry.setFileType(fileType);
         entry.setFileName(fileName);
@@ -380,9 +386,9 @@ class SecureUploadEdgeTest {
         @JSecureApi
         @PostMapping("/secure/upload")
         public JSecureResponse<String> upload(
-                @RequestPart("meta") @Valid JSecureRequest<JSecureUploadDto<Map<String, Object>, JSecureUploadFileDto>> meta,
+                @RequestPart("meta") @Valid JSecureRequest<JSecureUploadDto<Map<String, Object>, JSecureUploadFileDetailDto>> meta,
                 @RequestPart(value = "files", required = false) List<MultipartFile> files) {
-            int declared = meta.getTarget().getFiles() == null ? 0 : meta.getTarget().getFiles().size();
+            int declared = meta.getTarget().getFileDetails() == null ? 0 : meta.getTarget().getFileDetails().size();
             int bound = files == null ? 0 : files.size();
             return JSecureResponse.ok("accepted:" + declared + "/" + bound);
         }

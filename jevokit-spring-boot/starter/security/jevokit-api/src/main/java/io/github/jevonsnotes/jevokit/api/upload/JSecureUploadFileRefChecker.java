@@ -1,6 +1,6 @@
 package io.github.jevonsnotes.jevokit.api.upload;
 
-import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDto;
+import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDetailDto;
 
 /**
  * refer 模式文件存在性校验钩子：业务实现并注册为 Spring Bean 即被上传校验器发现
@@ -15,7 +15,7 @@ import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDto;
  * @Component
  * public class InvoiceFileRefChecker implements JSecureUploadFileRefChecker {
  *     @Override
- *     public boolean exists(JSecureUploadFileDto file) {
+ *     public boolean exists(JSecureUploadFileDetailDto file) {
  *         return invoiceAttachmentMapper.selectCount(file.getFileId()) > 0;
  *     }
  * }
@@ -29,5 +29,5 @@ public interface JSecureUploadFileRefChecker {
      * @param file 上传文件元数据条目（fileId 为业务侧引用键）
      * @return true 存在放行；false 不存在拒绝
      */
-    boolean exists(JSecureUploadFileDto file);
+    boolean exists(JSecureUploadFileDetailDto file);
 }

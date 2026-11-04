@@ -12,7 +12,7 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 import io.github.jevonsnotes.jevokit.api.annotation.JSecureApi;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureRequest;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadDto;
-import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDto;
+import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDetailDto;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureResponse;
 
 import java.util.List;
@@ -153,7 +153,7 @@ class JSecureUploadGuardTest {
         @JSecureApi
         @PostMapping("/dual")
         public JSecureResponse<String> handle(
-                @RequestPart("meta") JSecureRequest<JSecureUploadDto<String, JSecureUploadFileDto>> meta,
+                @RequestPart("meta") JSecureRequest<JSecureUploadDto<String, JSecureUploadFileDetailDto>> meta,
                 @RequestPart("files") List<MultipartFile> files) {
             return JSecureResponse.ok("ok");
         }

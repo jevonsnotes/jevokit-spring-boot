@@ -11,7 +11,7 @@ import java.util.Map;
  *
  * <p>三种获取方式由 {@link #fetchMode} 区分：push 条目必须有同名（part 名固定 "files"）
  * 且 filename = {@link #fileId} 的文件 part 与之对齐（对齐键，顺序无关）；pull 条目必须带
- * 合法 {@link #url}（域名须在终端 fetch-url-whitelist 白名单内）；refer 条目由业务实现的
+ * 合法 {@link #url}（域名须在终端 upload-fetch-url-whitelist 白名单内）；refer 条目由业务实现的
  * {@code JSecureUploadFileRefChecker} 钩子校验存在性。
  *
  * <p>安全约束：
@@ -26,7 +26,7 @@ import java.util.Map;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class JSecureUploadFileDto {
+public class JSecureUploadFileDetailDto {
 
     /** 请求内唯一标识：push 模式即 multipart 文件 part 的 filename（对齐键，顺序无关）。 */
     private String fileId;
@@ -46,19 +46,36 @@ public class JSecureUploadFileDto {
     /** 文件格式（pdf/jpg/png 等），按终端级 upload-format-whitelist 白名单校验。 */
     private String format;
 
-    /** 文件字节数：digest 计算前先比（超上限/与实际不符即拒）。 */
+    /** 文件字节数：digest 计算前先比（超上限/与实际不符即拒）；加密条目为密文字节数（即 wire 上 part 实际大小）。 */
     private Long size;
 
-    /** 摘要值（hex 小写），按 {@link #digestAlg} 算法流式比对。 */
+    /**
+     * 摘要值（hex 小写），按 {@link #digestAlg} 算法流式比对。
+     * 加密条目（{@link #encrypted}=true）的摘要按<b>加密前明文</b>计算——服务端解密后复核。
+     */
     private String digest;
 
-    /** 摘要算法：sha256（默认）/ sm3。 */
+    /** 摘要算法：sha256（缺省）/ sm3 / md5（可选算法集与终端允许范围见 upload-digest-algorithms）。 */
     private String digestAlg = "sha256";
+
+    /**
+     * 该条目文件 part 是否为密文：客户端 {@code add(..., encrypt=true)} 时置位（SM4-CBC、
+     * 随机 IV 前缀、密钥共用终端 SM4 密钥）。在签名信封内，不可伪造。
+     * 服务端校验链解密后将明文填充 {@link #plainContent}，业务从条目直接拿明文。
+     */
+    private boolean encrypted;
+
+    /**
+     * 解密后的明文字节：仅服务端校验链填充（{@link #encrypted} 条目），wire 上不存在
+     * （transient，不进信封序列化），客户端恒为 null。文件仍在 wire 上传输，此字段只是
+     * "免业务二次解密"的便捷视图，不改变内存占用模型。
+     */
+    private transient byte[] plainContent;
 
     /** 获取方式：push（直传）/ pull（URL 拉取）/ refer（引用已有）。 */
     private FetchMode fetchMode;
 
-    /** pull 模式必填：文件所在 URL（域名须在终端 fetch-url-whitelist 白名单内）。 */
+    /** pull 模式必填：文件所在 URL（域名须在终端 upload-fetch-url-whitelist 白名单内）。 */
     private String url;
 
     /** pull 模式可选：下载令牌（随 X-Fetch-Token 头透传给源站；日志输出自动脱敏）。 */

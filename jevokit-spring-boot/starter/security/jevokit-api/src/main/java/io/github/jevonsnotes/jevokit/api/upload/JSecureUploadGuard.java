@@ -27,7 +27,7 @@ import java.util.Map;
  * @JSecureApi
  * @PostMapping("/upload")
  * public JSecureResponse<String> upload(
- *         @RequestPart("meta") @Valid JSecureRequest<JSecureUploadDto<MyBiz, JSecureUploadFileDto>> meta,
+ *         @RequestPart("meta") @Valid JSecureRequest<JSecureUploadDto<MyBiz, JSecureUploadFileDetailDto>> meta,
  *         @RequestPart("files") List<MultipartFile> files) { ... }
  * }</pre>
  * <p>实现说明：以 SmartInitializingSingleton 在单例装配完成后遍历

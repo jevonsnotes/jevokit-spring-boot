@@ -6,7 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import io.github.jevonsnotes.jevokit.api.config.JevokitApiClientProperties;
 import io.github.jevonsnotes.jevokit.api.context.JSecureContext;
 import io.github.jevonsnotes.jevokit.api.dto.FetchMode;
-import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDto;
+import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDetailDto;
 import io.github.jevonsnotes.jevokit.api.exception.JSecureApiException;
 
 import java.io.ByteArrayOutputStream;
@@ -23,7 +23,7 @@ import java.time.Duration;
  * 白名单复核 → 带 X-Fetch-Token（可选）下载 → size 预检 → 流式摘要复核 → 返回字节（落盘/转存由调用方决定）。
  *
  * <p><b>下载时机是业务决策</b>（同步拉取/异步任务/失败重试各场景不同），框架不做时机决策、
- * 也不自动拉取——业务在需要文件内容的时机调用 {@link #fetch(JSecureUploadFileDto)}。
+ * 也不自动拉取——业务在需要文件内容的时机调用 {@link #fetch(JSecureUploadFileDetailDto)}。
  *
  * <p>安全边界（SSRF 纵深）：域名白名单在入口校验与本处复核各执行一次；仅允许 http/https；
  * 禁止跟随重定向（3xx 一律拒绝，防止 302 跳出白名单域）；下载字节数以声明 size 封顶，
@@ -54,7 +54,7 @@ public class JSecureFileFetcher {
      * @return 文件字节（已通过 size/摘要复核）
      * @throws JSecureApiException 非请求线程、非 pull 条目、白名单外地址或下载/复核失败时抛出
      */
-    public byte[] fetch(JSecureUploadFileDto file) {
+    public byte[] fetch(JSecureUploadFileDetailDto file) {
         return fetch(file, JSecureContext.getCurrentClientThrowIfInvalid());
     }
 
@@ -66,18 +66,22 @@ public class JSecureFileFetcher {
      * @return 文件字节（已通过 size/摘要复核）
      * @throws JSecureApiException 非 pull 条目、白名单外地址或下载/复核失败时抛出
      */
-    public byte[] fetch(JSecureUploadFileDto file, JevokitApiClientProperties client) {
+    public byte[] fetch(JSecureUploadFileDetailDto file, JevokitApiClientProperties client) {
         Assert.notNull(file, () -> new JSecureApiException("拉取文件条目不能为空"));
         Assert.notNull(client, () -> new JSecureApiException("拉取文件需要终端配置"));
         Assert.isTrue(FetchMode.pull.equals(file.getFetchMode()), () -> new JSecureApiException("仅支持拉取 pull 模式文件"));
         Assert.notBlank(file.getUrl(), () -> new JSecureApiException("pull 文件 url 不能为空"));
         // 白名单复核（入口校验之后的第二道，防配置变更窗口内漏放）
-        Assert.isTrue(JSecureUploadUtil.isUrlAllowed(client.getFetchUrlWhitelist(), file.getUrl()),
+        Assert.isTrue(JSecureUploadUtil.isUrlAllowed(client.getUploadFetchUrlWhitelist(), file.getUrl()),
                 () -> new JSecureApiException("pull 文件地址不在白名单：" + JSecureUploadLogMasker.maskUrl(file.getUrl())));
+        // size 声明合法性与上限恒检（上限是终端资源保护，不受 upload-size-verify 豁免）；
+        // 下载后"实际 = 声明"比对与读流封顶见下（一致性受开关，封顶为内存自保始终生效）
         Long declaredSize = file.getSize();
-        Assert.isTrue(declaredSize == null || declaredSize >= 0, () -> new JSecureApiException("pull 文件 size 非法"));
-        Assert.isTrue(declaredSize == null || declaredSize <= client.getUploadMaxSize(),
-                () -> new JSecureApiException("pull 文件超出大小上限：" + declaredSize));
+        if (declaredSize != null) {
+            Assert.isTrue(declaredSize >= 0, () -> new JSecureApiException("pull 文件 size 非法"));
+            Assert.isTrue(declaredSize <= client.getUploadMaxSize(),
+                    () -> new JSecureApiException("pull 文件超出大小上限：" + declaredSize));
+        }
 
         HttpRequest.Builder requestBuilder = HttpRequest.newBuilder(URI.create(file.getUrl().trim()))
                 .timeout(Duration.ofMillis(REQUEST_TIMEOUT_MILLIS))
@@ -100,16 +104,17 @@ public class JSecureFileFetcher {
 
         byte[] content;
         try (InputStream body = response.body()) {
-            content = readCapped(body, declaredSize);
+            content = readCapped(body, declaredSize, client);
         } catch (IOException e) {
             throw new JSecureApiException("文件读取失败：" + e.getMessage(), e);
         }
-        if (declaredSize != null) {
+        if (client.isUploadSizeVerify() && declaredSize != null) {
             Assert.isTrue(content.length == declaredSize, () -> new JSecureApiException(
                     "文件大小与声明不符（声明 " + declaredSize + "，实际 " + content.length + "）"));
         }
-        String digestAlg = JSecureUploadUtil.normalizeDigestAlg(file.getDigestAlg());
-        if (StrUtil.isNotBlank(file.getDigest())) {
+        // 摘要复核：算法按终端允许范围归一（与入口校验同口径）；upload-digest-verify=false 时跳过复核
+        if (client.isUploadDigestVerify() && StrUtil.isNotBlank(file.getDigest())) {
+            String digestAlg = JSecureUploadUtil.normalizeDigestAlg(file.getDigestAlg(), client.getUploadDigestAlgorithms());
             String actualDigest = JSecureUploadUtil.digestHex(content, digestAlg);
             Assert.isTrue(actualDigest.equalsIgnoreCase(StrUtil.trimToEmpty(file.getDigest())),
                     () -> new JSecureApiException("文件摘要校验失败（url=" + JSecureUploadLogMasker.maskUrl(file.getUrl()) + "）"));
@@ -119,10 +124,17 @@ public class JSecureFileFetcher {
     }
 
     /**
-     * 流式读取并按声明 size 封顶（声明缺失时按终端上限封顶；超限即拒，防止超大响应拖垮内存）。
+     * 流式读取并封顶防超大响应拖垮内存：size 校验开启时按声明 size 封顶（超限即"与声明不符"校验语义）；
+     * 关闭（upload-size-verify=false）或未声明 size 时按终端 upload-max-size 封顶——此时超限属
+     * 服务端内存自保（按下载失败处理），不是协议校验拒绝。
      */
-    private byte[] readCapped(InputStream body, Long declaredSize) throws IOException {
-        long cap = declaredSize != null ? declaredSize : Long.MAX_VALUE;
+    private byte[] readCapped(InputStream body, Long declaredSize, JevokitApiClientProperties client) throws IOException {
+        long cap;
+        if (declaredSize != null && client.isUploadSizeVerify()) {
+            cap = declaredSize;
+        } else {
+            cap = client.getUploadMaxSize();
+        }
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         byte[] chunk = new byte[READ_BUFFER_SIZE];
         long total = 0;
@@ -130,7 +142,9 @@ public class JSecureFileFetcher {
         while ((read = body.read(chunk)) != -1) {
             total += read;
             if (total > cap) {
-                throw new JSecureApiException("文件实际大小超出声明 size，已中止下载");
+                throw new JSecureApiException(String.format(
+                        "下载内容超出%s上限（%d 字节），已中止下载",
+                        declaredSize != null && client.isUploadSizeVerify() ? "声明 size" : "终端可接受", cap));
             }
             buffer.write(chunk, 0, read);
         }

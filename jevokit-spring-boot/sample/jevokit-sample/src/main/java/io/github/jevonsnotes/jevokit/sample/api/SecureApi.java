@@ -18,7 +18,7 @@ import io.github.jevonsnotes.jevokit.api.client.JSecureClient;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureRequest;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureResponse;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadDto;
-import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDto;
+import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDetailDto;
 import io.github.jevonsnotes.jevokit.api.util.JSecureApiUtil;
 import io.github.jevonsnotes.jevokit.core.lang.ApiResponse;
 import io.github.jevonsnotes.jevokit.core.util.HttpUtil;
@@ -88,15 +88,15 @@ public class SecureApi {
     * @return JSecure 响应包装（受理条目数/文件 part 数）
     */
     public JSecureResponse<String> upload(
-            @RequestPart("meta") @Valid JSecureRequest<JSecureUploadDto<UploadOrderVo, JSecureUploadFileDto>> meta,
+            @RequestPart("meta") @Valid JSecureRequest<JSecureUploadDto<UploadOrderVo, JSecureUploadFileDetailDto>> meta,
             @RequestPart(value = "files", required = false) List<MultipartFile> files) {
-        JSecureUploadDto<UploadOrderVo, JSecureUploadFileDto> upload = meta.getTarget();
-        int declared = upload.getFiles() == null ? 0 : upload.getFiles().size();
+        JSecureUploadDto<UploadOrderVo, JSecureUploadFileDetailDto> upload = meta.getTarget();
+        int declared = upload.getFileDetails() == null ? 0 : upload.getFileDetails().size();
         int bound = files == null ? 0 : files.size();
         // 走到这里时协议校验已全部通过：摘要清单与文件 part 一一对齐且摘要一致
         log.info("JSecure 上传受理：orderNo={}, 声明文件数={}, 实际文件 part 数={}",
                 upload.getBusinessData().getOrderNo(), declared, bound);
-        upload.getFiles().forEach(file -> log.info("文件条目：fileId={}, fileType={}, fetchMode={}, fileName={}（仅展示，永不落盘）",
+        upload.getFileDetails().forEach(file -> log.info("文件条目：fileId={}, fileType={}, fetchMode={}, fileName={}（仅展示，永不落盘）",
                 file.getFileId(), file.getFileType(), file.getFetchMode(), file.getFileName()));
         return JSecureResponse.ok("accepted:" + declared + "/" + bound);
     }

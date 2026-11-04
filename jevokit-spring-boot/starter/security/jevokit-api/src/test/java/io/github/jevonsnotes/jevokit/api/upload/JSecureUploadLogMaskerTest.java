@@ -4,7 +4,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import io.github.jevonsnotes.jevokit.api.dto.FetchMode;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadDto;
-import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDto;
+import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDetailDto;
 
 import java.util.List;
 
@@ -23,7 +23,7 @@ class JSecureUploadLogMaskerTest {
         assertThat(JSecureUploadLogMasker.maskToken("abcdefghijklmnop")).isEqualTo("abcd****mnop");
         assertThat(JSecureUploadLogMasker.maskToken("short")).isEqualTo("sh****");
 
-        JSecureUploadFileDto file = new JSecureUploadFileDto();
+        JSecureUploadFileDetailDto file = new JSecureUploadFileDetailDto();
         file.setFileId("f1");
         file.setUrl("https://cdn.partner.com/a.pdf?sign=abc&token=xyz");
         file.setFetchToken("secret-fetch-token-9876");

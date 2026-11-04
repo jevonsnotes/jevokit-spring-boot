@@ -38,7 +38,7 @@ import io.github.jevonsnotes.jevokit.api.dto.FetchMode;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureRequest;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureResponse;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadDto;
-import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDto;
+import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDetailDto;
 import io.github.jevonsnotes.jevokit.api.service.IPreventReplayAttack;
 import io.github.jevonsnotes.jevokit.api.service.impl.DefaultPreventReplayAttack;
 import io.github.jevonsnotes.jevokit.api.upload.JSecureUploadFileRefChecker;
@@ -68,7 +68,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *   <li><b>multipart 时序</b>——afterBodyRead 执行时通过 RequestContextHolder 取当前请求的文件 part
  *       是否已就位；同名 "files" 多文件绑定 List&lt;MultipartFile&gt; 的行为；meta part 是否混入该 List；</li>
  *   <li><b>fastjson2 嵌套泛型</b>——JSONObject.parseObject(view, type) 对两层泛型
- *       JSecureUploadDto&lt;OrderBiz, JSecureUploadFileDto&gt; 的反序列化正确性
+ *       JSecureUploadDto&lt;OrderBiz, JSecureUploadFileDetailDto&gt; 的反序列化正确性
  *       （advice 内 actualTypeArguments[0] 是 ParameterizedType）。</li>
  * </ol>
  * 说明：本类是实施前的一次性实证，结论沉淀进组件 README；实施落地后由正式测试类取代。
@@ -128,10 +128,10 @@ class SpikeUploadMultipartTest {
         // 命门结论 2：嵌套泛型反序列化正确（业务数据 + 文件清单均还原）
         assertThat(SpikeUploadController.capturedTarget).as("target 应为 JSecureUploadDto").isNotNull();
         assertThat(SpikeUploadController.capturedTarget.getBusinessData().getOrderNo()).isEqualTo("SO-2026-001");
-        assertThat(SpikeUploadController.capturedTarget.getFiles()).hasSize(2);
-        assertThat(SpikeUploadController.capturedTarget.getFiles().get(0).getFileId()).isEqualTo("file-1");
-        assertThat(SpikeUploadController.capturedTarget.getFiles().get(0).getFetchMode()).isEqualTo(FetchMode.push);
-        assertThat(SpikeUploadController.capturedTarget.getFiles().get(1).getDigestAlg()).isEqualTo("sm3");
+        assertThat(SpikeUploadController.capturedTarget.getFileDetails()).hasSize(2);
+        assertThat(SpikeUploadController.capturedTarget.getFileDetails().get(0).getFileId()).isEqualTo("file-1");
+        assertThat(SpikeUploadController.capturedTarget.getFileDetails().get(0).getFetchMode()).isEqualTo(FetchMode.push);
+        assertThat(SpikeUploadController.capturedTarget.getFileDetails().get(1).getDigestAlg()).isEqualTo("sm3");
 
         System.out.println("[SPIKE-1] PASS @RequestPart 触发 advice 链，response=" + response);
     }
@@ -188,7 +188,7 @@ class SpikeUploadMultipartTest {
     @Test
     @DisplayName("Spike3：fastjson2 对 JSecureUploadDto<A,B> 两层泛型按 actualTypeArguments[0] 正确反序列化")
     void fastjson2NestedGenericParsing() throws Exception {
-        JSecureUploadDto<SpikeOrderBiz, JSecureUploadFileDto> dto = buildUploadDto();
+        JSecureUploadDto<SpikeOrderBiz, JSecureUploadFileDetailDto> dto = buildUploadDto();
         String view = JSON.toJSONString(dto);
 
         // 完全复刻 advice 的取型路径：控制器方法泛型参数 → actualTypeArguments[0]
@@ -203,16 +203,16 @@ class SpikeUploadMultipartTest {
         assertThat(parsed).as("反序列化产物应为 JSecureUploadDto").isInstanceOf(JSecureUploadDto.class);
 
         @SuppressWarnings("unchecked")
-        JSecureUploadDto<SpikeOrderBiz, JSecureUploadFileDto> back =
-                (JSecureUploadDto<SpikeOrderBiz, JSecureUploadFileDto>) parsed;
+        JSecureUploadDto<SpikeOrderBiz, JSecureUploadFileDetailDto> back =
+                (JSecureUploadDto<SpikeOrderBiz, JSecureUploadFileDetailDto>) parsed;
         assertThat(back.getBusinessData().getOrderNo()).as("业务数据（泛型 B）应正确还原").isEqualTo("SO-2026-001");
         assertThat(back.getBusinessData().getAmount()).isEqualTo(199.00);
-        assertThat(back.getFiles()).as("文件清单（泛型 F）应正确还原").hasSize(2);
-        assertThat(back.getFiles().get(0).getFileId()).isEqualTo("file-1");
-        assertThat(back.getFiles().get(0).getSize()).isEqualTo(13L);
-        assertThat(back.getFiles().get(1).getFileType()).isEqualTo("id_card");
-        assertThat(back.getFiles().get(1).getDigestAlg()).isEqualTo("sm3");
-        assertThat(back.getFiles().get(1).getExtra()).containsEntry("pageNo", "2");
+        assertThat(back.getFileDetails()).as("文件清单（泛型 F）应正确还原").hasSize(2);
+        assertThat(back.getFileDetails().get(0).getFileId()).isEqualTo("file-1");
+        assertThat(back.getFileDetails().get(0).getSize()).isEqualTo(13L);
+        assertThat(back.getFileDetails().get(1).getFileType()).isEqualTo("id_card");
+        assertThat(back.getFileDetails().get(1).getDigestAlg()).isEqualTo("sm3");
+        assertThat(back.getFileDetails().get(1).getExtra()).containsEntry("pageNo", "2");
 
         // supports() 对嵌套泛型命中（同一取型路径）
         MethodParameter methodParameter = new MethodParameter(method, 0);
@@ -243,8 +243,8 @@ class SpikeUploadMultipartTest {
     }
 
     /** 组装上传业务体（push 双文件：发票 + 身份证，混合 sha256/sm3 两种摘要算法）。 */
-    private JSecureUploadDto<SpikeOrderBiz, JSecureUploadFileDto> buildUploadDto() {
-        JSecureUploadFileDto f1 = new JSecureUploadFileDto();
+    private JSecureUploadDto<SpikeOrderBiz, JSecureUploadFileDetailDto> buildUploadDto() {
+        JSecureUploadFileDetailDto f1 = new JSecureUploadFileDetailDto();
         f1.setFileId("file-1");
         f1.setFileType("invoice");
         f1.setUsage("main");
@@ -255,7 +255,7 @@ class SpikeUploadMultipartTest {
         f1.setDigestAlg("sha256");
         f1.setFetchMode(FetchMode.push);
 
-        JSecureUploadFileDto f2 = new JSecureUploadFileDto();
+        JSecureUploadFileDetailDto f2 = new JSecureUploadFileDetailDto();
         f2.setFileId("file-2");
         f2.setFileType("id_card");
         f2.setUsage("back");
@@ -313,7 +313,7 @@ class SpikeUploadMultipartTest {
     @RestController
     static class SpikeUploadController {
 
-        static JSecureUploadDto<SpikeOrderBiz, JSecureUploadFileDto> capturedTarget;
+        static JSecureUploadDto<SpikeOrderBiz, JSecureUploadFileDetailDto> capturedTarget;
         static int boundFilesSize;
         static List<String> boundFileNames;
 
@@ -326,7 +326,7 @@ class SpikeUploadMultipartTest {
         @JSecureApi
         @PostMapping("/spike/upload")
         public JSecureResponse<String> upload(
-                @RequestPart("meta") @jakarta.validation.Valid JSecureRequest<JSecureUploadDto<SpikeOrderBiz, JSecureUploadFileDto>> meta,
+                @RequestPart("meta") @jakarta.validation.Valid JSecureRequest<JSecureUploadDto<SpikeOrderBiz, JSecureUploadFileDetailDto>> meta,
                 @RequestPart("files") List<MultipartFile> files) {
             capturedTarget = meta.getTarget();
             boundFilesSize = files.size();

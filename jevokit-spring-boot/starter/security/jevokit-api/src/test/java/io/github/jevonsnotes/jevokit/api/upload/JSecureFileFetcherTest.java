@@ -7,7 +7,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import io.github.jevonsnotes.jevokit.api.config.JevokitApiClientProperties;
 import io.github.jevonsnotes.jevokit.api.dto.FetchMode;
-import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDto;
+import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDetailDto;
 import io.github.jevonsnotes.jevokit.api.exception.JSecureApiException;
 
 import java.io.OutputStream;
@@ -91,7 +91,7 @@ class JSecureFileFetcherTest {
     @Test
     @DisplayName("fetchToken 透传：源站无令牌即 403，带令牌取回内容")
     void fetchTokenPassedThrough() {
-        JSecureUploadFileDto entry = pullEntry(tokenRequiredUrl, (long) PAYLOAD.length, null);
+        JSecureUploadFileDetailDto entry = pullEntry(tokenRequiredUrl, (long) PAYLOAD.length, null);
         entry.setFetchToken("secret-token-123456");
         byte[] content = fetcher.fetch(entry, clientWithWhitelist());
         assertThat(TOKEN_SEEN).as("源站应收到 X-Fetch-Token 头").isTrue();
@@ -125,7 +125,7 @@ class JSecureFileFetcherTest {
     @Test
     @DisplayName("非 pull 条目必拒（fetch 只处理 pull 模式）")
     void fetchNonPullRejected() {
-        JSecureUploadFileDto pushEntry = new JSecureUploadFileDto();
+        JSecureUploadFileDetailDto pushEntry = new JSecureUploadFileDetailDto();
         pushEntry.setFileId("f1");
         pushEntry.setFetchMode(FetchMode.push);
         assertThatThrownBy(() -> fetcher.fetch(pushEntry, clientWithWhitelist()))
@@ -148,12 +148,12 @@ class JSecureFileFetcherTest {
     private JevokitApiClientProperties clientWithWhitelist() {
         JevokitApiClientProperties client = new JevokitApiClientProperties();
         client.setId("test");
-        client.getFetchUrlWhitelist().add("127.0.0.1");
+        client.getUploadFetchUrlWhitelist().add("127.0.0.1");
         return client;
     }
 
-    private JSecureUploadFileDto pullEntry(String url, Long size, String digest) {
-        JSecureUploadFileDto entry = new JSecureUploadFileDto();
+    private JSecureUploadFileDetailDto pullEntry(String url, Long size, String digest) {
+        JSecureUploadFileDetailDto entry = new JSecureUploadFileDetailDto();
         entry.setFileId("remote-1");
         entry.setFetchMode(FetchMode.pull);
         entry.setUrl(url);

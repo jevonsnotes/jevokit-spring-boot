@@ -4,8 +4,17 @@
 
 ## [未发布]
 
+## [3.5.3.0] — 2026-11-04
+
+### 新增
+
+- **JSecure 上传文件无感加密（场景六）**：`UploadChannel.add(..., encrypt=true)` 传入明文，客户端内部以终端 SM4 密钥 SM4-CBC 加密（随机 IV 前缀、字节级二进制安全）后作为文件 part；`digest` 按加密前明文计算、`size` 为密文字节数、条目新增 `encrypted` 标志（签名信封内不可伪造）。服务端校验链对加密条目：size 比对（密文）→ 解密 → 按明文复核 digest → 明文填充条目 `plainContent`（transient，不进信封）——Controller 单 meta 参数即可直接拿明文（无感解密），该形态下文件 part 名无需固定（服务端识别一切非 meta 的文件 part）；`upload-digest-verify=false` 仅豁免摘要复核，解密与明文注入恒执行；加密条目仅支持 push
+- **JSecure 文件上传（`jevokit-api`）**：`@JSecureApi` 端点支持 multipart 双参数形态（`meta` 加密信封 + `files` 文件 part），业务体 `JSecureUploadDto<B, F>`（业务数据 + 文件清单）由协议链无感校验——元数据层（fileId 字符集白名单/format 白名单/size 上限/条目数对齐）、内容层（按 filename=fileId 对齐 part 后摘要比对）、pull 模式（URL 域名白名单 SSRF 防线 + 拉取后摘要复核）、refer 模式（业务钩子存在性校验）。客户端统一门面 `JSecureClient`：`post()` JSON 通道与 `upload()` 上传通道（`.add()/.pull()/.refer()/.entry()` 混合组包，默认 hutool 载体，可注入自定义载体）。摘要算法支持 sha256/sm3/md5 三种（`digestAlg` 字段分派，md5 仅遗留互操作场景建议显式放开），终端可配 `upload-digest-algorithms` 收紧允许范围（fail-closed，范围外拒绝并提示允许清单；范围配置与全集求交，笔误名收窄不扩权；refer 条目不受范围牵连）；`upload-digest-verify` / `upload-size-verify` 两开关可分别关闭摘要/大小**一致性**校验（`upload-max-size` 单文件上限与 pull 下载内存封底恒生效，不被开关豁免）；`upload-max-file-count` 单请求条目数上限（缺省 20，防聚合放大，0/负数不限制）。启动期顾问 `JSecureUploadStartupAdvisor` 对弱化决策（校验开关关闭）与配平失当（容器 `spring.servlet.multipart.max-file-size` > `upload-max-size`、算法范围含笔误名）打 WARN 留痕。删除已废弃的 `JSRequestExecutor`/`JSecureUploadBuilder`（均未发布过）。协议自实现参考：`JSecureProtocolDemo`（单文件、bcprov+fastjson2，可直接交付对接方）
+
 ### 破坏性变更（Breaking）
 
+- **上传 DTO 字段与条目类更名**：`JSecureUploadDto` 的 `files` 字段更名为 `fileDetails`（信封明文键同步 `"files"` → `"fileDetails"`），条目类 `JSecureUploadFileDto` 更名为 `JSecureUploadFileDetailDto`——与 multipart 文件 part（part 名固定 `files`，承载文件字节）从命名上区分：前者是信封明文里的文件明细清单（元数据），后者是 wire 上的文件字节 part，二者按 fileId 对齐。均为 3.5.3.0 开发中命名（未随任何版本发布过），使用方无感
+- **`jevokit.api.client[].fetch-url-whitelist` 更名为 `upload-fetch-url-whitelist`**：原名为 3.5.3.0 开发中引入（未随任何版本发布过），归入 upload 配置族（与 `upload-max-size` / `upload-format-whitelist` / `upload-digest-algorithms` 等同前缀），语义更清晰；使用方无感（无已发布版本携带旧名）
 - **SM2 签名字符集配置化（`jevokit.crypto.charset`，默认 UTF-8）**：`SecurityUtil` 的 SM2 签名/验签原文取字节与 AES/SM4 密钥字符串转字节不再跟随 JVM 默认字符集（平台相关，GBK 平台 + 中文报文必验签失败），统一由新增配置 `jevokit.crypto.charset` 决定（`CryptoProperties` 新增 `charset` 字段并注入 `SecurityUtil.init`；非法字符集名应用启动即失败，该 fail-fast 不受 `startup-check` 开关管辖）。行为变更说明：JVM 默认字符集即 UTF-8 的环境（JDK 18+、主流 Linux 部署）行为不变；JVM 默认字符集非 UTF-8 的环境（如 Windows JDK 17 + zh_CN 即 GBK），SM2 签名字节口径由"跟随 JVM 默认"变为"默认 UTF-8"。迁移指引：中文报文且签名两端同为非 UTF-8 默认字符集的存量对接（原"碰巧两端都是 GBK"能互通的场景），升级后需两端显式配置相同字符集（如 `jevokit.crypto.charset=GBK`）；验签互通始终要求两端配置一致，任一端不同、含非 ASCII 报文即验签失败（纯 ASCII 报文两种字符集字节相同，不受影响）。SM4/AES 密文内的明文编码由底层固定 UTF-8，不受本配置影响；RSA 密钥为 Base64 解析、不涉字符集转换，亦不受影响
 
 ## [3.5.2.2] — 2026-10-14

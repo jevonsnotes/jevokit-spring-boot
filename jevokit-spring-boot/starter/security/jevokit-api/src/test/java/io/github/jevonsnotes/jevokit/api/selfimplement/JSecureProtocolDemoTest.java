@@ -21,7 +21,7 @@ import io.github.jevonsnotes.jevokit.api.consts.ApiHSignAlg;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureRequest;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureResponse;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadDto;
-import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDto;
+import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDetailDto;
 import io.github.jevonsnotes.jevokit.api.util.JSecureApiUtil;
 import io.github.jevonsnotes.jevokit.core.util.SecurityUtil;
 
@@ -165,6 +165,24 @@ class JSecureProtocolDemoTest {
         assertThat(uploadB).as("B 路径受理结果应与 A 一致").isEqualTo("\"accepted:2/2\"");
     }
 
+    @Test
+    @DisplayName("加密上传 A/B：JSecureClient add(...,true) 与自实现 demo encrypted=true 同服务端均受理")
+    void encryptedUploadBothImplementationsAccepted() {
+        byte[] plain = "加密A/B对照-机密内容-ENC".getBytes(StandardCharsets.UTF_8);
+        // A：JSecureClient 无感加密（内部 SM4-CBC + digest 按明文 + size 按密文）
+        JSecureResponse<String> respA = JSecureClient.of(CLIENT_ID)
+                .upload(baseUrl() + "/secure/upload", Map.of("orderNo", "SO-AB-ENC"), String.class)
+                .transNo("t-ab-enc-A").transType(TRANS_TYPE)
+                .add(plain, "ab-enc", "invoice", "机密.pdf", true)
+                .execute();
+        assertThat(respA.getCode()).as("JSecureClient 加密上传应受理").isEqualTo("0");
+        // B：自实现 demo 同口径（加密口径最易抄错：digest 明文/size 密文/encrypted 标志）
+        String respB = demo().uploadFiles(baseUrl() + "/secure/upload",
+                "{\"orderNo\":\"SO-AB-ENC\"}", "t-ab-enc-B", TRANS_TYPE,
+                List.of(new JSecureProtocolDemo.UploadFile("ab-enc", "invoice", "机密.pdf", "pdf", plain, true)));
+        assertThat(respB).as("自实现加密上传应受理且与 A 一致").contains("accepted:1/1");
+    }
+
     // ===================== 字节级互验（与 jevokit 的 hutool 实现双向一致） =====================
 
     @Test
@@ -286,9 +304,9 @@ class JSecureProtocolDemoTest {
         @PostMapping("/secure/upload")
         public JSecureResponse<String> upload(
                 @RequestPart("meta") @jakarta.validation.Valid
-                JSecureRequest<JSecureUploadDto<Map<String, Object>, JSecureUploadFileDto>> meta,
+                JSecureRequest<JSecureUploadDto<Map<String, Object>, JSecureUploadFileDetailDto>> meta,
                 @RequestPart(value = "files", required = false) List<MultipartFile> files) {
-            int declared = meta.getTarget().getFiles() == null ? 0 : meta.getTarget().getFiles().size();
+            int declared = meta.getTarget().getFileDetails() == null ? 0 : meta.getTarget().getFileDetails().size();
             int bound = files == null ? 0 : files.size();
             return JSecureResponse.ok("accepted:" + declared + "/" + bound);
         }

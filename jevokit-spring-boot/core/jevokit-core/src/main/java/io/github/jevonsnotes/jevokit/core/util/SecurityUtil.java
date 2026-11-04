@@ -5,6 +5,7 @@ import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.ClassUtil;
 import cn.hutool.core.util.ReflectUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.crypto.CryptoException;
 import cn.hutool.crypto.Mode;
 import cn.hutool.crypto.Padding;
 import cn.hutool.crypto.SecureUtil;
@@ -255,6 +256,37 @@ public class SecurityUtil {
         byte[] contentRes = ArrayUtil.sub(decode, 16, decode.length);
 
         return alg.decryptStr(contentRes);
+    }
+
+    /**
+     * sm4cbc 加密（字节级，二进制安全）：文件等任意字节内容的加密通道——String 版按 UTF-8 编解码
+     * 会使非文本字节损坏，二进制内容必须走本重载。产物不做 Base64（原始字节即用即传），
+     * 与 String 版同构：前 16 字节为随机 IV，其后为 SM4-CBC 密文。
+     *
+     * @param data 明文字节（任意内容）
+     * @param key  密钥（按注入字符集转字节）
+     * @return 密文字节 = [IV(16B) + SM4-CBC 密文]
+     */
+    public static byte[] sm4cbcEncrypt(byte[] data, String key) {
+        byte[] iv = random.generateSeed(16);
+        SM4 alg = new SM4(Mode.CBC, Padding.PKCS5Padding, charsetBytes(key), iv);
+        return ArrayUtil.addAll(iv, alg.encrypt(data));
+    }
+
+    /**
+     * sm4cbc 解密（字节级，{@link #sm4cbcEncrypt(byte[], String)} 的逆）：剥前 16 字节 IV 后解密。
+     *
+     * @param data 密文字节（[IV(16B) + 密文]）
+     * @param key  密钥
+     * @return 明文字节（任意内容，二进制安全）
+     */
+    public static byte[] sm4cbcDecrypt(byte[] data, String key) {
+        if (data == null || data.length <= 16) {
+            throw new CryptoException("sm4cbc 字节密文非法（短于 IV 长度 16）");
+        }
+        byte[] iv = ArrayUtil.sub(data, 0, 16);
+        SM4 alg = new SM4(Mode.CBC, Padding.PKCS5Padding, charsetBytes(key), iv);
+        return alg.decrypt(ArrayUtil.sub(data, 16, data.length));
     }
 
     /**

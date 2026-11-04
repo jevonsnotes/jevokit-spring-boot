@@ -25,7 +25,7 @@ import io.github.jevonsnotes.jevokit.api.dto.FetchMode;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureRequest;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureResponse;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadDto;
-import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDto;
+import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDetailDto;
 import io.github.jevonsnotes.jevokit.api.exception.JSecureApiException;
 import io.github.jevonsnotes.jevokit.api.upload.JSecureUploadUtil;
 import io.github.jevonsnotes.jevokit.api.util.JSecureApiUtil;
@@ -174,7 +174,7 @@ class SecureUploadFilenameWireTest {
         byte[] content = "wire-content".getBytes(StandardCharsets.UTF_8);
         JevokitApiClientProperties client = properties.getClient().get(0);
 
-        JSecureUploadFileDto entry = new JSecureUploadFileDto();
+        JSecureUploadFileDetailDto entry = new JSecureUploadFileDetailDto();
         entry.setFileId(declaredFileId);
         entry.setFileType("invoice");
         entry.setFileName("发票.pdf");
@@ -183,7 +183,7 @@ class SecureUploadFilenameWireTest {
         entry.setDigest(JSecureUploadUtil.digestHex(content, JSecureUploadUtil.DIGEST_ALG_SHA256));
         entry.setDigestAlg(JSecureUploadUtil.DIGEST_ALG_SHA256);
         entry.setFetchMode(FetchMode.push);
-        JSecureUploadDto<Map<String, Object>, JSecureUploadFileDto> upload =
+        JSecureUploadDto<Map<String, Object>, JSecureUploadFileDetailDto> upload =
                 new JSecureUploadDto<>(Map.of("orderNo", "SO-WIRE-001"), List.of(entry));
         JSecureRequest<Object> envelope = new JSecureRequest<>();
         envelope.setTransNo(UUID.randomUUID().toString());
@@ -261,9 +261,9 @@ class SecureUploadFilenameWireTest {
         @JSecureApi
         @PostMapping("/secure/upload")
         public JSecureResponse<String> upload(
-                @RequestPart("meta") @Valid JSecureRequest<JSecureUploadDto<Map<String, Object>, JSecureUploadFileDto>> meta,
+                @RequestPart("meta") @Valid JSecureRequest<JSecureUploadDto<Map<String, Object>, JSecureUploadFileDetailDto>> meta,
                 @RequestPart(value = "files", required = false) List<MultipartFile> files) {
-            int declared = meta.getTarget().getFiles() == null ? 0 : meta.getTarget().getFiles().size();
+            int declared = meta.getTarget().getFileDetails() == null ? 0 : meta.getTarget().getFileDetails().size();
             int bound = files == null ? 0 : files.size();
             return JSecureResponse.ok("accepted:" + declared + "/" + bound);
         }

@@ -8,17 +8,21 @@ import io.github.jevonsnotes.jevokit.api.exception.JSecureApiException;
 
 import java.io.InputStream;
 import java.net.URI;
+import java.util.Locale;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * 上传协议静态工具：摘要算法适配（sha256/sm3）与 pull 域名白名单匹配、fileId 字符集白名单校验，
+ * 上传协议静态工具：摘要算法适配（sha256/sm3/md5）与 pull 域名白名单匹配、fileId 字符集白名单校验，
  * 服务端校验器（{@link JSecureUploadVerifier}）、拉取器（{@link JSecureFileFetcher}）
  * 与客户端构建器共用，保证两端摘要与 fileId 口径一致。
  *
  * <p>判定与返回语义：
  * <ul>
- *   <li>{@link #normalizeDigestAlg(String)}：空白归一为 sha256；非 sha256/sm3 抛协议异常（算法集白名单）；</li>
+ *   <li>{@link #normalizeDigestAlg(String)}：空白归一为 sha256；非全集（sha256/sm3/md5）抛协议异常；
+ *       {@link #normalizeDigestAlg(String, List)} 为终端配置范围版（upload-digest-algorithms），
+ *       范围外算法抛异常且消息带允许清单；</li>
  *   <li>{@link #digestHex(InputStream, String)}：按算法流式计算 hex 小写摘要（流内已消费，调用方无须再读）；</li>
  *   <li>{@link #isUrlAllowed(java.util.List, String)}：URL 须为 http/https 且域名命中白名单
  *       （精确或 *.domain 通配）才放行；白名单未配置/URL 非法/未命中一律 false（fail-closed）；</li>
@@ -33,6 +37,10 @@ public final class JSecureUploadUtil {
     public static final String DIGEST_ALG_SHA256 = "sha256";
     /** 摘要算法：国密 SM3。 */
     public static final String DIGEST_ALG_SM3 = "sm3";
+    /** 摘要算法：MD5（完整性摘要可选项；防碰撞强度弱于 sha256/sm3，按终端算法范围配置选用）。 */
+    public static final String DIGEST_ALG_MD5 = "md5";
+    /** 协议支持的全部摘要算法（终端未配置 upload-digest-algorithms 时的缺省允许集）。 */
+    public static final Set<String> SUPPORTED_DIGEST_ALGS = Set.of(DIGEST_ALG_SHA256, DIGEST_ALG_SM3, DIGEST_ALG_MD5);
     /** fileId 合法字符集：字母、数字、点、下划线、连字符（multipart filename 走私/注入防线）。 */
     public static final String FILE_ID_ALLOWED_CHARS_DESC = "字母、数字与 . _ -";
     /** fileId 合法字符集正则（客户端入口与服务端元数据层共用同一口径）。 */
@@ -59,34 +67,63 @@ public final class JSecureUploadUtil {
     }
 
     /**
-     * 归一化摘要算法名：空白视为默认 sha256；仅接受 sha256/sm3。
+     * 归一化摘要算法名：空白视为默认 sha256；仅接受协议全集（sha256/sm3/md5）。
      *
      * @param digestAlg 报文内声明的算法名
      * @return 归一化后的小写算法名
      * @throws JSecureApiException 声明了不支持的算法时抛出
      */
     public static String normalizeDigestAlg(String digestAlg) {
-        String normalized = StrUtil.trimToEmpty(digestAlg).toLowerCase();
+        return normalizeDigestAlg(digestAlg, null);
+    }
+
+    /**
+     * 归一化摘要算法名（终端配置范围版）：空白视为默认 sha256；算法须同时满足
+     * ①在协议全集（sha256/sm3/md5）内 ②在终端允许范围内——范围配置不能"自我授权"
+     * 放行协议外算法名（如误配 sha1）。
+     *
+     * @param digestAlg 报文内声明的算法名
+     * @param allowed   终端配置的允许算法（upload-digest-algorithms；null/空 = 协议全集 sha256/sm3/md5）
+     * @return 归一化后的小写算法名
+     * @throws JSecureApiException 声明的算法不在全集/允许范围内时抛出（消息带允许清单，面向终端提示）
+     */
+    public static String normalizeDigestAlg(String digestAlg, List<String> allowed) {
+        String normalized = StrUtil.trimToEmpty(digestAlg).toLowerCase(Locale.ROOT);
         if (StrUtil.isBlank(normalized)) {
-            return DIGEST_ALG_SHA256;
+            normalized = DIGEST_ALG_SHA256;
         }
-        Assert.isTrue(DIGEST_ALG_SHA256.equals(normalized) || DIGEST_ALG_SM3.equals(normalized),
-                () -> new JSecureApiException("不支持的摘要算法：" + digestAlg + "（仅支持 sha256/sm3）"));
-        return normalized;
+        final String alg = normalized;
+        final String declared = StrUtil.blankToDefault(StrUtil.trimToEmpty(digestAlg), alg);
+        Set<String> allowedSet = (allowed == null || allowed.isEmpty())
+                ? SUPPORTED_DIGEST_ALGS
+                : Set.copyOf(allowed.stream()
+                        .map(a -> StrUtil.trimToEmpty(a).toLowerCase(Locale.ROOT))
+                        .filter(SUPPORTED_DIGEST_ALGS::contains)   // 范围配置先与全集求交：笔误名收窄而非扩权
+                        .collect(java.util.stream.Collectors.toUnmodifiableList()));
+        Assert.isTrue(SUPPORTED_DIGEST_ALGS.contains(alg) && allowedSet.contains(alg), () -> new JSecureApiException(String.format(
+                "摘要算法不在允许范围：%s（终端允许：%s，协议全集：%s）",
+                StrUtil.maxLength(declared, 16),
+                String.join("/", allowedSet.stream().sorted().toList()),
+                String.join("/", SUPPORTED_DIGEST_ALGS.stream().sorted().toList()))));
+        return alg;
     }
 
     /**
      * 按算法流式计算摘要（hex 小写）。
      *
      * @param input     数据流（方法内完整消费）
-     * @param digestAlg 摘要算法（sha256/sm3，空白归一为 sha256）
+     * @param digestAlg 摘要算法（sha256/sm3/md5，空白归一为 sha256）
      * @return hex 小写摘要值
      * @throws JSecureApiException 算法不支持或计算失败时抛出
      */
     public static String digestHex(InputStream input, String digestAlg) {
         String alg = normalizeDigestAlg(digestAlg);
         try {
-            return DIGEST_ALG_SM3.equals(alg) ? new SM3().digestHex(input) : DigestUtil.sha256Hex(input);
+            return switch (alg) {
+                case DIGEST_ALG_SM3 -> new SM3().digestHex(input);
+                case DIGEST_ALG_MD5 -> DigestUtil.md5Hex(input);
+                default -> DigestUtil.sha256Hex(input);
+            };
         } catch (Exception e) {
             throw new JSecureApiException("摘要计算失败：" + e.getMessage(), e);
         }
@@ -96,12 +133,16 @@ public final class JSecureUploadUtil {
      * 按算法计算字节摘要（hex 小写）——客户端构建器与单测用。
      *
      * @param content   数据内容
-     * @param digestAlg 摘要算法（sha256/sm3，空白归一为 sha256）
+     * @param digestAlg 摘要算法（sha256/sm3/md5，空白归一为 sha256）
      * @return hex 小写摘要值
      */
     public static String digestHex(byte[] content, String digestAlg) {
         String alg = normalizeDigestAlg(digestAlg);
-        return DIGEST_ALG_SM3.equals(alg) ? new SM3().digestHex(content) : DigestUtil.sha256Hex(content);
+        return switch (alg) {
+            case DIGEST_ALG_SM3 -> new SM3().digestHex(content);
+            case DIGEST_ALG_MD5 -> DigestUtil.md5Hex(content);
+            default -> DigestUtil.sha256Hex(content);
+        };
     }
 
     /**

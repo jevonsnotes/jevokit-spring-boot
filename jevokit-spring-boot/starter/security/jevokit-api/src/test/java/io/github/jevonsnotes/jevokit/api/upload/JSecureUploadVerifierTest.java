@@ -13,7 +13,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import io.github.jevonsnotes.jevokit.api.config.JevokitApiClientProperties;
 import io.github.jevonsnotes.jevokit.api.dto.FetchMode;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadDto;
-import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDto;
+import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDetailDto;
 import io.github.jevonsnotes.jevokit.api.exception.JSecureApiException;
 
 import java.nio.charset.StandardCharsets;
@@ -69,7 +69,7 @@ class JSecureUploadVerifierTest {
     @DisplayName("fileId 空必拒")
     void blankFileIdRejected() {
         mockMultipartRequest(filePart("file-1", "content-1"));
-        JSecureUploadFileDto entry = pushEntry("file-1", "content-1");
+        JSecureUploadFileDetailDto entry = pushEntry("file-1", "content-1");
         entry.setFileId(" ");
         assertThatThrownBy(() -> verifier.verifyUpload(upload(entry), client))
                 .isInstanceOf(JSecureApiException.class)
@@ -80,7 +80,7 @@ class JSecureUploadVerifierTest {
     @DisplayName("push 缺 digest 必拒（必填完整性）")
     void pushWithoutDigestRejected() {
         mockMultipartRequest(filePart("file-1", "content-1"));
-        JSecureUploadFileDto entry = pushEntry("file-1", "content-1");
+        JSecureUploadFileDetailDto entry = pushEntry("file-1", "content-1");
         entry.setDigest(null);
         assertThatThrownBy(() -> verifier.verifyUpload(upload(entry), client))
                 .isInstanceOf(JSecureApiException.class)
@@ -94,7 +94,7 @@ class JSecureUploadVerifierTest {
         // 随商榷点 2（无扩展名文件无法 push）修复：format 不再无条件必填——
         // 未配置 format 白名单的终端无校验需求、format 空放行；原"缺 format 必拒"断言随行为放宽更新
         for (String field : List.of("fileType", "fileName")) {
-            JSecureUploadFileDto entry = pushEntry("file-1", "content-1");
+            JSecureUploadFileDetailDto entry = pushEntry("file-1", "content-1");
             switch (field) {
                 case "fileType" -> entry.setFileType(null);
                 case "fileName" -> entry.setFileName(null);
@@ -104,14 +104,14 @@ class JSecureUploadVerifierTest {
                     .isInstanceOf(JSecureApiException.class)
                     .hasMessageContaining("缺少 " + field);
         }
-        JSecureUploadFileDto noSize = pushEntry("file-1", "content-1");
+        JSecureUploadFileDetailDto noSize = pushEntry("file-1", "content-1");
         noSize.setSize(null);
         assertThatThrownBy(() -> verifier.verifyUpload(upload(noSize), client))
                 .isInstanceOf(JSecureApiException.class)
                 .hasMessageContaining("缺少 size");
 
         // 未配置白名单：format 空的 push（无扩展名文件）放行
-        JSecureUploadFileDto extensionLess = pushEntry("file-1", "content-1");
+        JSecureUploadFileDetailDto extensionLess = pushEntry("file-1", "content-1");
         extensionLess.setFormat("");
         assertThatCode(() -> verifier.verifyUpload(upload(extensionLess), client))
                 .as("未配置 format 白名单的终端，无扩展名文件应放行")
@@ -119,7 +119,7 @@ class JSecureUploadVerifierTest {
 
         // 配置了 format 白名单：format 空必拒（空串不可能命中白名单，无扩展名文件不可 push）
         client.setUploadFormatWhitelist(Map.of("invoice", List.of("pdf")));
-        JSecureUploadFileDto withWhitelist = pushEntry("file-1", "content-1");
+        JSecureUploadFileDetailDto withWhitelist = pushEntry("file-1", "content-1");
         withWhitelist.setFormat("");
         assertThatThrownBy(() -> verifier.verifyUpload(upload(withWhitelist), client))
                 .as("配置了白名单的终端，format 空无法比对必拒")
@@ -131,7 +131,7 @@ class JSecureUploadVerifierTest {
     @DisplayName("size 与实际不符必拒（内容层预比对）")
     void sizeMismatchRejected() {
         mockMultipartRequest(filePart("file-1", "content-1"));
-        JSecureUploadFileDto entry = pushEntry("file-1", "content-1");
+        JSecureUploadFileDetailDto entry = pushEntry("file-1", "content-1");
         entry.setSize(999L);
         assertThatThrownBy(() -> verifier.verifyUpload(upload(entry), client))
                 .isInstanceOf(JSecureApiException.class)
@@ -161,7 +161,7 @@ class JSecureUploadVerifierTest {
     @DisplayName("refer：钩子缺失必拒 / 钩子存在且文件存在通过")
     void referHookResolution() {
         mockMultipartRequest();
-        JSecureUploadFileDto referEntry = new JSecureUploadFileDto();
+        JSecureUploadFileDetailDto referEntry = new JSecureUploadFileDetailDto();
         referEntry.setFileId("archived-1");
         referEntry.setFetchMode(FetchMode.refer);
         assertThatThrownBy(() -> verifier.verifyUpload(upload(referEntry), client))
@@ -177,7 +177,7 @@ class JSecureUploadVerifierTest {
     @DisplayName("pull：未配白名单必拒（fail-fast，不静默放行）")
     void pullWithoutWhitelistRejected() {
         mockMultipartRequest();
-        JSecureUploadFileDto pullEntry = new JSecureUploadFileDto();
+        JSecureUploadFileDetailDto pullEntry = new JSecureUploadFileDetailDto();
         pullEntry.setFileId("remote-1");
         pullEntry.setFetchMode(FetchMode.pull);
         pullEntry.setUrl("https://files.partner.com/a.pdf");
@@ -207,9 +207,9 @@ class JSecureUploadVerifierTest {
     }
 
     /** 造合规 push 条目（sha256 摘要自动计算）。 */
-    private JSecureUploadFileDto pushEntry(String fileId, String content) {
+    private JSecureUploadFileDetailDto pushEntry(String fileId, String content) {
         byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
-        JSecureUploadFileDto entry = new JSecureUploadFileDto();
+        JSecureUploadFileDetailDto entry = new JSecureUploadFileDetailDto();
         entry.setFileId(fileId);
         entry.setFileType("invoice");
         entry.setFileName(fileId + ".pdf");
@@ -221,7 +221,7 @@ class JSecureUploadVerifierTest {
         return entry;
     }
 
-    private JSecureUploadDto<Object, JSecureUploadFileDto> upload(JSecureUploadFileDto... files) {
+    private JSecureUploadDto<Object, JSecureUploadFileDetailDto> upload(JSecureUploadFileDetailDto... files) {
         return new JSecureUploadDto<>("biz", List.of(files));
     }
 }

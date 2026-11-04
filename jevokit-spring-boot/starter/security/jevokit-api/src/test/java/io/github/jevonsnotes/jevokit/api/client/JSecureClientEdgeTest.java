@@ -28,7 +28,7 @@ import io.github.jevonsnotes.jevokit.api.config.JevokitApiProperties;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureRequest;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureResponse;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadDto;
-import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDto;
+import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDetailDto;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadRequest;
 import io.github.jevonsnotes.jevokit.api.exception.JSecureApiException;
 
@@ -437,9 +437,9 @@ class JSecureClientEdgeTest {
         @JSecureApi(transType = TRANS_TYPE)
         @PostMapping("/secure/upload")
         public JSecureResponse<String> upload(
-                @RequestPart("meta") @Valid JSecureRequest<JSecureUploadDto<Map<String, Object>, JSecureUploadFileDto>> meta,
+                @RequestPart("meta") @Valid JSecureRequest<JSecureUploadDto<Map<String, Object>, JSecureUploadFileDetailDto>> meta,
                 @RequestPart(value = "files", required = false) List<MultipartFile> files) {
-            int declared = meta.getTarget().getFiles() == null ? 0 : meta.getTarget().getFiles().size();
+            int declared = meta.getTarget().getFileDetails() == null ? 0 : meta.getTarget().getFileDetails().size();
             int bound = files == null ? 0 : files.size();
             return JSecureResponse.ok("accepted:" + declared + "/" + bound);
         }
@@ -453,7 +453,7 @@ class JSecureClientEdgeTest {
         @JSecureApi(transType = TRANS_TYPE)
         @PostMapping("/secure/upload-biz-fail")
         public JSecureResponse<String> uploadBizFail(
-                @RequestPart("meta") @Valid JSecureRequest<JSecureUploadDto<Map<String, Object>, JSecureUploadFileDto>> meta,
+                @RequestPart("meta") @Valid JSecureRequest<JSecureUploadDto<Map<String, Object>, JSecureUploadFileDetailDto>> meta,
                 @RequestPart(value = "files", required = false) List<MultipartFile> files) {
             return JSecureResponse.fail("业务处理失败：账户余额不足");
         }

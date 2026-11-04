@@ -21,7 +21,7 @@ import io.github.jevonsnotes.jevokit.api.config.JevokitApiConfiguration;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureRequest;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureResponse;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadDto;
-import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDto;
+import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDetailDto;
 import io.github.jevonsnotes.jevokit.api.dto.FetchMode;
 import io.github.jevonsnotes.jevokit.api.upload.JSecureUploadUtil;
 
@@ -189,7 +189,7 @@ class JSecureClientDefaultCarrierTest {
     }
 
     /** POJO 全链路用例的扩展文件条目（F 泛型，继承基类加个性字段 invoiceNo）。 */
-    public static class InvoiceFileDto extends JSecureUploadFileDto {
+    public static class InvoiceFileDto extends JSecureUploadFileDetailDto {
         private String invoiceNo;
 
         public String getInvoiceNo() { return invoiceNo; }
@@ -243,9 +243,9 @@ class JSecureClientDefaultCarrierTest {
         @JSecureApi(transType = TRANS_TYPE)
         @PostMapping("/secure/upload")
         public JSecureResponse<String> upload(
-                @RequestPart("meta") @Valid JSecureRequest<JSecureUploadDto<Map<String, Object>, JSecureUploadFileDto>> meta,
+                @RequestPart("meta") @Valid JSecureRequest<JSecureUploadDto<Map<String, Object>, JSecureUploadFileDetailDto>> meta,
                 @RequestPart(value = "files", required = false) List<MultipartFile> files) {
-            int declared = meta.getTarget().getFiles() == null ? 0 : meta.getTarget().getFiles().size();
+            int declared = meta.getTarget().getFileDetails() == null ? 0 : meta.getTarget().getFileDetails().size();
             int bound = files == null ? 0 : files.size();
             return JSecureResponse.ok("accepted:" + declared + "/" + bound);
         }
@@ -257,7 +257,7 @@ class JSecureClientDefaultCarrierTest {
         @JSecureApi(transType = TRANS_TYPE)
         @PostMapping("/secure/upload-echo")
         public JSecureResponse<Map<String, String>> uploadEcho(
-                @RequestPart("meta") @Valid JSecureRequest<JSecureUploadDto<Map<String, Object>, JSecureUploadFileDto>> meta,
+                @RequestPart("meta") @Valid JSecureRequest<JSecureUploadDto<Map<String, Object>, JSecureUploadFileDetailDto>> meta,
                 @RequestPart(value = "files", required = false) List<MultipartFile> files) throws IOException {
             Map<String, String> echo = new LinkedHashMap<>();
             if (files != null) {
@@ -283,7 +283,7 @@ class JSecureClientDefaultCarrierTest {
             vo.setOrderNo(upload.getBusinessData().getOrderNo());          // B 解析
             vo.setAmount(upload.getBusinessData().getAmount());
             vo.setFileCount(files == null ? 0 : files.size());
-            vo.setInvoiceNos(upload.getFiles().stream()
+            vo.setInvoiceNos(upload.getFileDetails().stream()
                     .map(InvoiceFileDto::getInvoiceNo)                      // F 扩展字段解析
                     .filter(java.util.Objects::nonNull)
                     .collect(java.util.stream.Collectors.toList()));

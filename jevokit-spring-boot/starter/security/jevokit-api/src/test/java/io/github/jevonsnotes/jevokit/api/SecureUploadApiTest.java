@@ -29,7 +29,7 @@ import io.github.jevonsnotes.jevokit.api.config.JevokitApiClientProperties;
 import io.github.jevonsnotes.jevokit.api.config.JevokitApiProperties;
 import io.github.jevonsnotes.jevokit.api.dto.FetchMode;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadDto;
-import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDto;
+import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDetailDto;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadRequest;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureRequest;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureResponse;
@@ -142,7 +142,7 @@ class SecureUploadApiTest {
     @DisplayName("digest 篡改必拒：申报摘要与文件实际内容不符，code=999")
     void tamperedDigestRejected() throws Exception {
         byte[] content = "file-1-content".getBytes(StandardCharsets.UTF_8);
-        JSecureUploadFileDto lying = pushEntry("file-1", "invoice", "invoice.pdf", "pdf", (long) content.length,
+        JSecureUploadFileDetailDto lying = pushEntry("file-1", "invoice", "invoice.pdf", "pdf", (long) content.length,
                 "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef0", "sha256");
         JSecureUploadRequest request = buildRequest(builder -> builder.entry(lying, content));
         perform(request)
@@ -161,16 +161,182 @@ class SecureUploadApiTest {
         perform(request).andExpect(MockMvcResultMatchers.jsonPath("$.code").value("0"));
     }
 
+    // ------------------------------------------------------------------
+    // 加密条目（add(..., true)：SM4-CBC 内部加密，digest 按明文，服务端无感解密）
+    // ------------------------------------------------------------------
+
     @Test
-    @DisplayName("digestAlg 非法必拒：申报 md5 算法，code=999 仅支持 sha256/sm3")
-    void illegalDigestAlgRejected() throws Exception {
+    @DisplayName("加密正向：明文上传内部加密，part 为密文、digest 为明文摘要；姿势一端点无感解密回读一致")
+    void encryptedPushRoundTrip() throws Exception {
+        byte[] plain = "机密发票内容-加密往返-ENC-001".getBytes(StandardCharsets.UTF_8);
+        JSecureUploadRequest request = buildRequest(builder -> builder
+                .add(plain, "file-enc-1", "invoice", "发票.pdf", true));
+        // 客户端产物断言：part 字节是密文（不等于明文），条目 digest 是明文摘要、size 是密文长度
+        byte[] wireBytes = request.getFiles().get(0).getContent();
+        org.assertj.core.api.Assertions.assertThat(wireBytes).isNotEqualTo(plain);
+        org.assertj.core.api.Assertions.assertThat(request.getFiles().get(0).getContent().length)
+                .isGreaterThan(plain.length);   // IV 16B + padding
+        // 服务端：姿势一端点（单 meta 参数）无感解密回读明文——code=0 即证明解密+明文摘要复核全过
+        MockMultipartHttpServletRequestBuilder plainBuilder = multipartSkeleton("/secure/upload-plain", request);
+            request.getFiles().forEach(file -> plainBuilder.file(filePart(file.getContent(), file.getFileId())));
+            mockMvc.perform(plainBuilder)
+                .andExpect(MockMvcResultMatchers.jsonPath("$.code").value("0"));
+    }
+
+    @Test
+    @DisplayName("密文篡改必拒：加密条目 part 字节改一位，解密后摘要必失配，code=999")
+    void tamperedCipherRejected() throws Exception {
+        byte[] plain = "机密发票内容-加密篡改-ENC-002".getBytes(StandardCharsets.UTF_8);
+        JSecureUploadRequest request = buildRequest(builder -> builder
+                .add(plain, "file-enc-2", "invoice", "发票.pdf", true));
+        byte[] cipher = request.getFiles().get(0).getContent();
+        cipher[cipher.length - 1] ^= 0x01;   // 翻转最后一个密文字节
+        MockMultipartHttpServletRequestBuilder builder = multipartSkeleton(request);
+        builder.file(filePart(cipher, "file-enc-2"));
+        mockMvc.perform(builder)
+                .andExpect(MockMvcResultMatchers.jsonPath("$.code").value("999"));
+    }
+
+    @Test
+    @DisplayName("digest 开关关闭：加密条目仍无感解密（业务依赖 plainContent），摘要复核豁免")
+    void encryptedStillDecryptedWhenDigestVerifyOff() throws Exception {
+        boolean original = client().isUploadDigestVerify();
+        try {
+            client().setUploadDigestVerify(false);
+            byte[] plain = "开关关也解密-ENC-003".getBytes(StandardCharsets.UTF_8);
+            JSecureUploadRequest request = buildRequest(builder -> builder
+                    .add(plain, "file-enc-3", "invoice", "发票.pdf", true));
+            MockMultipartHttpServletRequestBuilder plainBuilder = multipartSkeleton("/secure/upload-plain", request);
+            request.getFiles().forEach(file -> plainBuilder.file(filePart(file.getContent(), file.getFileId())));
+            mockMvc.perform(plainBuilder)
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.code").value("0"));
+        } finally {
+            client().setUploadDigestVerify(original);
+        }
+    }
+
+    @Test
+    @DisplayName("加密条目仅限 push：pull/refer 条目标志 encrypted 必拒，code=999")
+    void encryptedPullRejected() throws Exception {
+        JSecureUploadFileDetailDto entry = new JSecureUploadFileDetailDto();
+        entry.setFileId("file-enc-pull");
+        entry.setDigest("deadbeef");
+        entry.setDigestAlg("sha256");
+        entry.setEncrypted(true);
+        entry.setFetchMode(FetchMode.pull);
+        entry.setUrl("http://127.0.0.1:18080/whatever.bin");
+        JSecureUploadRequest request = buildRequest(builder -> builder.entry(entry, null));
+        perform(request)
+                .andExpect(MockMvcResultMatchers.jsonPath("$.code").value("999"))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.message",
+                        Matchers.containsString("仅支持 push")));
+    }
+
+    @Test
+    @DisplayName("条目数超上限必拒：upload-max-file-count=1 时两文件条目，code=999（0 或负数不限制）")
+    void fileCountOverLimitRejected() throws Exception {
+        int original = client().getUploadMaxFileCount();
+        try {
+            client().setUploadMaxFileCount(1);
+            JSecureUploadRequest request = standardPushRequest();   // 双文件（file-1 + file-2）
+            perform(request)
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.code").value("999"))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.message",
+                            Matchers.containsString("条目数超上限")));
+            client().setUploadMaxFileCount(0);                      // 0 = 不限制
+            perform(standardPushRequest())
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.code").value("0"));
+        } finally {
+            client().setUploadMaxFileCount(original);
+        }
+    }
+
+    @Test
+    @DisplayName("digestAlg=md5 正向：MD5 摘要路径全管线通过，code=0（协议全集 sha256/sm3/md5）")
+    void md5DigestAccepted() throws Exception {
         byte[] content = "md5-content".getBytes(StandardCharsets.UTF_8);
         JSecureUploadRequest request = buildRequest(builder -> builder.entry(
                 pushEntry("file-md5", "invoice", "发票.pdf", "pdf", (long) content.length,
-                        "36524049a2b16e5f5c296a6cf16eb3ea", "md5"), content));
-        perform(request)
-                .andExpect(MockMvcResultMatchers.jsonPath("$.code").value("999"))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.message", Matchers.containsString("不支持的摘要算法")));
+                        "86e3504191d98216bcad8eaf14093d98", "md5"), content));
+        perform(request).andExpect(MockMvcResultMatchers.jsonPath("$.code").value("0"));
+    }
+
+    @Test
+    @DisplayName("digestAlg 范围外必拒：终端限定 [sm3] 后 sha256 条目被拒，code=999 提示带允许清单")
+    void digestAlgOutOfTerminalScopeRejected() throws Exception {
+        java.util.List<String> original = client().getUploadDigestAlgorithms();
+        try {
+            client().setUploadDigestAlgorithms(java.util.List.of("sm3"));
+            byte[] content = "sm3-only".getBytes(StandardCharsets.UTF_8);
+            JSecureUploadRequest request = buildRequest(builder -> builder.entry(
+                    pushEntry("file-scope", "invoice", "发票.pdf", "pdf", (long) content.length,
+                            io.github.jevonsnotes.jevokit.api.upload.JSecureUploadUtil.digestHex(content, "sha256"), "sha256"),
+                    content));
+            perform(request)
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.code").value("999"))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.message",
+                            Matchers.allOf(Matchers.containsString("摘要算法不在允许范围"),
+                                    Matchers.containsString("sm3"))));
+        } finally {
+            client().setUploadDigestAlgorithms(original);
+        }
+    }
+
+    @Test
+    @DisplayName("摘要校验开关关闭：upload-digest-verify=false 时错摘要/缺摘要均受理")
+    void digestVerifyDisabledSkipsDigestCheck() throws Exception {
+        boolean original = client().isUploadDigestVerify();
+        try {
+            client().setUploadDigestVerify(false);
+            byte[] content = "no-digest-check".getBytes(StandardCharsets.UTF_8);
+            // 错误摘要 + 缺失摘要两种形态都应受理（开关关闭即跳过比对与必填；size 校验独立开关不受影响）
+            JSecureUploadRequest lying = buildRequest(builder -> builder.entry(
+                    pushEntry("file-lying", "invoice", "发票.pdf", "pdf", (long) content.length,
+                            "deadbeef", "sha256"), content));
+            perform(lying).andExpect(MockMvcResultMatchers.jsonPath("$.code").value("0"));
+            JSecureUploadRequest noDigest = buildRequest(builder -> builder.entry(
+                    pushEntry("file-none", "invoice", "发票.pdf", "pdf", (long) content.length, null, null),
+                    content));
+            perform(noDigest).andExpect(MockMvcResultMatchers.jsonPath("$.code").value("0"));
+        } finally {
+            client().setUploadDigestVerify(original);
+        }
+    }
+
+    @Test
+    @DisplayName("大小校验开关关闭：缺 size/声明不符均受理；upload-max-size 上限恒拒（不受开关豁免）")
+    void sizeVerifyDisabledSkipsSizeCheck() throws Exception {
+        boolean original = client().isUploadSizeVerify();
+        try {
+            client().setUploadSizeVerify(false);
+            byte[] content = "no-size-check".getBytes(StandardCharsets.UTF_8);
+            // 缺 size（push 必填豁免；digest 仍按独立开关正确声明，防两开关互扰）+ 声明不符（比对豁免）受理；
+            String goodDigest = io.github.jevonsnotes.jevokit.api.upload.JSecureUploadUtil.digestHex(content, "sha256");
+            JSecureUploadRequest noSize = buildRequest(builder -> builder.entry(
+                    pushEntry("file-nosize", "invoice", "发票.pdf", "pdf", null, goodDigest, "sha256"), content));
+            perform(noSize).andExpect(MockMvcResultMatchers.jsonPath("$.code").value("0"));
+            JSecureUploadRequest wrongSize = buildRequest(builder -> builder.entry(
+                    pushEntry("file-wrongsize", "invoice", "发票.pdf", "pdf", (long) content.length + 1,
+                            goodDigest, "sha256"), content));
+            perform(wrongSize).andExpect(MockMvcResultMatchers.jsonPath("$.code").value("0"));
+            JSecureUploadRequest overLimit = buildRequest(builder -> builder.entry(
+                    pushEntry("file-overlimit", "invoice", "发票.pdf", "pdf", Long.MAX_VALUE,
+                            goodDigest, "sha256"), content));
+            // upload-max-size 上限不受开关豁免：声明超限仍拒（终端资源保护，配多少就是多少）
+            perform(overLimit)
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.code").value("999"))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.message",
+                            Matchers.containsString("超出大小上限")));
+            // 摘要校验独立开关：size 关闭但摘要开关开启，错摘要仍拒
+            JSecureUploadRequest lyingDigest = buildRequest(builder -> builder.entry(
+                    pushEntry("file-lying2", "invoice", "发票.pdf", "pdf", null, "deadbeef", "sha256"), content));
+            perform(lyingDigest)
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.code").value("999"))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.message",
+                            Matchers.containsString("摘要校验失败")));
+        } finally {
+            client().setUploadSizeVerify(original);
+        }
     }
 
     // ------------------------------------------------------------------
@@ -249,7 +415,7 @@ class SecureUploadApiTest {
     // ------------------------------------------------------------------
 
     @Test
-    @DisplayName("pull 未配白名单必拒：终端无 fetch-url-whitelist 而出现 pull 条目，code=999 fail-fast")
+    @DisplayName("pull 未配白名单必拒：终端无 upload-fetch-url-whitelist 而出现 pull 条目，code=999 fail-fast")
     void pullWithoutWhitelistRejected() throws Exception {
         JSecureUploadRequest request = buildRequest(builder -> builder
                 .pull("remote-1", "https://files.partner.com/a.pdf", 3L, null, "invoice", "pdf"));
@@ -262,14 +428,14 @@ class SecureUploadApiTest {
     @DisplayName("pull 域名外必拒：白名单 partner.com，申报 evil.com，code=999")
     void pullOutOfWhitelistRejected() throws Exception {
         try {
-            client().getFetchUrlWhitelist().add("*.partner.com");
+            client().getUploadFetchUrlWhitelist().add("*.partner.com");
             JSecureUploadRequest request = buildRequest(builder -> builder
                     .pull("remote-1", "https://evil.com/a.pdf", 3L, null, "invoice", "pdf"));
             perform(request)
                     .andExpect(MockMvcResultMatchers.jsonPath("$.code").value("999"))
                     .andExpect(MockMvcResultMatchers.jsonPath("$.message", Matchers.containsString("不在白名单")));
         } finally {
-            client().getFetchUrlWhitelist().clear();
+            client().getUploadFetchUrlWhitelist().clear();
         }
     }
 
@@ -277,12 +443,12 @@ class SecureUploadApiTest {
     @DisplayName("pull 域名内放行：通配 *.partner.com 命中子域，元数据层通过 code=0（下载时机属业务决策）")
     void pullWithinWhitelistAccepted() throws Exception {
         try {
-            client().getFetchUrlWhitelist().add("*.partner.com");
+            client().getUploadFetchUrlWhitelist().add("*.partner.com");
             JSecureUploadRequest request = buildRequest(builder -> builder
                     .pull("remote-1", "https://cdn.partner.com/invoice/a.pdf?sign=abc", 3L, null, "invoice", "pdf"));
             perform(request).andExpect(MockMvcResultMatchers.jsonPath("$.code").value("0"));
         } finally {
-            client().getFetchUrlWhitelist().clear();
+            client().getUploadFetchUrlWhitelist().clear();
         }
     }
 
@@ -324,9 +490,14 @@ class SecureUploadApiTest {
 
     /** 全量正向组装：meta part + 协议头 + 全部文件 part。 */
     private MockMultipartHttpServletRequestBuilder multipartSkeleton(JSecureUploadRequest request) {
+        return multipartSkeleton(URL, request);
+    }
+
+    /** 同上，可指定端点（如姿势一 /secure/upload-plain）。 */
+    private MockMultipartHttpServletRequestBuilder multipartSkeleton(String url, JSecureUploadRequest request) {
         MockPart metaPart = new MockPart("meta", null,
                 request.getMetaJson().getBytes(StandardCharsets.UTF_8), MediaType.APPLICATION_JSON);
-        MockMultipartHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart(URL).part(metaPart);
+        MockMultipartHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart(url).part(metaPart);
         request.getHeaders().forEach(builder::header);
         return builder;
     }
@@ -349,9 +520,9 @@ class SecureUploadApiTest {
     }
 
     /** 手工构造 push 条目（防线用例需要"谎报"字段——digest/算法/格式等）。 */
-    private JSecureUploadFileDto pushEntry(String fileId, String fileType, String fileName, String format,
+    private JSecureUploadFileDetailDto pushEntry(String fileId, String fileType, String fileName, String format,
                                            Long size, String digest, String digestAlg) {
-        JSecureUploadFileDto entry = new JSecureUploadFileDto();
+        JSecureUploadFileDetailDto entry = new JSecureUploadFileDetailDto();
         entry.setFileId(fileId);
         entry.setFileType(fileType);
         entry.setFileName(fileName);
@@ -381,18 +552,28 @@ class SecureUploadApiTest {
         @JSecureApi
         @PostMapping("/secure/upload")
         public JSecureResponse<String> upload(
-                @RequestPart("meta") @Valid JSecureRequest<JSecureUploadDto<UploadOrderBiz, JSecureUploadFileDto>> meta,
+                @RequestPart("meta") @Valid JSecureRequest<JSecureUploadDto<UploadOrderBiz, JSecureUploadFileDetailDto>> meta,
                 @RequestPart(value = "files", required = false) List<MultipartFile> files) {
-            int declared = meta.getTarget().getFiles() == null ? 0 : meta.getTarget().getFiles().size();
+            int declared = meta.getTarget().getFileDetails() == null ? 0 : meta.getTarget().getFileDetails().size();
             int bound = files == null ? 0 : files.size();
             return JSecureResponse.ok("accepted:" + declared + "/" + bound);
+        }
+
+        /** 姿势一端点：单 meta 参数（无 files 绑定），加密条目经无感解密从 plainContent 回读明文。 */
+        @JSecureApi
+        @PostMapping("/secure/upload-plain")
+        public JSecureResponse<String> uploadPlain(
+                @RequestPart("meta") @Valid JSecureRequest<JSecureUploadDto<UploadOrderBiz, JSecureUploadFileDetailDto>> meta) {
+            JSecureUploadFileDetailDto first = meta.getTarget().getFileDetails().get(0);
+            return JSecureResponse.ok(first.getFileId() + ":" + (first.getPlainContent() == null
+                    ? "null" : new String(first.getPlainContent(), StandardCharsets.UTF_8)));
         }
 
         /** 装配错误形态对照端点：上传 DTO 走 @RequestBody（非 multipart），服务端必须 fail-fast 拒绝。 */
         @JSecureApi
         @PostMapping("/secure/upload-body")
         public JSecureResponse<String> uploadBody(
-                @RequestBody @Valid JSecureRequest<JSecureUploadDto<UploadOrderBiz, JSecureUploadFileDto>> meta) {
+                @RequestBody @Valid JSecureRequest<JSecureUploadDto<UploadOrderBiz, JSecureUploadFileDetailDto>> meta) {
             return JSecureResponse.ok("should-never-reach");
         }
     }

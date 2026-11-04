@@ -8,7 +8,7 @@ import io.github.jevonsnotes.jevokit.api.config.JevokitApiClientProperties;
 import io.github.jevonsnotes.jevokit.api.config.JevokitApiProperties;
 import io.github.jevonsnotes.jevokit.api.dto.FetchMode;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadDto;
-import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDto;
+import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDetailDto;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadRequest;
 import io.github.jevonsnotes.jevokit.api.exception.JSecureApiException;
 import io.github.jevonsnotes.jevokit.api.util.JSecureApiUtil;
@@ -64,7 +64,7 @@ class UploadChannelTest {
         assertThat(request.getFiles().get(0).partName()).isEqualTo("files");
         assertThat(request.getFiles().get(0).getContent()).isEqualTo(content);
 
-        JSecureUploadFileDto entry = parseEntries(request).get(0);
+        JSecureUploadFileDetailDto entry = parseEntries(request).get(0);
         assertThat(entry.getSize()).isEqualTo((long) content.length);
         assertThat(entry.getFormat()).isEqualTo("pdf");
         assertThat(entry.getDigestAlg()).isEqualTo("sha256");
@@ -107,13 +107,13 @@ class UploadChannelTest {
         assertThat(SecurityUtil.sm2Base64Verify(view, envelope.getString("signature"), client.getPublicKey()))
                 .as("SM2 体签名应通过").isTrue();
 
-        JSecureUploadDto<Object, JSecureUploadFileDto> upload =
+        JSecureUploadDto<Object, JSecureUploadFileDetailDto> upload =
                 JSONObject.parseObject(view, JSecureUploadDto.class);
         assertThat((Map<String, Object>) upload.getBusinessData()).containsEntry("orderNo", "SO-1");
-        assertThat(upload.getFiles()).hasSize(3);
-        assertThat(upload.getFiles().get(0).getFetchMode()).isEqualTo(FetchMode.push);
-        assertThat(upload.getFiles().get(1).getUrl()).isEqualTo("https://cdn.partner.com/a.pdf");
-        assertThat(upload.getFiles().get(2).getFileId()).isEqualTo("archived-1");
+        assertThat(upload.getFileDetails()).hasSize(3);
+        assertThat(upload.getFileDetails().get(0).getFetchMode()).isEqualTo(FetchMode.push);
+        assertThat(upload.getFileDetails().get(1).getUrl()).isEqualTo("https://cdn.partner.com/a.pdf");
+        assertThat(upload.getFileDetails().get(2).getFileId()).isEqualTo("archived-1");
     }
 
     @Test
@@ -146,9 +146,9 @@ class UploadChannelTest {
     }
 
     /** 解出构建产物里的文件清单（服务端配方解密）。 */
-    private List<JSecureUploadFileDto> parseEntries(JSecureUploadRequest request) {
+    private List<JSecureUploadFileDetailDto> parseEntries(JSecureUploadRequest request) {
         JSONObject envelope = JSONObject.parseObject(request.getMetaJson());
         String view = SecurityUtil.sm4cbcDecrypt(envelope.getString("data"), client.getSecretKeySm4());
-        return JSONObject.parseObject(view, JSecureUploadDto.class).getFiles();
+        return JSONObject.parseObject(view, JSecureUploadDto.class).getFileDetails();
     }
 }

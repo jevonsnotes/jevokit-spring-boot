@@ -73,9 +73,12 @@ import java.util.UUID;
  *   <li>响应信封：{"transNo","transType","code","message","signature","data"}，code=0 成功；
  *       data 解密得业务明文 JSON（view），对其验 SM2 签名。</li>
  *   <li>上传通道：multipart/form-data，meta part（name=meta、Content-Type=application/json、
- *       不带 filename）装上述信封（data 为 {"businessData":…,"files":[…]} 的密文），
- *       文件 part（name=files、filename=fileId、application/octet-stream）明文传输，
+ *       不带 filename）装上述信封（data 为 {"businessData":…,"fileDetails":[…]} 的密文），
+ *       文件 part（name=files、filename=fileId、application/octet-stream）传输，
  *       摘要清单按 sha256（hex 小写）声明，协议头挂根请求。</li>
+ *   <li>加密条目（可选，UploadFile 第 6 参 encrypted=true）：文件以终端 SM4 密钥 SM4-CBC 加密
+ *       （随机 16 字节 IV 前缀，字节级），<b>digest 按加密前明文计算、size 为密文字节数</b>、
+ *       条目置 encrypted=true——服务端校验链无感解密并按明文复核摘要（自实现最易抄错的口径）。</li>
  * </ul>
  *
  * <p>字符集口径（重要）：SM2 签名/验签原文取字节的口径由服务端 {@code jevokit.crypto.charset}
@@ -158,6 +161,31 @@ public class JSecureProtocolDemo {
             return Base64.getEncoder().encodeToString(out);
         } catch (Exception e) {
             throw new IllegalStateException("SM4 加密失败", e);
+        }
+    }
+
+    /**
+     * SM4-CBC 文件加密（场景六，字节级二进制安全）：随机 16 字节 IV 前置 + PKCS#7 填充，
+     * 产物为原始字节（不做 Base64，即 wire 上文件 part 的内容）。
+     * 与协议 data 字段的 {@link #sm4CbcEncrypt(String)} 同配方，差异仅在入参/出参为字节
+     * （String 版按 UTF-8 编解码，任意二进制字节会损坏）。
+     *
+     * @param plain 明文字节（文件内容）
+     * @return 密文字节 = [IV(16B) + SM4-CBC 密文]
+     */
+    public byte[] sm4FileEncrypt(byte[] plain) {
+        try {
+            byte[] iv = new byte[16];
+            RANDOM.nextBytes(iv);
+            Cipher cipher = Cipher.getInstance("SM4/CBC/PKCS5Padding", BouncyCastleProvider.PROVIDER_NAME);
+            cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(sm4Key, "SM4"), new IvParameterSpec(iv));
+            byte[] encrypted = cipher.doFinal(plain);
+            byte[] out = new byte[iv.length + encrypted.length];
+            System.arraycopy(iv, 0, out, 0, iv.length);
+            System.arraycopy(encrypted, 0, out, iv.length, encrypted.length);
+            return out;
+        } catch (Exception e) {
+            throw new IllegalStateException("SM4 文件加密失败", e);
         }
     }
 
@@ -300,15 +328,27 @@ public class JSecureProtocolDemo {
         public final String fileName;
         /** 文件格式（小写扩展名，如 pdf；无扩展名传空串，服务端配了白名单则会被拒）。 */
         public final String format;
-        /** 文件内容字节。 */
+        /** 文件内容字节（encrypted=true 时为<b>明文</b>，加密在组包时进行）。 */
         public final byte[] bytes;
 
+        /**
+         * 是否加密上传（场景六）：true 时组包内部以终端 SM4 密钥加密，digest 按<b>加密前明文</b>
+         * 计算、size 为密文字节数、条目置 encrypted=true（服务端校验链无感解密）。
+         */
+        public final boolean encrypted;
+
         public UploadFile(String fileId, String fileType, String fileName, String format, byte[] bytes) {
+            this(fileId, fileType, fileName, format, bytes, false);
+        }
+
+        public UploadFile(String fileId, String fileType, String fileName, String format, byte[] bytes,
+                          boolean encrypted) {
             this.fileId = fileId;
             this.fileType = fileType;
             this.fileName = fileName;
             this.format = format;
             this.bytes = bytes;
+            this.encrypted = encrypted;
         }
     }
 
@@ -328,21 +368,26 @@ public class JSecureProtocolDemo {
                               List<UploadFile> files) {
         // 1. 文件摘要清单（sha256 hex 小写）+ 业务体组装（与服务端 JSecureUploadDto 字段一致）
         List<Object> entries = new ArrayList<>(files.size());
+        Map<String, byte[]> partBytes = new java.util.LinkedHashMap<>();
         for (UploadFile file : files) {
+            // 加密条目（场景六）：密文进 part，digest 按明文，size 按密文（wire 实际）
+            byte[] wireBytes = file.encrypted ? sm4FileEncrypt(file.bytes) : file.bytes;
+            partBytes.put(file.fileId, wireBytes);
             JSONObject entry = new JSONObject();
             entry.put("fileId", file.fileId);
             entry.put("fileType", file.fileType);
             entry.put("fileName", file.fileName);
             entry.put("format", file.format);
-            entry.put("size", (long) file.bytes.length);
-            entry.put("digest", sha256Hex(file.bytes));
+            entry.put("size", (long) wireBytes.length);
+            entry.put("digest", sha256Hex(file.bytes));   // 恒按明文（未加密条目明文即 part 字节）
             entry.put("digestAlg", "sha256");
+            entry.put("encrypted", file.encrypted);
             entry.put("fetchMode", "push");
             entries.add(entry);
         }
         JSONObject upload = new JSONObject();
         upload.put("businessData", JSON.parse(businessJson));
-        upload.put("files", entries);
+        upload.put("fileDetails", entries);
         String uploadJson = upload.toJSONString();
         // 2. 信封签名加密（与 JSON 通道同配方），作为 meta part 内容
         String metaJson = buildEnvelope(transNo, transType, sm2Sign(uploadJson), sm4CbcEncrypt(uploadJson));
@@ -354,8 +399,8 @@ public class JSecureProtocolDemo {
             writePart(body, boundary, "meta", null, "application/json",
                     metaJson.getBytes(StandardCharsets.UTF_8));
             for (UploadFile file : files) {
-                // 文件 part：part 名恒为 files，filename = fileId（服务端按它对齐摘要清单）
-                writePart(body, boundary, "files", file.fileId, "application/octet-stream", file.bytes);
+                // 文件 part：part 名恒为 files，filename = fileId（服务端按它对齐摘要清单）；加密条目写密文
+                writePart(body, boundary, "files", file.fileId, "application/octet-stream", partBytes.get(file.fileId));
             }
             body.write(("--" + boundary + "--\r\n").getBytes(StandardCharsets.UTF_8));
             HttpRequest.Builder request = HttpRequest.newBuilder(URI.create(url))
@@ -469,18 +514,18 @@ public class JSecureProtocolDemo {
         // 终端配置：与服务端 jevokit.api.client[] 的登记值成对（示例为 sample 演示终端 client-demo-1）
         JSecureProtocolDemo demo = new JSecureProtocolDemo(
                 "client-demo-1",
-                "demo-sm4-secret",
-                "demo-sm4-secret",
+                "demo-sm4-secret",        // 头签名盐
+                "DemoSm4Key123456",       // SM4 密钥（sample local 覆盖值，与服务端配置一致）
                 "MIGTAgEAMBMGByqGSM49AgEGCCqBHM9VAYItBHkwdwIBAQQgk5B6bcSXNwvtfd6nufsDHEPOu8N2hHKJMBW5blZP2eSgCgYIKoEcz1UBgi2hRANCAASxO58/zvEseRlMZtRlojzn7m4jAaZPTDSOalPCSk3nnGW0GmEu2ZhfWDNH+Nq8wA6BLodb2gwI9NF+F1Mp3p9R",
                 "MFkwEwYHKoZIzj0CAQYIKoEcz1UBgi0DQgAEsTufP87xLHkZTGbUZaI85+5uIwGmT0w0jmpTwkpN55xltBphLtmYX1gzR/javMAOgS6HW9oMCPTRfhdTKd6fUQ==");
 
         // JSON 通道：业务体 {"name":...}，交易类型须在服务端 @JSecureApi 限定内（sample 为 T030421 或空）
-        String view = demo.postJson("http://127.0.0.1:8080/secure/test",
+        String view = demo.postJson("http://127.0.0.1:18080/secure/test",
                 "{\"name\":\"self-implement\"}", "t-selfimpl-001", "T030421");
         System.out.println("JSON 通道响应明文：" + view);
 
         // 上传通道：两个 push 文件（fileId 仅字母/数字/._-，fileName 可为中文）
-        String uploadView = demo.uploadFiles("http://127.0.0.1:8080/secure/upload",
+        String uploadView = demo.uploadFiles("http://127.0.0.1:18080/secure/upload",
                 "{\"orderNo\":\"SO-SELFIMPL-001\"}", "t-selfimpl-002", "T030422",
                 List.of(
                         new UploadFile("inv-1", "invoice", "invoice.pdf", "pdf",
@@ -488,5 +533,12 @@ public class JSecureProtocolDemo {
                         new UploadFile("id-1", "id_card", "idcard.jpg", "jpg",
                                 "id-card-bytes".getBytes(StandardCharsets.UTF_8))));
         System.out.println("上传通道响应明文：" + uploadView);
+
+        // 加密上传（场景六）：传明文 + 第 6 参 true，组包内部 SM4-CBC 加密（digest 按明文/size 按密文）
+        String encView = demo.uploadFiles("http://127.0.0.1:18080/secure/upload",
+                "{\"orderNo\":\"SO-SELFIMPL-002\"}", "t-selfimpl-003", "T030422",
+                List.of(new UploadFile("enc-1", "invoice", "secret.pdf", "pdf",
+                        "机密文件内容-自实现加密".getBytes(StandardCharsets.UTF_8), true)));
+        System.out.println("加密上传响应明文：" + encView);
     }
 }

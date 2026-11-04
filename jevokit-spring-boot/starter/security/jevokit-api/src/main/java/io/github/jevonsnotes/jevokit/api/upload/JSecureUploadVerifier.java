@@ -13,7 +13,7 @@ import org.springframework.web.util.WebUtils;
 import io.github.jevonsnotes.jevokit.api.config.JevokitApiClientProperties;
 import io.github.jevonsnotes.jevokit.api.dto.FetchMode;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadDto;
-import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDto;
+import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDetailDto;
 import io.github.jevonsnotes.jevokit.api.exception.JSecureApiException;
 import io.github.jevonsnotes.jevokit.api.util.JSecureApiUtil;
 
@@ -33,7 +33,7 @@ import java.util.Set;
  * <ol>
  *   <li><b>元数据层</b>（不碰文件字节）：fileId 唯一非空且字符集白名单
  *       （仅允许字母、数字与 {@code . _ -}，长度上限 {@value JSecureUploadUtil#FILE_ID_MAX_LENGTH}，
- *       防绕过客户端校验的 filename 走私/CRLF 头注入）、digestAlg 合法（sha256/sm3）、
+ *       防绕过客户端校验的 filename 走私/CRLF 头注入）、digestAlg 合法（全集 sha256/sm3/md5 且在终端 upload-digest-algorithms 范围内，refer 不查）、
  *       format 终端白名单（fail-closed；未配置白名单的终端不校验 format，无扩展名文件可 push）、
  *       size 终端上限、push 必填完整（fileId/fileType/fileName/size/digest）、
  *       push 条目数 = 文件 part 数（多余/缺少双向都拒）、meta part 不重复（同名 &gt;1 即拒，
@@ -68,9 +68,14 @@ public class JSecureUploadVerifier {
      */
     public void verifyUpload(JSecureUploadDto<?, ?> upload, JevokitApiClientProperties client) {
         Assert.notNull(upload, () -> new JSecureApiException("上传数据不能为空"));
-        List<? extends JSecureUploadFileDto> files =
-                upload.getFiles() == null ? List.of() : upload.getFiles();
+        List<? extends JSecureUploadFileDetailDto> files =
+                upload.getFileDetails() == null ? List.of() : upload.getFileDetails();
 
+        // 条目数上限（聚合防线：单文件合法不等于 N 个合法；0 或负数 = 不限制）
+        if (client.getUploadMaxFileCount() > 0 && files.size() > client.getUploadMaxFileCount()) {
+            throw new JSecureApiException(String.format("上传文件条目数超上限（%d > %d）",
+                    files.size(), client.getUploadMaxFileCount()));
+        }
         verifyMetadata(files, client);
 
         HttpServletRequest request = JSecureApiUtil.getCurrentRequest()
@@ -79,18 +84,18 @@ public class JSecureUploadVerifier {
                 "上传接口必须以 multipart 请求（meta 加密信封 + 文件 part），当前请求非 multipart"));
 
         verifyNoDuplicateMetaPart(request);
-        verifyPushContents(files, collectFileParts(request));
+        verifyPushContents(files, collectFileParts(request), client);
     }
 
     /**
      * 元数据层校验（不碰文件字节）。
      */
-    private void verifyMetadata(List<? extends JSecureUploadFileDto> files, JevokitApiClientProperties client) {
+    private void verifyMetadata(List<? extends JSecureUploadFileDetailDto> files, JevokitApiClientProperties client) {
         long uploadMaxSize = client.getUploadMaxSize();
         Map<String, List<String>> formatWhitelist = client.getUploadFormatWhitelist();
         boolean formatWhitelistConfigured = formatWhitelist != null && !formatWhitelist.isEmpty();
         Set<String> seenFileIds = new HashSet<>();
-        for (JSecureUploadFileDto file : files) {
+        for (JSecureUploadFileDetailDto file : files) {
             Assert.notNull(file, () -> new JSecureApiException("文件条目不能为空"));
             String fileId = file.getFileId();
             Assert.notBlank(fileId, () -> new JSecureApiException("文件标识 fileId 不能为空"));
@@ -101,8 +106,12 @@ public class JSecureUploadVerifier {
                     "文件标识 fileId 非法（仅允许" + JSecureUploadUtil.FILE_ID_ALLOWED_CHARS_DESC
                             + "，长度 1-" + JSecureUploadUtil.FILE_ID_MAX_LENGTH + "）："
                             + StrUtil.maxLength(fileId, 32)));
-            // digestAlg 合法性（空白归一 sha256）
-            JSecureUploadUtil.normalizeDigestAlg(file.getDigestAlg());
+            // digestAlg 合法性（空白归一 sha256）：终端配置了 upload-digest-algorithms 时按范围 fail-closed，
+            // 算法不在允许范围即拒（消息带允许清单）——两端算法口径对齐的协商防线。
+            // refer 不查（不涉及摘要计算/比对，文件在首次上传时已校验过，与 format 白名单对 refer 不查同口径）
+            if (!FetchMode.refer.equals(file.getFetchMode())) {
+                JSecureUploadUtil.normalizeDigestAlg(file.getDigestAlg(), client.getUploadDigestAlgorithms());
+            }
             // format 终端白名单（配置后 fail-closed：fileType 必须有映射且 format 在列表内）。
             // 适用范围：push 必查（format 必填——含 format 为空的情形，空串不可能命中列表即拒，
             // 无扩展名文件在配置了白名单的终端不可 push）；pull 声明了 fileType+format 才查（简式 pull 可省略）；
@@ -111,10 +120,13 @@ public class JSecureUploadVerifier {
             if (formatWhitelistConfigured && formatWhitelistApplies(file)) {
                 List<String> allowedFormats = formatWhitelist.get(StrUtil.trimToEmpty(file.getFileType()));
                 Assert.isTrue(allowedFormats != null && !allowedFormats.isEmpty(),
-                        () -> new JSecureApiException("文件类型未在上传白名单配置：" + file.getFileType()));
+                        () -> new JSecureApiException("文件类型未在上传白名单配置：" + StrUtil.maxLength(file.getFileType(), 32)));
                 Assert.isTrue(allowedFormats.contains(StrUtil.trimToEmpty(file.getFormat())),
-                        () -> new JSecureApiException("文件格式不在白名单：" + file.getFormat()));
+                        () -> new JSecureApiException("文件格式不在白名单：" + StrUtil.maxLength(file.getFormat(), 32)));
             }
+            // 加密条目仅支持 push（pull/refer 暂不支持自动解密，显式拒绝防静默误解）
+            Assert.isTrue(!file.isEncrypted() || FetchMode.push.equals(file.getFetchMode()),
+                    () -> new JSecureApiException("加密条目暂仅支持 push 模式：" + fileId));
             FetchMode fetchMode = file.getFetchMode();
             Assert.notNull(fetchMode, () -> new JSecureApiException("文件获取方式 fetchMode 不能为空：" + fileId));
             switch (fetchMode) {
@@ -123,18 +135,30 @@ public class JSecureUploadVerifier {
                     Assert.notBlank(file.getFileName(), () -> new JSecureApiException("push 文件缺少 fileName：" + fileId));
                     // format 不在此强制必填：配置了白名单的终端由上方白名单校验兜住（format 空必拒），
                     // 未配置白名单的终端放行（无扩展名文件可 push）
-                    Assert.notNull(file.getSize(), () -> new JSecureApiException("push 文件缺少 size：" + fileId));
-                    Assert.notBlank(file.getDigest(), () -> new JSecureApiException("push 文件缺少 digest：" + fileId));
-                    Assert.isTrue(file.getSize() >= 0, () -> new JSecureApiException("push 文件 size 非法：" + fileId));
-                    Assert.isTrue(file.getSize() <= uploadMaxSize, () -> new JSecureApiException(
-                            "文件超出大小上限（" + uploadMaxSize + " 字节）：" + fileId));
+                    // digest 必填仅在校验开关开启时要求（upload-digest-verify=false 时允许不声明摘要）
+                    if (client.isUploadDigestVerify()) {
+                        Assert.notBlank(file.getDigest(), () -> new JSecureApiException("push 文件缺少 digest：" + fileId));
+                    }
+                    // size 必填仅在校验开关开启时要求（upload-size-verify=false 时允许不声明 size）；
+                    // 声明合法性与 upload-max-size 上限恒检——上限是终端资源保护，不受开关豁免
+                    if (client.isUploadSizeVerify()) {
+                        Assert.notNull(file.getSize(), () -> new JSecureApiException("push 文件缺少 size：" + fileId));
+                    }
+                    if (file.getSize() != null) {
+                        Assert.isTrue(file.getSize() >= 0, () -> new JSecureApiException("push 文件 size 非法：" + fileId));
+                        Assert.isTrue(file.getSize() <= uploadMaxSize, () -> new JSecureApiException(
+                                "文件超出大小上限（" + uploadMaxSize + " 字节）：" + fileId));
+                    }
                 }
                 case pull -> {
                     Assert.notBlank(file.getUrl(), () -> new JSecureApiException("pull 文件缺少 url：" + fileId));
-                    Assert.isTrue(JSecureUploadUtil.isUrlAllowed(client.getFetchUrlWhitelist(), file.getUrl()),
+                    Assert.isTrue(JSecureUploadUtil.isUrlAllowed(client.getUploadFetchUrlWhitelist(), file.getUrl()),
                             () -> new JSecureApiException("pull 文件地址不在白名单：" + JSecureUploadLogMasker.maskUrl(file.getUrl())));
-                    Assert.isTrue(file.getSize() == null || (file.getSize() >= 0 && file.getSize() <= uploadMaxSize),
-                            () -> new JSecureApiException("pull 文件 size 非法或超出上限：" + fileId));
+                    // 声明合法性与上限恒检（同 push；声明可空，声明了就必须合法且不超上限）
+                    if (file.getSize() != null) {
+                        Assert.isTrue(file.getSize() >= 0 && file.getSize() <= uploadMaxSize,
+                                () -> new JSecureApiException("pull 文件 size 非法或超出上限：" + fileId));
+                    }
                 }
                 case refer -> {
                     JSecureUploadFileRefChecker checker = refCheckerProvider.getIfAvailable();
@@ -150,7 +174,7 @@ public class JSecureUploadVerifier {
     /**
      * 判定该条目是否适用 format 白名单：push 必查；pull 声明了 fileType+format 才查；refer 不查。
      */
-    private boolean formatWhitelistApplies(JSecureUploadFileDto file) {
+    private boolean formatWhitelistApplies(JSecureUploadFileDetailDto file) {
         if (FetchMode.refer.equals(file.getFetchMode())) {
             return false;
         }
@@ -161,10 +185,12 @@ public class JSecureUploadVerifier {
     }
 
     /**
-     * push 内容层校验：条目数与文件 part 双向对齐，按 filename=fileId 找 part，比 size、流式比摘要。
+     * push 内容层校验：条目数与文件 part 双向对齐，按 filename=fileId 找 part，
+     * 比 size（upload-size-verify=false 时跳过）、流式比摘要（upload-digest-verify=false 时跳过）。
      */
-    private void verifyPushContents(List<? extends JSecureUploadFileDto> files, List<UploadFilePart> fileParts) {
-        List<? extends JSecureUploadFileDto> pushEntries = files.stream()
+    private void verifyPushContents(List<? extends JSecureUploadFileDetailDto> files, List<UploadFilePart> fileParts,
+                                    JevokitApiClientProperties client) {
+        List<? extends JSecureUploadFileDetailDto> pushEntries = files.stream()
                 .filter(file -> FetchMode.push.equals(file.getFetchMode()))
                 .toList();
         Assert.isTrue(pushEntries.size() == fileParts.size(), () -> new JSecureApiException(String.format(
@@ -173,19 +199,58 @@ public class JSecureUploadVerifier {
         Map<String, UploadFilePart> partsByFileId = new LinkedHashMap<>();
         for (UploadFilePart part : fileParts) {
             Assert.isFalse(partsByFileId.containsKey(part.fileId()),
-                    () -> new JSecureApiException("文件 part 的 fileId 重复（wire filename）：" + part.fileId()));
+                    () -> new JSecureApiException("文件重复：" + part.fileId()));
             partsByFileId.put(part.fileId(), part);
         }
-        for (JSecureUploadFileDto entry : pushEntries) {
+        for (JSecureUploadFileDetailDto entry : pushEntries) {
             UploadFilePart part = partsByFileId.get(entry.getFileId());
-            Assert.notNull(part, () -> new JSecureApiException("缺少文件 part（fileId=%s，即 wire 上 filename 属性的期望值）".formatted(entry.getFileId())));
-            Assert.isTrue(part.size() == entry.getSize(), () -> new JSecureApiException(
-                    "文件大小与声明不符（fileId=%s，声明 %d，实际 %d）".formatted(entry.getFileId(), entry.getSize(), part.size())));
+            if (part == null) {
+                log.warn("缺少文件 part：fileId={}（multipart 文件 part 的 filename 应等于该 fileId——"
+                        + "常见成因：客户端换了文件但 meta 仍按旧文件生成，或自定义载体组包时 filename 未写 fileId）",
+                        entry.getFileId());
+                throw new JSecureApiException("缺少文件：" + entry.getFileId());
+            }
+            // 实际字节数上限恒检（开关关闭且未声明 size 时的兜底防线；上限不受开关豁免）
+            Assert.isTrue(part.size() <= client.getUploadMaxSize(), () -> new JSecureApiException(
+                    "文件超出大小上限（" + client.getUploadMaxSize() + " 字节）：" + entry.getFileId()));
+            if (client.isUploadSizeVerify()) {
+                Assert.isTrue(part.size() == entry.getSize(), () -> new JSecureApiException(
+                        "文件大小与声明不符（fileId=%s，声明 %d，实际 %d）".formatted(entry.getFileId(), entry.getSize(), part.size())));
+            }
+            // 加密条目：终端密钥解密（无感注入明文，digest-verify 开关不豁免解密本身——
+            // 业务要从条目拿明文，密文损坏即拒）；摘要按解密后明文复核（客户端约定按明文计算）
+            byte[] plainBytes = null;
+            byte[] digestSource;
+            if (entry.isEncrypted()) {
+                byte[] cipherBytes;
+                try (InputStream in = part.openStream()) {
+                    cipherBytes = in.readAllBytes();
+                } catch (IOException e) {
+                    throw new JSecureApiException("文件读取失败（filename=" + entry.getFileId() + "）：" + e.getMessage(), e);
+                }
+                try {
+                    plainBytes = io.github.jevonsnotes.jevokit.core.util.SecurityUtil
+                            .sm4cbcDecrypt(cipherBytes, client.getSecretKeySm4());
+                } catch (Exception e) {
+                    throw new JSecureApiException("文件解密失败（密钥不符或密文损坏，fileId=" + entry.getFileId() + "）", e);
+                }
+                entry.setPlainContent(plainBytes);
+                digestSource = plainBytes;
+            } else {
+                digestSource = null;
+            }
+            if (!client.isUploadDigestVerify()) {
+                continue;
+            }
             String actualDigest;
-            try (InputStream in = part.openStream()) {
-                actualDigest = JSecureUploadUtil.digestHex(in, entry.getDigestAlg());
-            } catch (IOException e) {
-                throw new JSecureApiException("文件读取失败（filename=" + entry.getFileId() + "）：" + e.getMessage(), e);
+            if (plainBytes != null) {
+                actualDigest = JSecureUploadUtil.digestHex(plainBytes, entry.getDigestAlg());
+            } else {
+                try (InputStream in = part.openStream()) {
+                    actualDigest = JSecureUploadUtil.digestHex(in, entry.getDigestAlg());
+                } catch (IOException e) {
+                    throw new JSecureApiException("文件读取失败（filename=" + entry.getFileId() + "）：" + e.getMessage(), e);
+                }
             }
             Assert.isTrue(actualDigest.equalsIgnoreCase(StrUtil.trimToEmpty(entry.getDigest())),
                     () -> new JSecureApiException("文件摘要校验失败（fileId=" + entry.getFileId() + "）"));
@@ -261,7 +326,7 @@ public class JSecureUploadVerifier {
      * 文件 part 统一视图（jakarta Part 与 Spring MultipartFile 的共同抽象）。
      * <p>命名约定：按协议用途命名而非传输字段名——multipart 的 filename 属性（Content-Disposition）
      * 由协议约定承载 fileId（对齐键），故本视图的 {@link #fileId()} 即取该属性；业务原始文件名在信封
-     * {@code JSecureUploadFileDto.fileName}，与本视图无关（不参与对齐）。
+     * {@code JSecureUploadFileDetailDto.fileName}，与本视图无关（不参与对齐）。
      */
     private interface UploadFilePart {
         String partName();

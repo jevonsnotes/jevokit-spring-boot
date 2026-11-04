@@ -16,7 +16,7 @@ import io.github.jevonsnotes.jevokit.api.dto.FetchMode;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureRequest;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureResponse;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadDto;
-import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDto;
+import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadFileDetailDto;
 import io.github.jevonsnotes.jevokit.api.dto.JSecureUploadRequest;
 import io.github.jevonsnotes.jevokit.api.exception.JSecureApiException;
 import io.github.jevonsnotes.jevokit.api.upload.JSecureUploadUtil;
@@ -40,7 +40,7 @@ import java.util.Map;
  *
  * <p>文件条目三通道（可混合）：{@link #add(File, String, String) add}（push 直传，自动算摘要）、
  * {@link #pull(String, String, Long, String) pull}（URL 拉取）、
- * {@link #refer(String) refer}（引用已有）、{@link #entry(JSecureUploadFileDto, byte[]) entry}（全自定）。
+ * {@link #refer(String) refer}（引用已有）、{@link #entry(JSecureUploadFileDetailDto, byte[]) entry}（全自定）。
  * <p>传输载体：{@code execute()} 空参走默认载体（hutool HttpRequest：协议头 headerMap +
  * meta part[application/json] + 逐文件 form "files" 且 filename=fileId）；
  * {@code execute(IUploadRequest)} 注入自定义传输载体回调，payload 即 {@link JSecureUploadRequest}。
@@ -67,16 +67,28 @@ public class UploadChannel<B, R> {
     private final Class<R> responseClass;
 
     /** 文件摘要清单（push/pull/refer 统一存放）。 */
-    private final List<JSecureUploadFileDto> fileEntries = new ArrayList<>();
+    private final List<JSecureUploadFileDetailDto> fileEntries = new ArrayList<>();
 
-    /** push 文件内容（fileId → 字节）。 */
+    /** push 文件内容（fileId → 字节，即 wire part 实际字节）。 */
     private final Map<String, byte[]> pushContents = new LinkedHashMap<>();
+
+    /**
+     * add(..., encrypt=true) 暂存的待加密明文（fileId → 明文字节）——加密需要终端 SM4 密钥，
+     * 延迟到 prepare 解析终端后执行；密文字节入 pushContents、size 回填条目。
+     */
+    private final Map<String, byte[]> pendingEncrypt = new LinkedHashMap<>();
 
     /** 交易号（不设则 prepare 时自动生成 UUID——服务端 transNo 为 @NotBlank 必填）。 */
     private String transNo;
 
     /** 交易类型（服务端 @JSecureApi 声明了 transType 限定时必填）。 */
     private String transType;
+
+    /**
+     * 摘要算法（add 自动计算的算法与 pull 声明的算法；缺省 sha256）——
+     * 服务端终端配置 upload-digest-algorithms 限定范围时按其取值（如 sm3）。
+     */
+    private String digestAlg = JSecureUploadUtil.DIGEST_ALG_SHA256;
 
     /** 终端配置（prepare 时按 clientId 匹配）。 */
     private JevokitApiClientProperties client;
@@ -121,7 +133,23 @@ public class UploadChannel<B, R> {
     }
 
     /**
-     * 追加 push 文件（自动计算 size/format/digest，摘要算法 sha256）。
+     * 设置摘要算法（sha256/sm3/md5）：影响其后 add() 自动计算的摘要与 pull() 声明的算法；
+     * 不设则缺省 sha256。调用方须按服务端终端 upload-digest-algorithms 允许范围自行取值
+     * （本客户端不读服务端配置，范围外算法将等服务端拒绝）；已有条目后再调用会 fail-fast
+     * （防"先 add 后改算法"生成算法口径不一致的报文），须先 digestAlg() 再 add()/pull()。
+     *
+     * @param digestAlg 摘要算法名（空白归一 sha256，协议外算法名 fail-fast）
+     * @return 本构建器（链式）
+     */
+    public UploadChannel<B, R> digestAlg(String digestAlg) {
+        Assert.isTrue(fileEntries.isEmpty(), () -> new JSecureApiException(
+                "digestAlg() 须在 add()/pull()/entry() 之前调用（已有条目按原算法生成摘要）"));
+        this.digestAlg = JSecureUploadUtil.normalizeDigestAlg(digestAlg);
+        return this;
+    }
+
+    /**
+     * 追加 push 文件（自动计算 size/format/digest，算法由 digestAlg() 设定，缺省 sha256）。
      *
      * @param file     本地文件
      * @param fileId   请求内唯一标识（即 multipart part 的 filename，仅允许字母/数字与 . _ -）
@@ -133,7 +161,7 @@ public class UploadChannel<B, R> {
     }
 
     /**
-     * 追加 push 文件（自动计算 size/format/digest，摘要算法 sha256）。
+     * 追加 push 文件（自动计算 size/format/digest，算法由 digestAlg() 设定，缺省 sha256）。
      *
      * @param file     本地文件
      * @param fileId   请求内唯一标识（仅允许字母/数字与 . _ -）
@@ -142,16 +170,30 @@ public class UploadChannel<B, R> {
      * @return 本构建器（链式）
      */
     public UploadChannel<B, R> add(File file, String fileId, String fileType, String fileName) {
+        return add(file, fileId, fileType, fileName, false);
+    }
+
+    /**
+     * 追加 push 文件（本地文件，可选括号内自动加密，语义同 {@link #add(byte[], String, String, String, boolean)}）。
+     *
+     * @param file     本地文件
+     * @param fileId   请求内唯一标识
+     * @param fileType 业务类型
+     * @param fileName 展示用原始文件名
+     * @param encrypt  是否内部加密
+     * @return 本构建器（链式）
+     */
+    public UploadChannel<B, R> add(File file, String fileId, String fileType, String fileName, boolean encrypt) {
         Assert.notNull(file, () -> new JSecureApiException("上传文件不能为空：" + fileId));
         try {
-            return add(Files.readAllBytes(file.toPath()), fileId, fileType, fileName);
+            return add(Files.readAllBytes(file.toPath()), fileId, fileType, fileName, encrypt);
         } catch (IOException e) {
             throw new JSecureApiException("读取上传文件失败：" + file.getPath(), e);
         }
     }
 
     /**
-     * 追加 push 文件（自动计算 size/format/digest，摘要算法 sha256）。
+     * 追加 push 文件（自动计算 size/format/digest，算法由 digestAlg() 设定，缺省 sha256）。
      *
      * @param content  文件内容
      * @param fileId   请求内唯一标识（仅允许字母/数字与 . _ -）
@@ -163,7 +205,7 @@ public class UploadChannel<B, R> {
     }
 
     /**
-     * 追加 push 文件（自动计算 size/format/digest，摘要算法 sha256；format 取 fileName 扩展名，
+     * 追加 push 文件（自动计算 size/format/digest，算法由 digestAlg() 设定（缺省 sha256）；format 取 fileName 扩展名，
      * 无扩展名时留空交服务端白名单判定）。
      *
      * @param content  文件内容
@@ -173,16 +215,39 @@ public class UploadChannel<B, R> {
      * @return 本构建器（链式）
      */
     public UploadChannel<B, R> add(byte[] content, String fileId, String fileType, String fileName) {
+        return add(content, fileId, fileType, fileName, false);
+    }
+
+    /**
+     * 追加 push 文件（可选括号内自动加密）：encrypt=true 时传入<b>明文字节</b>，内部以终端
+     * SM4 密钥 SM4-CBC 加密（随机 IV 前缀）后作为文件 part 字节；digest 按<b>加密前明文</b>
+     * 计算（服务端解密后复核），size 回填密文字节数（即 wire 上实际大小），条目标志
+     * encrypted=true（服务端校验链无感解密，业务直接从条目拿明文）。
+     *
+     * @param content  文件内容（encrypt=true 时为明文；false 时原样作为 part 字节）
+     * @param fileId   请求内唯一标识（仅允许字母/数字与 . _ -）
+     * @param fileType 业务类型
+     * @param fileName 展示用原始文件名（兼作 format 推断来源）
+     * @param encrypt  是否内部加密（SM4-CBC，密钥共用终端 SM4 密钥）
+     * @return 本构建器（链式）
+     */
+    public UploadChannel<B, R> add(byte[] content, String fileId, String fileType, String fileName, boolean encrypt) {
         Assert.notNull(content, () -> new JSecureApiException("上传文件内容不能为空：" + fileId));
-        JSecureUploadFileDto entry = new JSecureUploadFileDto();
+        JSecureUploadFileDetailDto entry = new JSecureUploadFileDetailDto();
         entry.setFileId(fileId);
         entry.setFileType(fileType);
         entry.setFileName(fileName);
         entry.setFormat(inferFormat(fileName));
-        entry.setSize((long) content.length);
-        entry.setDigest(JSecureUploadUtil.digestHex(content, JSecureUploadUtil.DIGEST_ALG_SHA256));
-        entry.setDigestAlg(JSecureUploadUtil.DIGEST_ALG_SHA256);
+        entry.setDigest(JSecureUploadUtil.digestHex(content, digestAlg));   // 加密条目也按明文算
+        entry.setDigestAlg(digestAlg);
+        entry.setEncrypted(encrypt);
         entry.setFetchMode(FetchMode.push);
+        if (encrypt) {
+            // size 为密文字节数（IV 16B + padding），prepare 加密后回填；明文暂存延后加密
+            pendingEncrypt.put(fileId, content);
+            return entry(entry, null);
+        }
+        entry.setSize((long) content.length);
         return entry(entry, content);
     }
 
@@ -191,9 +256,9 @@ public class UploadChannel<B, R> {
      * 服务端拉取时复核）。
      *
      * @param fileId 请求内唯一标识（仅允许字母/数字与 . _ -）
-     * @param url    文件地址（域名须在服务端终端 fetch-url-whitelist 白名单内）
+     * @param url    文件地址（域名须在服务端终端 upload-fetch-url-whitelist 白名单内）
      * @param size   文件字节数（可空）
-     * @param digest 文件摘要（hex，可空；声明后服务端拉取复核）
+     * @param digest 文件摘要（hex，可空；按 digestAlg() 设定的算法计算，声明后服务端拉取复核）
      * @return 本构建器（链式）
      */
     public UploadChannel<B, R> pull(String fileId, String url, Long size, String digest) {
@@ -213,13 +278,13 @@ public class UploadChannel<B, R> {
      */
     public UploadChannel<B, R> pull(String fileId, String url, Long size, String digest,
                                     String fileType, String format) {
-        JSecureUploadFileDto entry = new JSecureUploadFileDto();
+        JSecureUploadFileDetailDto entry = new JSecureUploadFileDetailDto();
         entry.setFileId(fileId);
         entry.setFileType(fileType);
         entry.setFormat(format);
         entry.setSize(size);
         entry.setDigest(digest);
-        entry.setDigestAlg(JSecureUploadUtil.DIGEST_ALG_SHA256);
+        entry.setDigestAlg(digestAlg);
         entry.setFetchMode(FetchMode.pull);
         entry.setUrl(url);
         return entry(entry, null);
@@ -232,7 +297,7 @@ public class UploadChannel<B, R> {
      * @return 本构建器（链式）
      */
     public UploadChannel<B, R> refer(String fileId) {
-        JSecureUploadFileDto entry = new JSecureUploadFileDto();
+        JSecureUploadFileDetailDto entry = new JSecureUploadFileDetailDto();
         entry.setFileId(fileId);
         entry.setFetchMode(FetchMode.refer);
         return entry(entry, null);
@@ -249,7 +314,7 @@ public class UploadChannel<B, R> {
      * @return 本构建器（链式）
      * @throws JSecureApiException fileId 非法（字符集/长度）、为空或重复时抛出
      */
-    public UploadChannel<B, R> entry(JSecureUploadFileDto fileEntry, byte[] content) {
+    public UploadChannel<B, R> entry(JSecureUploadFileDetailDto fileEntry, byte[] content) {
         Assert.notNull(fileEntry, () -> new JSecureApiException("文件条目不能为空"));
         Assert.notBlank(fileEntry.getFileId(), () -> new JSecureApiException("文件标识 fileId 不能为空"));
         // fileId 即 multipart 文件 part 的 filename（对齐键）：字符集白名单收紧，防走私/注入（与服务端同口径）
@@ -279,14 +344,23 @@ public class UploadChannel<B, R> {
             return this;
         }
         client = JSecureApiUtil.getClient(clientId);
+        // 自动加密条目：终端密钥就绪后加密暂存明文，密文入 part、size 回填（信封序列化前完成）
+        pendingEncrypt.forEach((fileId, plain) -> {
+            byte[] cipher = io.github.jevonsnotes.jevokit.core.util.SecurityUtil.sm4cbcEncrypt(plain, client.getSecretKeySm4());
+            fileEntries.stream()
+                    .filter(e -> fileId.equals(e.getFileId()))
+                    .findFirst()
+                    .ifPresent(e -> e.setSize((long) cipher.length));
+            pushContents.put(fileId, cipher);
+        });
         // transNo 不设则自动生成：服务端 @NotBlank 无条件必填，客户端兜底保证报文恒可过校验
         if (StrUtil.isBlank(transNo)) {
             transNo = UUID.randomUUID().toString();
         }
 
         @SuppressWarnings("unchecked")
-        JSecureUploadDto<B, JSecureUploadFileDto> upload =
-                new JSecureUploadDto<>(businessData, (List<JSecureUploadFileDto>) (List<?>) fileEntries);
+        JSecureUploadDto<B, JSecureUploadFileDetailDto> upload =
+                new JSecureUploadDto<>(businessData, (List<JSecureUploadFileDetailDto>) (List<?>) fileEntries);
         JSecureRequest<B> envelope = new JSecureRequest<>();
         envelope.setTransNo(transNo);
         envelope.setTransType(transType);
