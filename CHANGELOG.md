@@ -4,6 +4,12 @@
 
 ## [未发布]
 
+### 修复
+
+- **jevokit-api `JSecureUploadGuard` 在 actuator 环境下双映射 NoUnique 启动失败（3.5.3.0 引入）**：上传裸奔检测防线按具体类型 `RequestMappingHandlerMapping` 注入 ObjectProvider 并在启动尾期 `ifAvailable`——actuator 环境下 `controllerEndpointHandlerMapping` 亦为该类型子类，双命中抛 `NoUniqueBeanDefinitionException`。修复为注入 BeanFactory 按**标准 bean 名** `requestMappingHandlerMapping` 精确获取（子类 bean 不再参与匹配；无 Web 环境该名不存在时跳过，原语义保留）。该问题在 3.5.3.0/3.5.3.1 期间被 desHelper 循环环遮挡未暴露，环修复（3.5.3.2）后启动前进至此处才显现。回归：双同类型映射 bean 并存场景按名取、防线检出能力不降（模块 171 用例）
+
+## [3.5.3.3] — 2026-11-11
+
 ## [3.5.3.2] — 2026-11-11
 
 ### 修复

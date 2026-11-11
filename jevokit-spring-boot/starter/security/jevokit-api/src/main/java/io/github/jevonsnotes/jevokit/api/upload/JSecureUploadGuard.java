@@ -2,7 +2,6 @@ package io.github.jevonsnotes.jevokit.api.upload;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.web.method.HandlerMethod;
@@ -37,13 +36,26 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class JSecureUploadGuard implements SmartInitializingSingleton {
 
-    private final ObjectProvider<RequestMappingHandlerMapping> handlerMappingProvider;
+    /**
+     * 按 bean 名取 MVC 的 handlerMapping（"requestMappingHandlerMapping"）而非按类型：
+     * actuator 环境下 {@code ControllerEndpointHandlerMapping} 也是 RequestMappingHandlerMapping
+     * 子类型，按类型查找双命中（NoUniqueBeanDefinitionException，3.5.3.2 修复）；按名+类型
+     * 精确命中且无 Web 环境时该名不存在，走跳过分支（原语义保留）。
+     */
+    private final org.springframework.beans.factory.BeanFactory beanFactory;
 
     /** 启动期裸奔检测入口：任何违规方法直接抛 IllegalStateException 中断启动。 */
     @Override
     public void afterSingletonsInstantiated() {
-        handlerMappingProvider.ifAvailable(handlerMapping -> checkHandlerMethods(handlerMapping.getHandlerMethods()));
+        if (beanFactory.containsBean(HANDLER_MAPPING_BEAN_NAME)) {
+            RequestMappingHandlerMapping handlerMapping =
+                    beanFactory.getBean(HANDLER_MAPPING_BEAN_NAME, RequestMappingHandlerMapping.class);
+            checkHandlerMethods(handlerMapping.getHandlerMethods());
+        }
     }
+
+    /** MVC 请求映射处理器的标准 bean 名（WebMvcAutoConfiguration 固定注册名）。 */
+    static final String HANDLER_MAPPING_BEAN_NAME = "requestMappingHandlerMapping";
 
     /**
      * 校验全部 handler 方法（可见性设为包内以便单测直调）。

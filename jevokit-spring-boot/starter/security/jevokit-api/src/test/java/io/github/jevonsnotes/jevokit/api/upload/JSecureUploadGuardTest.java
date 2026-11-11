@@ -67,8 +67,29 @@ class JSecureUploadGuardTest {
     @Test
     @DisplayName("无 handler 映射（非 Web 环境）：跳过检测不报错")
     void skipsWhenNoHandlerMapping() {
-        new JSecureUploadGuard(new DefaultListableBeanFactory()
-                .getBeanProvider(RequestMappingHandlerMapping.class)).afterSingletonsInstantiated();
+        new JSecureUploadGuard(new DefaultListableBeanFactory()).afterSingletonsInstantiated();
+
+    }
+
+    @Test
+    @DisplayName("actuator 双映射形态：第二个同类型 bean 不干扰，按 bean 名精确取 MVC 的映射")
+    void actuatorLikeSecondHandlerMappingIgnored() throws Exception {
+        // 复刻 actuator 场景：容器同时存在 requestMappingHandlerMapping 与
+        // controllerEndpointHandlerMapping（同为 RequestMappingHandlerMapping 类型）。
+        // 旧实现按类型 getIfAvailable 双命中抛 NoUniqueBeanDefinitionException；
+        // 修复后按 bean 名取 MVC 的那个，违规方法仍被检出（防线不失效）。
+        StaticApplicationContext context = new StaticApplicationContext();
+        context.registerBean(BareSingleFileController.class.getSimpleName(), BareSingleFileController.class);
+        context.refresh();
+        RequestMappingHandlerMapping mvcMapping = new RequestMappingHandlerMapping();
+        mvcMapping.setApplicationContext(context);
+        mvcMapping.afterPropertiesSet();
+        DefaultListableBeanFactory factory = new DefaultListableBeanFactory();
+        factory.registerSingleton(JSecureUploadGuard.HANDLER_MAPPING_BEAN_NAME, mvcMapping);
+        factory.registerSingleton("controllerEndpointHandlerMapping", new RequestMappingHandlerMapping());
+        assertThatThrownBy(() -> new JSecureUploadGuard(factory).afterSingletonsInstantiated())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("裸奔检测不通过");
     }
 
     // ------------------------------------------------------------------
@@ -85,41 +106,10 @@ class JSecureUploadGuardTest {
         RequestMappingHandlerMapping mapping = new RequestMappingHandlerMapping();
         mapping.setApplicationContext(context);
         mapping.afterPropertiesSet();
-        new JSecureUploadGuard(new SimpleProvider(mapping)).afterSingletonsInstantiated();
+        DefaultListableBeanFactory factory = new DefaultListableBeanFactory();
+        factory.registerSingleton(JSecureUploadGuard.HANDLER_MAPPING_BEAN_NAME, mapping);
+        new JSecureUploadGuard(factory).afterSingletonsInstantiated();
     }
-
-    /** 简单 ObjectProvider 包装（仅单例）。 */
-    private static final class SimpleProvider implements org.springframework.beans.factory.ObjectProvider<RequestMappingHandlerMapping> {
-        private final RequestMappingHandlerMapping mapping;
-
-        private SimpleProvider(RequestMappingHandlerMapping mapping) {
-            this.mapping = mapping;
-        }
-
-        @Override
-        public RequestMappingHandlerMapping getObject(Object... args) {
-            return mapping;
-        }
-
-        @Override
-        public RequestMappingHandlerMapping getObject() {
-            return mapping;
-        }
-
-        @Override
-        public RequestMappingHandlerMapping getIfAvailable() {
-            return mapping;
-        }
-
-        @Override
-        public RequestMappingHandlerMapping getIfUnique() {
-            return mapping;
-        }
-    }
-
-    // ------------------------------------------------------------------
-    // 受测控制器形态
-    // ------------------------------------------------------------------
 
     @RestController
     static class BareSingleFileController {

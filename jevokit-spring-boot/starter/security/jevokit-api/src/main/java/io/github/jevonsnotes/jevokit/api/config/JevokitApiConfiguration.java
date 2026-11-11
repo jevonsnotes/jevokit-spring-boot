@@ -90,10 +90,12 @@ public class JevokitApiConfiguration {
         return new JSecureFileFetcher();
     }
 
-    /** 注册上传裸奔检测防线（启动期扫描 handler 方法；无 Web 环境无 RequestMappingHandlerMapping 时跳过）。 */
+    /** 注册上传裸奔检测防线（启动期扫描 handler 方法；无 Web 环境无 requestMappingHandlerMapping bean 时跳过）。
+     *  注入 BeanFactory 按 bean 名取 handlerMapping——按具体类型注入在 actuator 环境下双命中
+     *  （controllerEndpointHandlerMapping 亦是其子类型，3.5.3.2 修复）。 */
     @Bean
-    public SmartInitializingSingleton jSecureUploadGuard(ObjectProvider<RequestMappingHandlerMapping> handlerMappingProvider){
-        return new JSecureUploadGuard(handlerMappingProvider);
+    public SmartInitializingSingleton jSecureUploadGuard(org.springframework.beans.factory.BeanFactory beanFactory){
+        return new JSecureUploadGuard(beanFactory);
     }
 
 }
