@@ -4,6 +4,8 @@
 
 ## [未发布]
 
+## [3.5.3.2] — 2026-11-11
+
 ### 修复
 
 - **jevokit-desensitization `DesHelper` 的 ApplicationListener 接口身份引发 Feign 场景容器环（3.5.2.2 回归，根因修复）**：3.5.2.2 死锁改造让 `DesHelper implements ApplicationListener<ContextRefreshedEvent>`——该接口身份使其进入事件多播器的 listener 检索名单，Spring Cloud `refreshEventListener` 装配期触发检索时连坐拉起业务权限拦截器（`SensitizationPowerInterceptor` 实现）的依赖链（拦截器→业务 service→Feign client→client 创建又经同路径要拦截器），形成容器环、应用启动失败；3.5.3.1 的 Provider 延迟只消除了环中的 desHelper 节点（环①→环②），业务环仍在。修复：回调改为 `@EventListener` 注解（语义完全相同，不进 listener bean 名单）。版本对照实验（Boot 3.5.16 + spring-cloud-openfeign 4.3.3 最小工程复现）：3.5.2.1 启动成功 / 3.5.2.2 环 / 3.5.3.1 环 / 修复版启动成功
