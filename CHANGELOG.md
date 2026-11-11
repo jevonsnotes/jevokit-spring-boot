@@ -4,6 +4,10 @@
 
 ## [未发布]
 
+### 修复
+
+- **jevokit-desensitization `desHelper` 容器循环依赖解环**：`desHelper` 的 bean 方法原本**构造注入** `SensitizationPowerInterceptor`——业务自定义拦截器（常注入带 Feign 的业务 service，而 Feign 侧配置又用 desHelper）与该边闭合即成容器环，应用启动失败（`BeanCurrentlyInCreationException`）。修复为 `ObjectProvider` 延迟解析：desHelper 构造期只依赖自身配置（环的 kit 侧边消失，业务链无论怎么绕都不成环），拦截器延至 `ContextRefreshedEvent`（单例锁已释放、容器完全就绪）懒解析发布到静态引用——DEF-1 死锁防御语义不变（`@PostConstruct` 阶段不碰业务 bean）；未覆盖时 provider 落 `@ConditionalOnMissingBean` 缺省实现，行为与直注入一致。窗口语义变化：init 到刷新完成之间全部静态入口按未就绪语义处理（desensitizeLog/View fail-fast、日志对象链路 fail-open、checkPower 安全默认 false）——容器刷新完成前不接流量，实际无影响。配套把 `ready` 门闩从 `@PostConstruct` 挪至事件回调末尾最后落（此前窗口期 ready=true 但实例未发布，就绪断言名不副实：过了断言却拿 null 实例靠判空 fail-open 兜底），现在 ready=true 严格等价于"全部静态引用已发布、静态入口可用"。另补直传拦截器的便捷构造（测试/无容器直构场景，发布时序仍走事件）。回归：`DesHelperCycleBreakTest` 复刻"业务拦截器→业务 service→desHelper"闭环形态，解环后上下文正常启动且业务拦截器经事件发布生效
+
 ## [3.5.3.0] — 2026-11-04
 
 ### 新增

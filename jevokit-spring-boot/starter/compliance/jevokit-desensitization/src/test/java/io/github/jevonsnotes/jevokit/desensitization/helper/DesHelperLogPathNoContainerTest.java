@@ -76,8 +76,10 @@ class DesHelperLogPathNoContainerTest {
 
     @Test
     @DisplayName("就绪但无容器：JSON 报文参数脱敏经静态配置完成，对象参数 fail-open 原样返回（DEF-1 回归）")
-    void logPathWorksWithoutSpringContainer() {
+    void logPathWorksWithoutSpringContainer() throws Exception {
         new DesHelper(minimalProperties(), new DefaultSensitizationPowerInterceptor()).init();
+        // 直构无容器场景没有刷新事件，手动模拟其等价终态（ready 随事件最后落——见 DesHelper 注释）
+        setStaticField("ready", true);
         // 模拟"容器不可用"环境：SpringUtil 静态上下文置 null——修复前此形态下日志路径的
         // SpringUtil.getBean 直接抛 UtilException/NoSuchBeanDefinition（或持锁场景下死锁）
         writeSpringUtilContext(null);
@@ -96,8 +98,10 @@ class DesHelperLogPathNoContainerTest {
     void objectArgUsesPublishedInstanceWithoutContainer() throws Exception {
         DesHelper helper = new DesHelper(minimalProperties(), new DefaultSensitizationPowerInterceptor());
         helper.init();
-        // 模拟 ContextRefreshedEvent 发布效果（生产经容器 getBean 得代理实例；单测无容器，直填裸实例验证零容器通路）
+        // 模拟 ContextRefreshedEvent 发布效果（生产经容器 getBean 得代理实例；单测无容器，直填裸实例验证零容器通路；
+        // ready 亦随事件最后落——模拟完整就绪终态）
         setStaticField("staticInstance", helper);
+        setStaticField("ready", true);
         writeSpringUtilContext(null);
 
         Object out = DesHelper.desensitizeLog(new ComplexLogArg());

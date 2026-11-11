@@ -40,9 +40,18 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class DesHelper implements ApplicationListener<ContextRefreshedEvent> {
     private final JevokitDesensitizationProperties properties;
-    private final SensitizationPowerInterceptor sensitizationPowerInterceptor;
-    /** 就绪标志：init()（@PostConstruct）发布，ContextClosedEvent 清理（与发布配对，见 onContextClosed）。
-     *  volatile——日志链路在 netty 等非容器线程上读取 */
+    /**
+     * 权限拦截器延迟解析源：构造期直注入会在容器里形成 desHelper →（业务拦截器 → 业务依赖
+     * 链）→ desHelper 的环，故持有 provider、待刷新完成（单例锁已释放）再解析发布。
+     */
+    private final org.springframework.beans.factory.ObjectProvider<SensitizationPowerInterceptor> sensitizationPowerInterceptorProvider;
+    /**
+     * 就绪门闩：<b>全部静态引用发布完成后</b>才置 true——即 {@link #onApplicationEvent(ContextRefreshedEvent)}
+     * 末尾最后落（实例与拦截器引用先发，门闩后落，与 onContextClosed 的清理写序互为镜像）。
+     * 语义 = "静态入口（desensitizeLog/desensitizeView/checkPower）可用"；init(@PostConstruct) 到刷新完成
+     * 之间的窗口按未就绪处理（fail-fast/fail-open/安全默认），容器刷新完成前不接流量，无实际影响。
+     * volatile——日志链路在 netty 等非容器线程上读取；ContextClosedEvent 清理（与发布配对）。
+     */
     private static volatile boolean ready;
     /** init() 提升的静态配置引用。volatile——非容器线程直读（DesUtil 日志链路），
      *  且关闭清理后置空必须对读方可见 */
@@ -213,14 +222,12 @@ public class DesHelper implements ApplicationListener<ContextRefreshedEvent> {
         return staticProperties;
     }
 
-    /** 容器就绪回调：把配置/权限拦截器提升为静态引用并置 ready 标志（静态入口的前置条件）。
-     *  实例引用不在此发布——@PostConstruct 处 this 为裸实例且上下文仍在刷新（单例锁被持有），
-     *  代理发布延后至 {@link #onApplicationEvent(ContextRefreshedEvent)}。 */
+    /** 构造后回调：仅提升轻量配置引用（此时尚持单例锁，只碰自身字段，不触发任何业务 bean）。
+     *  实例/拦截器引用与 ready 门闩一律延后到 {@link #onApplicationEvent(ContextRefreshedEvent)}：
+     *  ready 若在此置 true，窗口期（实例未发布）静态入口过了就绪断言却拿 null 实例——名不副实。 */
     @PostConstruct
     public void init() {
         staticProperties = this.properties;
-        staticSensitizationPowerInterceptor = this.sensitizationPowerInterceptor;
-        ready = true;
     }
 
     /** 上下文刷新完成回调：此刻单例锁已释放（finishRefresh 阶段），取容器实例发布到静态引用。
@@ -229,6 +236,12 @@ public class DesHelper implements ApplicationListener<ContextRefreshedEvent> {
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
         staticInstance = event.getApplicationContext().getBean(DesHelper.class);
+        // 拦截器此刻才解析：单例锁已释放（finishRefresh 阶段），业务实现（含其依赖链）按需创建不再成环；
+        // 未覆盖时 provider 落到 @ConditionalOnMissingBean 的缺省实现，行为与直注入一致
+        staticSensitizationPowerInterceptor = sensitizationPowerInterceptorProvider.getIfAvailable();
+        // 门闩最后落：走到这里全部静态引用已发布，ready=true 才名副其实
+        // （与 onContextClosed 的"先清引用、最后清门闩"写序互为镜像）
+        ready = true;
     }
 
     /** 上下文关闭回调：清理 init()/刷新发布提升的全部静态引用（与发布配对的生命周期闭环）。
@@ -257,6 +270,24 @@ public class DesHelper implements ApplicationListener<ContextRefreshedEvent> {
      * @param obj 日志参数对象；null 原样返回
      * @return 克隆并脱敏后的新对象（入参不被修改，日志可安全输出）
      */
+    /**
+     * 便捷构造（测试/无容器直构场景）：拦截器直传，内部包装为固定返回的 provider——
+     * 发布时序与主构造一致（仍待刷新完成事件解析发布，防环语义不变）。
+     */
+    public DesHelper(JevokitDesensitizationProperties properties, SensitizationPowerInterceptor interceptor) {
+        this(properties, new org.springframework.beans.factory.ObjectProvider<>() {
+            @Override
+            public SensitizationPowerInterceptor getIfAvailable() {
+                return interceptor;
+            }
+
+            @Override
+            public SensitizationPowerInterceptor getObject() {
+                return java.util.Objects.requireNonNull(interceptor);
+            }
+        });
+    }
+
     public static Object desensitizeLog(Object obj) {
         Assert.isTrue(ready, "desHelper not ready");
         return DesUtil.desByProcessTypeWrap(DstProcessType.LOG, () -> desensitizeLogAfterClone(CloneUtil.deep(obj)));

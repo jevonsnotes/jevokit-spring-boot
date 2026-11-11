@@ -1,6 +1,7 @@
 package io.github.jevonsnotes.jevokit.desensitization.config;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Bean;
@@ -32,11 +33,17 @@ public class JevokitDesensitizationConfiguration{
         return new DesensitizationAspect();
     }
 
-    /** 注册脱敏辅助器（@PostConstruct 提升静态引用）。 */
+    /**
+     * 注册脱敏辅助器（@PostConstruct 提升静态配置引用）。
+     * <p>权限拦截器经 {@link ObjectProvider} 延迟解析（刷新完成事件时才取，见 DesHelper）：
+     * 构造期直注入业务实现会把"desHelper → 业务拦截器 → 业务依赖 → …→ desHelper"拉成
+     * 容器环（业务侧拦截器常注入带 Feign 的 service，Feign 配置又用脱敏），延迟解析从根上解环。
+     */
     @ConditionalOnMissingBean
     @Bean
-    public DesHelper desHelper(JevokitDesensitizationProperties properties,SensitizationPowerInterceptor sensitizationPowerInterceptor){
-        return new DesHelper(properties,sensitizationPowerInterceptor);
+    public DesHelper desHelper(JevokitDesensitizationProperties properties,
+                               ObjectProvider<SensitizationPowerInterceptor> sensitizationPowerInterceptorProvider){
+        return new DesHelper(properties,sensitizationPowerInterceptorProvider);
     }
 
 
