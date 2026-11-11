@@ -38,7 +38,15 @@ import java.util.regex.Pattern;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class DesHelper implements ApplicationListener<ContextRefreshedEvent> {
+/**
+ * <p><b>不要让本类实现 {@code ApplicationListener} 接口</b>（回调一律用 @EventListener 注解）：
+ * 实现接口会使本 bean 进入事件多播器的 listener 检索名单，Spring Cloud refreshEventListener
+ * 装配期触发该检索时连坐拉起权限拦截器的业务依赖链（拦截器→业务 service→Feign client→
+ * 又经同路径要拦截器），在 Feign 场景形成容器环（3.5.2.2 引入、3.5.3.3 修复，回归见
+ * feign-cycle 复现工程与 DesHelperCycleBreakTest）。@EventListener 注解方法注册的监听
+ * 不进该名单，回调语义完全相同。
+ */
+public class DesHelper {
     private final JevokitDesensitizationProperties properties;
     /**
      * 权限拦截器延迟解析源：构造期直注入会在容器里形成 desHelper →（业务拦截器 → 业务依赖
@@ -233,7 +241,8 @@ public class DesHelper implements ApplicationListener<ContextRefreshedEvent> {
     /** 上下文刷新完成回调：此刻单例锁已释放（finishRefresh 阶段），取容器实例发布到静态引用。
      *  经容器取而非记 this，保留 AOP 代理形态（@Desensitization 切面语义与原 getBean 一致）；
      *  刷新失败的上下文不触发本事件，日志链路按 fail-open 跳过（见 getInstance 死锁防御注释）。 */
-    @Override
+    /** 容器刷新完成回调（@EventListener 形态：不实现 ApplicationListener 接口——见类头注） */
+    @org.springframework.context.event.EventListener(ContextRefreshedEvent.class)
     public void onApplicationEvent(ContextRefreshedEvent event) {
         staticInstance = event.getApplicationContext().getBean(DesHelper.class);
         // 拦截器此刻才解析：单例锁已释放（finishRefresh 阶段），业务实现（含其依赖链）按需创建不再成环；
