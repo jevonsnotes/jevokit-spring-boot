@@ -50,6 +50,7 @@
 | JSecureContext 三个 ThreadLocal 请求结束后不清理——线程池复用串终端/串交易号 | 异常路径未处理 | 已修复·已沉淀 | [bug-jsecure-context-threadlocal-leak-20260920.md](bug-jsecure-context-threadlocal-leak-20260920.md) |
 | Maven Central 首发五连障：插件静默跳过/token 失效/两步序少半步/模块缺 name/旧 BOM 假绿 | 契约不一致 | 已修复·已沉淀 | [bug-central-release-pipeline-20260921.md](bug-central-release-pipeline-20260921.md) |
 | 安全组件边界六缺陷：客户端异常类型不统一/非200不感知/fileId 走私 multipart 头/重复 part 静默受理 | 契约不一致 + 边界条件遗漏 | 已修复·已沉淀 | [bug-jsecure-upload-edge-defects-20261031.md](bug-jsecure-upload-edge-defects-20261031.md) |
+| 三层连环遮挡：desHelper listener 身份致 Feign 环 + guard 类型双命中，低版本正常才是定位主力 | 契约不一致 | 已修复·已沉淀 | [bug-deshelper-listener-feign-cycle-chain-20261112.md](bug-deshelper-listener-feign-cycle-chain-20261112.md) |
 
 ## 单条目骨架
 
