@@ -27,7 +27,7 @@ Table of Contents
 
 # jevokit-spring-boot
 
-![Release](https://img.shields.io/badge/release-v3.5.3.1-blue.svg)
+![Release](https://img.shields.io/badge/release-v3.5.3.3-blue.svg)
 ![JDK](https://img.shields.io/badge/jdk-17+-green.svg)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.x-6DB33F.svg)
 
